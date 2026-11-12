@@ -18,21 +18,21 @@ export function GroupsView() {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
-      <h1 className="text-4xl font-bold uppercase">My groups</h1>
+      <h1 className="paint worn mt-1 text-5xl leading-none sm:text-6xl">My groups</h1>
       <section aria-live="polite" aria-busy={load.status === "loading"} className="mt-6">
         {load.status === "loading" && <ListSkeleton />}
         {load.status === "error" && <LoadError title="Couldn't load your groups" message={load.message} onRetry={retry} />}
         {load.status === "ready" && load.data.length === 0 && (
-          <div className="rounded-xl border border-dashed p-8 text-center">
+          <div className="rounded-xl border border-dashed bg-card/85 p-8 text-center">
             <UsersRound className="mx-auto size-8 text-muted-foreground" aria-hidden="true" />
-            <h2 className="mt-3 text-xl font-semibold uppercase">No groups yet</h2>
+            <h2 className="mt-3 font-display text-2xl font-extrabold uppercase">No groups yet</h2>
             <p className="mx-auto mt-2 max-w-sm leading-relaxed text-muted-foreground">
               Open an invite link from your organizer while signed in, or start your own group below.
             </p>
           </div>
         )}
         {load.status === "ready" && load.data.length > 0 && (
-          <ul className="divide-y rounded-xl border bg-card">
+          <ul className="divide-y panel">
             {load.data.map((g) => (
               <li key={g.groupId}>
                 <Link
@@ -40,7 +40,7 @@ export function GroupsView() {
                   className="flex min-h-16 items-center gap-3 px-4 py-3 outline-none hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/60"
                 >
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-lg font-semibold">{g.name}</span>
+                    <span className="block truncate font-display text-2xl font-extrabold uppercase">{g.name}</span>
                     <span className="text-sm text-muted-foreground">
                       {g.season} season · {ROLE_LABEL[g.role]}
                     </span>
@@ -80,8 +80,8 @@ function CreateGroupForm() {
   }
 
   return (
-    <form onSubmit={submit} className="mt-10 rounded-xl border bg-card p-5">
-      <h2 className="text-xl font-semibold uppercase">Start a group</h2>
+    <form onSubmit={submit} className="mt-10 panel p-5">
+      <h2 className="font-display text-2xl font-extrabold uppercase">Start a group</h2>
       <p className="mt-1 text-muted-foreground">You become its organizer and can invite people.</p>
       <div className="mt-4 grid gap-4 sm:grid-cols-[1fr_9rem]">
         <label className="grid gap-1.5 text-sm font-medium">
@@ -130,9 +130,9 @@ function CreateGroupForm() {
 
 function ListSkeleton() {
   return (
-    <div className="animate-pulse space-y-2 rounded-xl border bg-card p-4">
-      <span className="block h-5 w-48 rounded bg-muted" />
-      <span className="block h-4 w-32 rounded bg-muted" />
+    <div className="animate-pulse space-y-2 panel p-4">
+      <span className="block h-5 w-48 rounded bg-secondary" />
+      <span className="block h-4 w-32 rounded bg-secondary" />
       <span className="sr-only">Loading your groups</span>
     </div>
   );

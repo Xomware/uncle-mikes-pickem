@@ -5,6 +5,10 @@ import { type FormEvent, useCallback, useState } from "react";
 
 import { DeathGrid } from "@/components/death/death-grid";
 import { Lives } from "@/components/death/lives";
+import { ReplayTheDown } from "@/components/death/replay-the-down";
+import { SuddenDeathLockup } from "@/components/death/sudden-death-lockup";
+import { Helmet } from "@/components/field/helmet";
+import { Coin } from "@/components/field/icons";
 import { LoadError } from "@/components/load-error";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
@@ -35,8 +39,9 @@ export function DeathPool(props: Props) {
 
   if (load.status === "loading") {
     return (
-      <div className="mt-6 animate-pulse space-y-3" aria-busy="true">
-        <span className="block h-32 rounded-xl bg-muted" />
+      <div className="sudden-death mt-6 animate-pulse space-y-3" aria-busy="true">
+        <span className="block h-40 rounded-xl bg-card" />
+        <span className="block h-32 rounded-xl bg-card" />
         <span className="sr-only">Loading the death pool</span>
       </div>
     );
@@ -58,11 +63,16 @@ export function DeathPoolView({ board, onChange, ...props }: ViewProps) {
   const replace = (next: DeathEntry) =>
     onChange({ ...board, entries: board.entries.map((e) => (e.entryId === next.entryId ? next : e)) });
 
+  const alive = board.entries.filter((e) => e.status === "alive").length;
+
   return (
-    <section className="mt-6">
-      <h2 className="text-xl font-semibold uppercase">Your entries</h2>
-      <WeekStatus week={board.week} />
-      {mine.length === 0 && <p className="mt-3 text-muted-foreground">You don&apos;t have a death pool entry yet.</p>}
+    <section className="sudden-death mt-6">
+      <SuddenDeathLockup alive={alive} total={board.entries.length} />
+      <div className="panel mt-6 px-4 py-3">
+        <h2 className="font-display text-2xl font-extrabold uppercase">Your entries</h2>
+        <WeekStatus week={board.week} />
+        {mine.length === 0 && <p className="mt-2 text-muted-foreground">You don&apos;t have a death pool entry yet.</p>}
+      </div>
       <ul className="mt-3 space-y-3">
         {mine.map((e) => (
           <EntryCard
@@ -76,6 +86,7 @@ export function DeathPoolView({ board, onChange, ...props }: ViewProps) {
         ))}
       </ul>
       <AddEntry {...props} onAdded={async () => onChange(await getDeathBoard(groupId))} />
+      <ReplayTheDown />
       <DeathGrid board={board} />
     </section>
   );
@@ -121,14 +132,24 @@ function EntryCard({ entry, week, startLives, groupId, onPicked }: EntryCardProp
   }
 
   return (
-    <li className={cn("rounded-xl border bg-card p-4", out && "opacity-70")}>
+    <li className={cn("panel p-4", !out && "border-flood/25")}>
       <div className="flex items-center gap-3">
-        <span className={cn("min-w-0 flex-1 truncate font-semibold", out && "text-muted-foreground line-through")}>
-          {entry.label}
+        <Helmet out={out} className="h-10 w-12 shrink-0" />
+        <span className="min-w-0 flex-1">
+          <span
+            className={cn(
+              "block truncate font-display text-xl font-extrabold uppercase",
+              out && "text-muted-foreground line-through decoration-blood decoration-2",
+            )}
+          >
+            {entry.label}
+          </span>
+          <span className={cn("text-sm", out ? "text-wrong" : "text-muted-foreground")}>
+            {out ? `Eliminated in Week ${entry.eliminatedWeek}` : entry.livesLeft > 1 ? "Alive, timeout in hand" : "Alive"}
+          </span>
         </span>
         <Lives left={entry.livesLeft} total={startLives} />
       </div>
-      {out && <p className="mt-2 text-sm text-wrong">Eliminated in Week {entry.eliminatedWeek}</p>}
       {!out && week && week.locked && (
         <p className="mt-2 text-sm text-muted-foreground">
           {current ? `Week ${week.number} pick: ${current}` : `No pick for Week ${week.number}`}
@@ -162,6 +183,15 @@ interface PickerProps {
 
 function TeamPicker({ games, taken, current, pending, onChoose }: PickerProps) {
   return (
+    <div className="mt-4 border-t pt-3">
+      {/* The weekly pick is the coin toss. */}
+      <p className="flex items-center gap-3">
+        <Coin className="size-10 shrink-0" />
+        <span>
+          <span className="block font-stencil text-3xl leading-none font-black uppercase">Call it</span>
+          <span className="text-sm text-muted-foreground">One team to win. Each team once a season.</span>
+        </span>
+      </p>
     <ul className="mt-3 space-y-3">
       {games.map((g) => (
         <li key={g.gameId}>
@@ -186,6 +216,7 @@ function TeamPicker({ games, taken, current, pending, onChoose }: PickerProps) {
         </li>
       ))}
     </ul>
+    </div>
   );
 }
 
@@ -208,15 +239,15 @@ function TeamButton({ team, line, used, selected, pending, onChoose, className }
       onClick={() => onChoose(team)}
       className={cn(
         "row-start-1 flex h-12 items-center gap-2 rounded-lg border px-3 text-left transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/60 disabled:cursor-not-allowed",
-        selected ? "border-primary bg-primary/15" : "border-border bg-background hover:bg-muted",
+        selected ? "border-flood bg-flood/15 shadow-[0_0_14px_-2px_oklch(0.96_0.015_240/0.5)]" : "border-border bg-secondary enabled:hover:bg-muted",
         used && "opacity-40",
         pending === team && "animate-pulse",
         className,
       )}
     >
-      <span className={cn("font-display text-lg font-bold", used && "line-through")}>{team}</span>
+      <span className={cn("font-display text-xl font-extrabold", used && "line-through")}>{team}</span>
       <span className="flex-1 text-sm text-muted-foreground">{used ? "Used" : line}</span>
-      {selected && <Check className="size-4 text-primary" aria-label="Your pick" />}
+      {selected && <Check className="size-5 text-flood" aria-label="Your pick" />}
     </button>
   );
 }
@@ -242,8 +273,8 @@ function AddEntry({ groupId, organizer, members, fee, onAdded }: Props & { onAdd
   }
 
   return (
-    <form onSubmit={submit} className="mt-4 rounded-xl border border-dashed p-4">
-      <p className="font-semibold">Add an entry</p>
+    <form onSubmit={submit} className="mt-4 rounded-xl border border-dashed bg-card/85 p-4">
+      <p className="font-display text-lg font-bold uppercase">Add an entry</p>
       <p className="text-sm text-muted-foreground">
         Each entry is paid separately{fee > 0 ? `: $${fee} per entry` : ""}.
       </p>

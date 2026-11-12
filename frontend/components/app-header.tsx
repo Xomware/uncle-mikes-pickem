@@ -12,7 +12,7 @@ import { DEFAULT_NEXT } from "@/lib/auth/next-path";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "/groups/", label: "My groups" },
+  { href: "/groups/", label: "Groups" },
   { href: "/profile/", label: "Profile" },
 ];
 
@@ -28,8 +28,8 @@ export function AppHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
-      <div className="mx-auto flex max-w-5xl items-center gap-2 px-4 sm:px-6">
+    <header className="endzone">
+      <div className="mx-auto flex max-w-5xl items-center gap-1 px-3 py-2 sm:px-6">
         <Brand href={DEFAULT_NEXT} className="mr-auto" />
         <nav aria-label="Main" className="flex items-center">
           {NAV.map(({ href, label }) => {
@@ -40,8 +40,9 @@ export function AppHeader() {
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "inline-flex h-11 items-center border-b-2 border-transparent px-3 text-sm font-medium text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/60",
-                  active && "border-primary text-foreground",
+                  "inline-flex h-11 items-center border-b-[3px] border-transparent px-2.5 font-display text-base font-bold tracking-wider text-chalk/80 uppercase outline-none hover:text-chalk focus-visible:ring-3 focus-visible:ring-ring/60 sm:px-3",
+                  // The yellow first-down line marks where you are.
+                  active && "border-primary text-chalk",
                 )}
               >
                 {label}
@@ -50,7 +51,7 @@ export function AppHeader() {
           })}
         </nav>
         {auth.status === "signedIn" && (
-          <Button variant="ghost" size="icon-lg" className="size-11" onClick={signOut} disabled={signingOut}>
+          <Button variant="ghost" size="icon-lg" className="size-11 text-chalk/80 hover:bg-chalk/10" onClick={signOut} disabled={signingOut}>
             <LogOut aria-hidden="true" />
             <span className="sr-only">Sign out</span>
           </Button>

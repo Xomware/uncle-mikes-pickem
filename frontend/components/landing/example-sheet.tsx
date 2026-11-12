@@ -1,5 +1,5 @@
-import { Check, Clock, X } from "lucide-react";
-
+import { LightBank } from "@/components/field/icons";
+import { ResultMark } from "@/components/field/result-mark";
 import { cn } from "@/lib/utils";
 
 type Result = "correct" | "wrong" | "pending";
@@ -19,51 +19,61 @@ const ROWS: Row[] = [
   { confidence: 13, pick: "BAL", over: "PIT", result: "pending" },
 ];
 
-const RESULT = {
-  correct: { icon: Check, label: "Correct", className: "bg-correct-muted text-correct" },
-  wrong: { icon: X, label: "Wrong", className: "bg-wrong-muted text-wrong" },
-  pending: { icon: Clock, label: "Not played", className: "bg-muted text-muted-foreground" },
-} as const;
-
 function points(row: Row): string {
-  if (row.result === "pending") return "-";
-  return row.result === "correct" ? `+${row.confidence}` : "0";
+  if (row.result === "pending") return "--";
+  return row.result === "correct" ? String(row.confidence) : "0";
 }
 
-/** A made-up week, to show what a pick sheet looks like before anyone has one. */
+const total = ROWS.reduce((n, r) => n + (r.result === "correct" ? r.confidence : 0), 0);
+
+/** A made-up week on the scoreboard, to show what a pick sheet looks like before anyone has one. */
 export function ExampleSheet() {
   return (
-    <figure className="rounded-xl border bg-card p-4">
-      <figcaption className="mb-3 flex items-baseline justify-between">
-        <span className="font-display text-lg font-semibold tracking-wide uppercase">Example week</span>
-        <span className="text-sm text-muted-foreground">Confidence 16 to 1</span>
+    <figure className="scoreboard p-3 sm:p-4">
+      <figcaption className="flex items-baseline justify-between border-b border-white/10 px-1 pb-2">
+        <span className="led text-2xl">WEEK 7</span>
+        <span className="font-display text-sm font-bold tracking-[0.2em] text-muted-foreground uppercase">
+          Example week
+        </span>
       </figcaption>
-      <ol className="space-y-2">
-        {ROWS.map((row) => {
-          const r = RESULT[row.result];
-          return (
-            <li key={row.confidence} className="flex items-center gap-3 rounded-lg bg-background/60 px-3 py-2">
-              <span className="w-8 text-center font-display text-2xl font-bold tabular-nums">{row.confidence}</span>
-              <span className="min-w-0 flex-1">
-                <span className="font-semibold">{row.pick}</span>
-                <span className="text-muted-foreground"> over {row.over}</span>
-                {row.gow && (
-                  <span className="mt-1 block w-fit rounded-sm bg-primary/15 px-1.5 py-0.5 text-xs font-semibold text-primary uppercase">
-                    Game of the Week
-                  </span>
-                )}
-              </span>
-              <span
-                className={cn("inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm font-semibold", r.className)}
-              >
-                <r.icon className="size-4" aria-hidden="true" />
-                <span className="sr-only">{r.label}, </span>
-                <span className="tabular-nums">{points(row)}</span>
-              </span>
-            </li>
-          );
-        })}
+      <ol className="mt-2 space-y-1.5">
+        {ROWS.map((row) => (
+          <li
+            key={row.confidence}
+            className={cn(
+              "flex min-h-14 items-center gap-3 rounded-md px-2 py-1.5",
+              row.result === "correct" && "bg-correct-muted",
+              row.result === "wrong" && "bg-wrong-muted",
+              row.result === "pending" && "bg-white/5",
+            )}
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm bg-turf font-stencil text-2xl font-black text-chalk shadow-[inset_0_-3px_0_var(--chalk)]">
+              <span className="sr-only">Confidence </span>
+              {row.confidence}
+            </span>
+            <span className="min-w-0 flex-1 leading-tight">
+              <span className="font-display text-xl font-extrabold">{row.pick}</span>
+              <span className="text-muted-foreground"> over {row.over}</span>
+              {row.gow && (
+                <span className="mt-0.5 flex w-fit items-center gap-1 font-display text-xs font-bold tracking-[0.18em] text-primary uppercase">
+                  <LightBank className="size-3.5" />
+                  Primetime
+                </span>
+              )}
+            </span>
+            {row.result === "pending" ? (
+              <span className="text-sm text-muted-foreground">Not played</span>
+            ) : (
+              <ResultMark result={row.result} className="text-lg" />
+            )}
+            <span className="led w-9 text-right text-2xl">{points(row)}</span>
+          </li>
+        ))}
       </ol>
+      <p className="mt-3 flex items-baseline justify-between border-t border-white/10 px-1 pt-2">
+        <span className="font-display text-sm font-bold tracking-[0.2em] text-muted-foreground uppercase">Total</span>
+        <span className="led text-3xl">{total}</span>
+      </p>
     </figure>
   );
 }

@@ -25,19 +25,19 @@ export function LedgerView() {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6" aria-busy={load.status === "loading"}>
-      <Link href={groupHref(id)} className="inline-flex min-h-11 items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link href={groupHref(id)} className="chalk inline-flex min-h-11 items-center gap-1.5 text-sm tracking-[0.14em] hover:text-primary">
         <ArrowLeft className="size-4" aria-hidden="true" />
         Back to group
       </Link>
-      <h1 className="mt-2 text-4xl font-bold uppercase">Payments</h1>
-      {load.status === "loading" && <span className="mt-6 block h-64 animate-pulse rounded-xl bg-muted" />}
+      <h1 className="paint worn mt-1 text-5xl leading-none sm:text-6xl">Payments</h1>
+      {load.status === "loading" && <span className="mt-6 block h-64 animate-pulse rounded-xl bg-card/70" />}
       {load.status === "error" && (
         <div className="mt-6">
           <LoadError title="Couldn't load payments" message={load.message} onRetry={retry} />
         </div>
       )}
       {load.status === "ready" && !isOrganizer(load.data.role) && (
-        <p className="mt-6 text-muted-foreground">Only the group&apos;s owner or an admin can see everyone&apos;s payments.</p>
+        <p className="panel mt-6 p-4 text-muted-foreground">Only the group&apos;s owner or an admin can see everyone&apos;s payments.</p>
       )}
       {load.status === "ready" && isOrganizer(load.data.role) && (
         <Book ledger={load.data} onChange={() => getLedger(id).then(setData)} />
@@ -73,19 +73,20 @@ function Book({ ledger, onChange }: { ledger: Ledger; onChange: () => Promise<vo
 
   return (
     <>
-      <section className="mt-6 rounded-xl border bg-card p-5">
+      <section className="scoreboard mt-6 p-5">
         <p className="text-muted-foreground">Collected</p>
-        <p className="font-display text-4xl font-bold">
-          {dollars(paid)} <span className="text-xl text-muted-foreground">of {dollars(owed)}</span>
+        <p className="mt-1">
+          <span className="led text-5xl">{dollars(paid)}</span>{" "}
+          <span className="font-display text-xl font-bold text-muted-foreground">of {dollars(owed)}</span>
         </p>
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted" role="presentation">
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10" role="presentation">
           <div className="h-full bg-correct" style={{ width: `${owed ? Math.min(100, (paid / owed) * 100) : 0}%` }} />
         </div>
         <dl className="mt-4 grid gap-3 sm:grid-cols-3">
           {POTS.filter((pot) => ledger.pots[pot].total > 0).map((pot) => (
-            <div key={pot} className="rounded-lg border p-3">
+            <div key={pot} className="rounded-md border border-white/10 bg-white/[0.03] p-3">
               <dt className="text-sm text-muted-foreground">{KIND_LABEL[pot]}</dt>
-              <dd className="text-xl font-semibold tabular-nums">{dollars(ledger.pots[pot].total)}</dd>
+              <dd className="led text-2xl">{dollars(ledger.pots[pot].total)}</dd>
               <dd className="text-sm text-muted-foreground">
                 {ledger.pots[pot].payouts.map((p, i) => `${PLACE[i] ?? `${i + 1}th`} ${dollars(p)}`).join(" · ")}
               </dd>
@@ -102,7 +103,7 @@ function Book({ ledger, onChange }: { ledger: Ledger; onChange: () => Promise<vo
 
       <ul className="mt-6 space-y-3">
         {ledger.members.map((m) => (
-          <li key={m.sub} className="rounded-xl border bg-card p-4">
+          <li key={m.sub} className="panel p-4">
             <p className="flex items-center gap-2">
               <span className="min-w-0 flex-1 truncate font-medium">{m.name}</span>
               {m.balance > 0 ? (
