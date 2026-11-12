@@ -1,6 +1,6 @@
 import pytest
 
-from lambdas.common import groups
+from lambdas.common import nfl_store
 from tests.conftest import DOM, PAT, SAM, call, table
 
 FEES = {"weekly": 10, "yearly": 100, "death": 20}
@@ -45,12 +45,12 @@ def test_update_writes_a_new_version_the_group_read_returns(api, gid):
 
 
 def test_takes_effect_from_the_next_unlocked_week(api, gid, monkeypatch):
-    monkeypatch.setattr(groups, "last_locked_week", lambda season: 4)
+    monkeypatch.setattr(nfl_store.Feed, "last_locked_week", lambda self: 4)
     assert update(api, gid, {"pickemTie": "full"})[1]["effectiveWeek"] == 5
 
 
 def test_second_life_cannot_change_after_week_one_locks(api, gid, monkeypatch):
-    monkeypatch.setattr(groups, "last_locked_week", lambda season: 1)
+    monkeypatch.setattr(nfl_store.Feed, "last_locked_week", lambda self: 1)
     status, message = update(api, gid, {"deathSecondLife": True})
     assert status == 409
     assert "Week 1" in message

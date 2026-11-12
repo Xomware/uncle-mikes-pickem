@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from lambdas.common import gow
+from lambdas.common import clock, gow, nfl_store
 from tests.conftest import DOM, PAT, SAM, call, seed_week, table
 
 # Week 1 2027: TNF Thursday 2027-09-09 20:20 ET.
@@ -77,27 +77,49 @@ def test_admin_can_set_it(api, gid):
     assert set_gow(api, gid, "104", who=PAT)[0] == 200
 
 
-def test_cron_picks_top_hype_after_tuesday_noon_and_keeps_an_organizer_choice(api, gid):
+@pytest.fixture
+def frozen(monkeypatch):
+    """Set real time for clock.now(); a replay group's own clock still wins."""
+
+    def freeze(text):
+        fixed = at(text)
+        monkeypatch.setattr(clock, "datetime", type("dt", (datetime,), {"now": staticmethod(lambda tz=None: fixed)}))
+
+    return freeze
+
+
+def test_cron_picks_top_hype_after_tuesday_noon_and_keeps_an_organizer_choice(api, gid, frozen):
     tick = api["cron_tick"]
     other = call(api["groups_create"], PAT, {"name": "Other", "season": 2027})[1]["groupId"]
     set_gow(api, other, "104", who=PAT)
 
-    assert tick.auto_gow(at("2027-09-07T15:58:00")) == []
+    frozen("2027-09-07T15:58:00")
+    assert tick.auto_gow() == []
     assert stored_gow(gid) is None
 
-    assert tick.auto_gow(at("2027-09-07T16:00:00")) == [f"{gid}#W01"]
+    frozen("2027-09-07T16:00:00")
+    assert tick.auto_gow() == [f"{gid}#W01"]
     # 102 and 103 tie on hype; the earlier kickoff wins.
     assert {k: stored_gow(gid)[k] for k in ("gameId", "chosenBy")} == {"gameId": "102", "chosenBy": "auto"}
     assert stored_gow(other)["gameId"] == "104"
-    assert tick.auto_gow(at("2027-09-08T16:00:00")) == []
+    frozen("2027-09-08T16:00:00")
+    assert tick.auto_gow() == []
 
 
-def test_cron_leaves_locked_weeks_and_replay_groups_alone(api, gid):
-    tick = api["cron_tick"]
-    assert tick.auto_gow(at("2027-09-10T00:20:00")) == []
-    table().update_item(
-        Key={"PK": f"GROUP#{gid}", "SK": "META"},
-        UpdateExpression="SET clock = :c",
-        ExpressionAttributeValues={":c": "2027-09-08T00:00:00Z"},
-    )
-    assert tick.auto_gow(at("2027-09-08T16:00:00")) == []
+def test_cron_leaves_a_locked_week_alone(api, gid, frozen):
+    frozen("2027-09-10T00:20:00")
+    assert api["cron_tick"].auto_gow() == []
+    assert stored_gow(gid) is None
+
+
+def test_cron_judges_a_replay_group_on_its_virtual_clock(api, gid, frozen):
+    kickoff = "2026-09-11T00:20:00Z"
+    game = {"gameId": "9", "kickoff": kickoff, "away": {"abbr": "DAL"}, "home": {"abbr": "PHI"}, "lines": None}
+    nfl_store.save_replay(2026, {1: [game]}, "2026-11-12T00:00:00Z")
+    replay = call(api["groups_create"], DOM, {"name": "Replay", "season": 2026, "replay": True})[1]["groupId"]
+
+    # Real time is before the 2027 deadline; the replay clock sits an hour before its Week 1 lock.
+    frozen("2027-09-01T12:00:00")
+    assert api["cron_tick"].auto_gow() == [f"{replay}#W01"]
+    item = table().get_item(Key={"PK": f"GROUP#{replay}#S2026#W01", "SK": "GOW"})["Item"]
+    assert (item["gameId"], item["chosenAt"]) == ("9", "2026-09-10T23:20:00Z")

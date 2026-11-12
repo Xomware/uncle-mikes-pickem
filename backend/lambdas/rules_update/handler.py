@@ -70,11 +70,12 @@ def handler(event, context):
     require_organizer(membership(table, body.groupId, me["sub"]))
 
     pk = f"GROUP#{body.groupId}"
-    season = int(table.get_item(Key={"PK": pk, "SK": "META"})["Item"]["season"])
+    group = table.get_item(Key={"PK": pk, "SK": "META"})["Item"]
+    season = int(group["season"])
     prefix = f"RULES#S{season}#"
     versions = table.query(KeyConditionExpression=Key("PK").eq(pk) & Key("SK").begins_with(prefix))["Items"]
     try:
-        version = new_version(versions, changes, next_unlocked_week(season))
+        version = new_version(versions, changes, next_unlocked_week(group))
     except ValueError as e:
         raise ApiError(409, str(e))
 

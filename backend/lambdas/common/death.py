@@ -12,6 +12,16 @@ from lambdas.common.rules import rules_for
 LAST_WEEK = 18
 
 
+def entries_pk(group_id: str, season: int) -> str:
+    """Partition of a group-season's `DEATH#<entryId>` items."""
+    return f"GROUP#{group_id}#S{season}"
+
+
+def start_lives(versions: list[dict]) -> int:
+    # Second life can only be set before Week 1, so Week 1's rules decide it for the season.
+    return 2 if rules_for(versions, 1)["deathSecondLife"] else 1
+
+
 def check_pick(picks: dict[int, str], week: int, team: str) -> None:
     if any(t == team for w, t in picks.items() if w != week):
         raise ValueError(f"{team} already used this season")
@@ -25,8 +35,7 @@ def _hit(team: str | None, outcomes: dict[str, str], tie_loses: bool) -> bool:
 
 
 def fold(entries: dict[str, dict[int, str]], results: dict[int, dict[str, str]], versions: list[dict]) -> dict:
-    # Second life can only be set before Week 1, so Week 1's rules decide it for the season.
-    lives = 2 if rules_for(versions, 1)["deathSecondLife"] else 1
+    lives = start_lives(versions)
     state = {e: {"lives": lives, "eliminatedWeek": None} for e in entries}
     last = 0
     for week in sorted(results):
