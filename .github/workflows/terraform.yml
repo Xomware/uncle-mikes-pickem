@@ -6,8 +6,8 @@ on:
     paths:
       - "infrastructure/terraform/**"
       - ".github/workflows/terraform.yml"
+  # Any base, so stacked PRs get a plan too. Apply only ever runs on main.
   pull_request:
-    branches: [main]
     paths:
       - "infrastructure/terraform/**"
       - ".github/workflows/terraform.yml"

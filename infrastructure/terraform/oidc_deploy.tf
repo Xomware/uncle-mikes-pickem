@@ -79,6 +79,50 @@ resource "aws_iam_role_policy" "deploy_backend" {
   policy = data.aws_iam_policy_document.deploy_backend.json
 }
 
+# deploy-frontend.yml's grants, as a second policy so the backend's stay untouched.
+data "aws_iam_policy_document" "deploy_frontend" {
+  statement {
+    sid       = "PublishSite"
+    effect    = "Allow"
+    actions   = ["s3:PutObject", "s3:DeleteObject", "s3:ListBucket"]
+    resources = [module.web.s3_bucket_arn, "${module.web.s3_bucket_arn}/*"]
+  }
+
+  # ListDistributions has no resource-level form. The workflow uses it to find
+  # the distribution by alias; the invalidation itself is scoped below.
+  statement {
+    sid       = "FindDistribution"
+    effect    = "Allow"
+    actions   = ["cloudfront:ListDistributions"]
+    resources = ["*"]
+  }
+
+  statement {
+    sid       = "InvalidateCache"
+    effect    = "Allow"
+    actions   = ["cloudfront:CreateInvalidation", "cloudfront:GetInvalidation"]
+    resources = [module.web.cloudfront_distribution_arn]
+  }
+
+  # The build bakes these into the bundle. xomware-infrastructure owns the Cognito ones.
+  statement {
+    sid     = "ReadBuildConfig"
+    effect  = "Allow"
+    actions = ["ssm:GetParameter"]
+    resources = concat(
+      [for name in ["user-pool-id", "hosted-ui-domain", "clients/pickem-id"] :
+      "arn:aws:ssm:${var.aws_region}:${local.account_id}:parameter/xomware/shared/cognito/${name}"],
+      [aws_ssm_parameter.api_url.arn],
+    )
+  }
+}
+
+resource "aws_iam_role_policy" "deploy_frontend" {
+  name   = "deploy-frontend"
+  role   = aws_iam_role.deploy.id
+  policy = data.aws_iam_policy_document.deploy_frontend.json
+}
+
 output "deploy_role_arn" {
   value = aws_iam_role.deploy.arn
 }

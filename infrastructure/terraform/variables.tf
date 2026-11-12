@@ -15,6 +15,18 @@ variable "environment" {
   default     = "production"
 }
 
+variable "domain_name" {
+  description = "Public hostname for the site. Also the site bucket's name."
+  type        = string
+  default     = "pickem.xomware.com"
+}
+
+variable "route53_zone_name" {
+  description = "Shared hosted zone that domain_name lives in."
+  type        = string
+  default     = "xomware.com"
+}
+
 variable "lambda_runtime" {
   type    = string
   default = "python3.12"
