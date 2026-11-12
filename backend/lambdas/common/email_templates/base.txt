@@ -1,0 +1,8 @@
+UNCLE MIKE'S NFL PICK EM
+
+{% block body %}{% endblock %}
+
+--
+You're getting this because you're in {{ group_name }} on {{ brand }}.
+Unsubscribe: {{ unsubscribe_url }}
+Email settings: {{ site }}/profile/

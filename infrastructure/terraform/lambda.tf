@@ -43,6 +43,15 @@ locals {
   replay_lambdas = [
     { name = "advance", description = "Move a replay group's virtual clock", path_part = "advance", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
   ]
+  # The module gives each path one method, so prefs reads and writes are two paths.
+  # unsubscribe is public: the signed token in the link is its only credential.
+  email_lambdas = [
+    { name = "prefs", description = "Read the caller's email preferences in every group", path_part = "prefs", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+    { name = "prefs_set", description = "Change the caller's email preferences in one group", path_part = "prefs-set", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+    { name = "unsubscribe", description = "Unsubscribe from email by signed token", path_part = "unsubscribe", http_method = "ANY", authorization = "NONE" },
+    { name = "preview", description = "Render an email template with sample data (?id=&template=)", path_part = "preview", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+    { name = "test", description = "Send the test email to the caller", path_part = "test", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+  ]
 
   all_api_lambdas = merge(
     { for l in local.me_lambdas : "me_${l.name}" => l },
@@ -56,6 +65,7 @@ locals {
     { for l in local.death_lambdas : "death_${l.name}" => l },
     { for l in local.payments_lambdas : "payments_${l.name}" => l },
     { for l in local.replay_lambdas : "replay_${l.name}" => l },
+    { for l in local.email_lambdas : "email_${l.name}" => l },
   )
 
   # One role per function, granted only the table actions its handler makes.
@@ -87,6 +97,26 @@ locals {
     payments_ledger = ["app:Query", "nfl:GetItem"]
     payments_mark   = ["app:GetItem", "app:PutItem"]
     replay_advance  = ["app:GetItem", "app:UpdateItem"]
+
+    email_prefs       = ["app_index:Query", "ops:GetItem"]
+    email_prefs_set   = ["app:GetItem", "app:UpdateItem"]
+    email_unsubscribe = ["app:GetItem", "app:UpdateItem"]
+    email_preview     = ["app:GetItem"]
+    email_test        = ["app:GetItem"]
+  }
+
+  # Beyond table actions: policy documents from ses.tf. One line per key.
+  api_policies = {
+    email_unsubscribe = [data.aws_iam_policy_document.unsubscribe_key.json]
+    email_preview     = [data.aws_iam_policy_document.unsubscribe_key.json]
+    email_test        = [data.aws_iam_policy_document.unsubscribe_key.json, data.aws_iam_policy_document.send_email.json]
+  }
+
+  # Environment beyond lambda_variables. One line per key.
+  api_env = {
+    email_unsubscribe = local.email_env
+    email_preview     = local.email_env
+    email_test        = local.email_env
   }
 }
 
@@ -103,7 +133,8 @@ resource "aws_iam_role" "api" {
 }
 
 data "aws_iam_policy_document" "api" {
-  for_each = local.all_api_lambdas
+  for_each                = local.all_api_lambdas
+  source_policy_documents = try(local.api_policies[each.key], [])
 
   statement {
     sid       = "Logs"
@@ -144,7 +175,7 @@ resource "aws_lambda_function" "api" {
   filename         = "./templates/lambda_stub.zip"
   source_code_hash = filebase64sha256("./templates/lambda_stub.zip")
 
-  environment { variables = local.lambda_variables }
+  environment { variables = merge(local.lambda_variables, try(local.api_env[each.key], {})) }
 
   depends_on = [aws_cloudwatch_log_group.api]
 
