@@ -1,4 +1,20 @@
-import type { Game, PickEntry, WeekPicks } from "@/lib/api/client";
+import type { Game, PickEntry, WeekPicks, WeekView } from "@/lib/api/client";
+
+export type Outcome = "correct" | "wrong" | null;
+
+/** Green or red once the game has a winner. A tie stays neutral: how it scores is a group rule, graded in F7. */
+export function outcome(pick: PickEntry | undefined, game: Game): Outcome {
+  if (!pick?.team || !game.winner || game.winner === "TIE") return null;
+  return pick.team === game.winner ? "correct" : "wrong";
+}
+
+/** One row per member, the caller first, then by name. `picks` is null for a member who never saved. */
+export function gridRows(view: WeekView, me: string) {
+  const bySub = Object.fromEntries(view.picks.map((p) => [p.sub, p]));
+  return view.members
+    .map((m) => ({ ...m, picks: bySub[m.sub] ?? null }))
+    .sort((a, b) => Number(b.sub === me) - Number(a.sub === me) || a.name.localeCompare(b.name));
+}
 
 /**
  * A pick sheet is a ranking: open games in order, top row worth N, last worth 1.
