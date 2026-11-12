@@ -1,0 +1,103 @@
+{
+ "season": {
+  "type": 2,
+  "year": 2026
+ },
+ "week": {
+  "number": 18
+ },
+ "events": [
+  {
+   "id": "401873181",
+   "date": "2027-01-10T05:00Z",
+   "shortName": "NYJ @ BUF",
+   "competitions": [
+    {
+     "date": "2027-01-10T05:00Z",
+     "timeValid": false,
+     "neutralSite": false,
+     "venue": {
+      "id": "11938",
+      "fullName": "Highmark Stadium",
+      "indoor": false,
+      "address": {
+       "city": "Orchard Park",
+       "state": "NY",
+       "country": "USA"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "id": "2",
+        "abbreviation": "BUF"
+       }
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "id": "20",
+        "abbreviation": "NYJ"
+       }
+      }
+     ],
+     "status": {
+      "type": {
+       "name": "STATUS_SCHEDULED",
+       "state": "pre",
+       "completed": false
+      }
+     },
+     "broadcasts": []
+    }
+   ]
+  },
+  {
+   "id": "401873174",
+   "date": "2027-01-10T05:00Z",
+   "shortName": "CLE @ CIN",
+   "competitions": [
+    {
+     "date": "2027-01-10T05:00Z",
+     "timeValid": false,
+     "neutralSite": false,
+     "venue": {
+      "id": "3874",
+      "fullName": "Paycor Stadium",
+      "indoor": false,
+      "address": {
+       "city": "Cincinnati",
+       "state": "OH",
+       "country": "USA"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "id": "4",
+        "abbreviation": "CIN"
+       }
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "id": "5",
+        "abbreviation": "CLE"
+       }
+      }
+     ],
+     "status": {
+      "type": {
+       "name": "STATUS_SCHEDULED",
+       "state": "pre",
+       "completed": false
+      }
+     },
+     "broadcasts": []
+    }
+   ]
+  }
+ ]
+}
