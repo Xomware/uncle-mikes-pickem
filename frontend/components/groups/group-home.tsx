@@ -7,6 +7,7 @@ import { useCallback, useState } from "react";
 
 import { DeathPool } from "@/components/death/death-pool";
 import { InviteLink } from "@/components/groups/invite-link";
+import { ReplayBar } from "@/components/groups/replay-bar";
 import { LoadError } from "@/components/load-error";
 import { buttonVariants } from "@/components/ui/button";
 import { type GroupDetail, getGroup } from "@/lib/api/client";
@@ -19,7 +20,7 @@ const TABS = { members: "Members", death: "Death pool" } as const;
 export function GroupHome() {
   const id = useSearchParams().get("id") ?? "";
   const fetcher = useCallback(() => getGroup(id), [id]);
-  const { load, retry } = useLoad(fetcher);
+  const { load, retry, setData } = useLoad(fetcher);
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6" aria-busy={load.status === "loading"}>
@@ -31,13 +32,13 @@ export function GroupHome() {
         </div>
       )}
       {load.status === "error" && <LoadError title="Couldn't load this group" message={load.message} onRetry={retry} />}
-      {load.status === "ready" && <GroupDetails detail={load.data} />}
+      {load.status === "ready" && <GroupDetails detail={load.data} onChange={setData} />}
     </div>
   );
 }
 
-function GroupDetails({ detail }: { detail: GroupDetail }) {
-  const { group, role, members } = detail;
+function GroupDetails({ detail, onChange }: { detail: GroupDetail; onChange: (detail: GroupDetail) => void }) {
+  const { group, role, members, replay } = detail;
   const [tab, setTab] = useState<keyof typeof TABS>("members");
   return (
     <>
@@ -70,6 +71,15 @@ function GroupDetails({ detail }: { detail: GroupDetail }) {
         )}
       </div>
 
+      {replay && (
+        <ReplayBar
+          groupId={group.groupId}
+          organizer={isOrganizer(role)}
+          replay={replay}
+          onMoved={(clock) => onChange({ ...detail, replay: { ...replay, clock } })}
+        />
+      )}
+
       <div role="tablist" aria-label="Group sections" className="mt-6 flex gap-1 border-b">
         {(Object.keys(TABS) as (keyof typeof TABS)[]).map((key) => (
           <button
@@ -90,6 +100,8 @@ function GroupDetails({ detail }: { detail: GroupDetail }) {
 
       {tab === "death" && (
         <DeathPool
+          // A moved replay clock changes the open week and what's locked: refetch.
+          key={replay?.clock}
           groupId={group.groupId}
           organizer={isOrganizer(role)}
           members={members}
