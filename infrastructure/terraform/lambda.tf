@@ -22,6 +22,7 @@ locals {
   ]
   picks_lambdas = [
     { name = "set", description = "Save the caller's picks for a week", path_part = "set", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+    { name = "get", description = "Read a week's games, GOW and visible picks (?groupId=&week=)", path_part = "get", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
   ]
   gow_lambdas = [
     { name = "set", description = "Choose a group's game of the week", path_part = "set", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
@@ -57,6 +58,7 @@ locals {
     members_update = ["app:GetItem", "app:UpdateItem"]
     gow_set        = ["app:GetItem", "app:PutItem", "nfl:GetItem"]
     picks_set      = ["app:GetItem", "app:PutItem", "nfl:GetItem", "nfl:Query"]
+    picks_get      = ["app:Query", "nfl:GetItem", "nfl:Query"]
   }
 }
 
