@@ -1,9 +1,18 @@
 import importlib
 import json
+import os
 
 import boto3
 import pytest
 from moto import mock_aws
+
+# Handler and store modules build boto3 resources at import, before any fixture
+# runs. Pin a region and fake credentials so collection never reaches a real
+# AWS config (a dev machine's `aws login` profile needs botocore[crt]).
+os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
+os.environ["AWS_ACCESS_KEY_ID"] = "testing"
+os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
+os.environ.pop("AWS_PROFILE", None)
 
 DOM = {"sub": "u-dom", "email": "dom@example.com", "name": "Dom"}
 PAT = {"sub": "u-pat", "email": "pat@example.com", "name": "Pat"}
