@@ -1,8 +1,10 @@
 "use client";
 
-import { Check, Heart, Lock, Plus } from "lucide-react";
+import { Check, Lock, Plus } from "lucide-react";
 import { type FormEvent, useCallback, useState } from "react";
 
+import { DeathGrid } from "@/components/death/death-grid";
+import { Lives } from "@/components/death/lives";
 import { LoadError } from "@/components/load-error";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
@@ -74,6 +76,7 @@ export function DeathPoolView({ board, onChange, ...props }: ViewProps) {
         ))}
       </ul>
       <AddEntry {...props} onAdded={async () => onChange(await getDeathBoard(groupId))} />
+      <DeathGrid board={board} />
     </section>
   );
 }
@@ -86,20 +89,6 @@ function WeekStatus({ week }: { week: DeathBoard["week"] }) {
       {week.locked && <Lock className="size-4" aria-hidden="true" />}
       Week {week.number} {week.locked ? "is locked" : `locks ${lock}`}
     </p>
-  );
-}
-
-export function Lives({ left, total }: { left: number; total: number }) {
-  return (
-    <span className="flex shrink-0 gap-0.5" role="img" aria-label={`${left} of ${total} ${total === 1 ? "life" : "lives"} left`}>
-      {Array.from({ length: total }, (_, i) => (
-        <Heart
-          key={i}
-          aria-hidden="true"
-          className={cn("size-4", i < left ? "fill-wrong text-wrong" : "text-muted-foreground")}
-        />
-      ))}
-    </span>
   );
 }
 
