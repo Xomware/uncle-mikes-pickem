@@ -41,6 +41,9 @@ export function slotName(game: Game): string {
 
 export const GOW_LABEL = "GAME OF THE WEEK";
 
+export const sheetHref = (groupId: string, week: number, all = false) =>
+  `/group/sheet/?id=${encodeURIComponent(groupId)}&week=${week}${all ? "&all=1" : ""}`;
+
 export interface Slot {
   label: string;
   gow: boolean;
