@@ -143,6 +143,12 @@ def test_replay_before_any_capture_says_so(replay):
     assert replay.espn_calls == []
 
 
+def test_replay_browsing_ahead_hides_meetings_its_clock_has_not_reached(replay):
+    # Week 3 of the replay looking at the Week 10 game: the Week 5 tie hasn't happened yet.
+    group("r", "2026-09-25T12:00:00Z", replay=True)
+    assert get(replay, "r")[1]["headToHead"] == []
+
+
 def test_replay_reads_the_capture_before_its_clock(replay):
     group("r", "2026-11-12T15:00:00Z", replay=True)
     status, data = get(replay, "r")

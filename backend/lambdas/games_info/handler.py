@@ -10,7 +10,7 @@ says so in `source`. Score and state always come from the GAME item, never the c
 import gzip
 import json
 import os
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import boto3
 
@@ -77,7 +77,7 @@ def side(team: dict, info: dict) -> dict:
     return {**team, **extra, "form": extra.get("form", []), "injuries": extra.get("injuries", [])}
 
 
-def payload(game: dict, info: dict, source: dict) -> dict:
+def payload(game: dict, info: dict, source: dict, now: datetime) -> dict:
     stored_venue = game.get("venue") or {}
     roof = info.get("roof") or ("dome" if stored_venue.get("indoor") else None)
     weather = None
@@ -95,7 +95,9 @@ def payload(game: dict, info: dict, source: dict) -> dict:
         "away": side(game["away"], info),
         "home": side(game["home"], info),
         "weather": weather,
-        "headToHead": info.get("headToHead", []),
+        # Meetings are cut at this game's kickoff when built. A replay group browsing ahead
+        # (Week 3 looking at Week 10) must not see a Week 5 result its clock hasn't reached.
+        "headToHead": [m for m in info.get("headToHead", []) if nfl_store.parse(m["kickoff"]) + nfl_store.RESULT_DELAY <= now],
         "source": source,
     }
 
@@ -118,4 +120,4 @@ def handler(event, context):
     if not game:
         raise ApiError(404, "That game isn't on this season's schedule")
     info, source = cached(game, feed)
-    return respond(200, payload(game, info, source))
+    return respond(200, payload(game, info, source, feed.now))
