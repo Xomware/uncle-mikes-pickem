@@ -1,0 +1,81 @@
+# Called by both deploys. A push that changes IAM and app code together used to
+# deploy before the apply granted the new permission and fail with AccessDenied
+# (#25). Terraform and the deploys start on the same push, so the deploy waits
+# here for the apply on its own commit.
+#
+# Polling rather than `workflow_run`: a workflow_run trigger drops the deploys'
+# push path filters, and Terraform only runs when its own paths change, so the
+# deploys would still need `push` for every other commit.
+
+name: Wait for Terraform
+
+on:
+  workflow_call:
+
+jobs:
+  wait:
+    runs-on: ubuntu-latest
+    # The apply can queue behind an earlier one (terraform.yml's concurrency group).
+    timeout-minutes: 45
+    steps:
+      - if: github.event_name == 'push'
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          fetch-depth: 0
+
+      - name: Wait for the Terraform apply on this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" != "push" ]; then
+            echo "Triggered by $EVENT, not a push; nothing to wait for."
+            exit 0
+          fi
+
+          # Same range GitHub's push path filter uses: the whole push.
+          if [ -n "$BEFORE" ] \
+             && [ "$BEFORE" != "0000000000000000000000000000000000000000" ] \
+             && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            RANGE="$BEFORE $SHA"
+          else
+            RANGE="$SHA~1 $SHA"
+          fi
+          # Captured first: `git diff | grep -q` under pipefail can SIGPIPE git
+          # and read as "no match".
+          CHANGED=$(git diff --name-only $RANGE)
+          if ! echo "$CHANGED" | grep -qE '^(infrastructure/terraform/|\.github/workflows/terraform\.yml$)'; then
+            echo "No Terraform paths changed in $RANGE; terraform.yml did not run."
+            exit 0
+          fi
+
+          # A workflow_dispatch run on the same commit also counts, so a failed
+          # apply can be recovered by dispatching Terraform and re-running this.
+          for i in $(seq 1 130); do
+            RUN=$(gh run list -R "$REPO" --workflow terraform.yml --commit "$SHA" --limit 20 \
+                    --json databaseId,event,status,conclusion \
+                    --jq '[.[] | select(.event != "pull_request")][0] // empty | "\(.databaseId) \(.status) \(.conclusion)"')
+            if [ -z "$RUN" ]; then
+              if [ "$i" -ge 15 ]; then
+                echo "::error::Terraform paths changed but no terraform.yml run exists for $SHA after 5 minutes."
+                exit 1
+              fi
+            else
+              read -r ID STATUS CONCLUSION <<< "$RUN"
+              echo "Terraform run $ID: $STATUS $CONCLUSION"
+              if [ "$STATUS" = "completed" ]; then
+                if [ "$CONCLUSION" = "success" ]; then
+                  exit 0
+                fi
+                echo "::error::Terraform run $ID finished $CONCLUSION; not deploying."
+                exit 1
+              fi
+            fi
+            sleep 20
+          done
+          echo "::error::Timed out waiting for the Terraform apply on $SHA."
+          exit 1

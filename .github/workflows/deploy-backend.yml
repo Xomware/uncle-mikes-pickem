@@ -1,0 +1,35 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy-backend.yml"
+  workflow_dispatch:
+    inputs:
+      lambdas:
+        description: Comma-separated lambda folders to deploy. Empty rebuilds the layer and deploys all.
+        default: ''
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  wait-for-terraform:
+    permissions:
+      actions: read
+      contents: read
+    uses: ./.github/workflows/wait-for-terraform.yml
+
+  deploy:
+    needs: wait-for-terraform
+    uses: Xomware/github-actions/.github/workflows/deploy-lambda-python.yml@v1
+    with:
+      app: pickem
+      root: backend
+      python-version: '3.12'
+      role-key: AWS_DEPLOY_ROLE_ARN
+      test-command: python -m pytest -q
+      lambdas: ${{ inputs.lambdas }}
