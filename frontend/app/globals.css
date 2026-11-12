@@ -1,0 +1,105 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+  Dark-first sports look: a deep navy canvas tinted toward the same hue as
+  the text, a gold accent for actions, and green/red reserved for results.
+  Correct and wrong never double as brand colours, so a green button can't be
+  read as a correct pick. Dark is the only mode for now.
+*/
+
+@theme inline {
+  --font-sans: var(--font-body);
+  --font-display: var(--font-heading);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Pick results. Always paired with text or an icon, never colour alone. */
+  --color-correct: var(--correct);
+  --color-correct-muted: var(--correct-muted);
+  --color-wrong: var(--wrong);
+  --color-wrong-muted: var(--wrong-muted);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+.dark {
+  --radius: 0.5rem;
+
+  --background: oklch(0.17 0.025 255);
+  --foreground: oklch(0.96 0.008 255);
+  --card: oklch(0.21 0.03 255);
+  --card-foreground: var(--foreground);
+  --popover: oklch(0.23 0.03 255);
+  --popover-foreground: var(--foreground);
+  --secondary: oklch(0.27 0.03 255);
+  --secondary-foreground: var(--foreground);
+  --muted: oklch(0.25 0.028 255);
+  --muted-foreground: oklch(0.74 0.025 255);
+  --accent: oklch(0.29 0.035 255);
+  --accent-foreground: var(--foreground);
+  --border: oklch(0.32 0.03 255);
+  --input: oklch(0.36 0.03 255);
+
+  /* Gold, dark text on top: 0.82 lightness against 0.2 clears 4.5:1. */
+  --primary: oklch(0.82 0.14 82);
+  --primary-foreground: oklch(0.2 0.03 255);
+  --ring: oklch(0.82 0.14 82);
+
+  --correct: oklch(0.78 0.16 150);
+  --correct-muted: oklch(0.32 0.07 150);
+  --wrong: oklch(0.7 0.18 25);
+  --wrong-muted: oklch(0.32 0.08 25);
+  --destructive: var(--wrong);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-background font-sans text-foreground;
+    /* clip, not hidden: hidden would break position: sticky on the header. */
+    overflow-x: clip;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-display;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
