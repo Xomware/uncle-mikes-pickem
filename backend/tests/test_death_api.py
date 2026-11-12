@@ -25,7 +25,7 @@ def schedule(season=2027, locks=None):
 
 @pytest.fixture
 def api(app):
-    names = ("groups_create", "invites_create", "invites_accept", "death_entry", "death_pick")
+    names = ("groups_create", "invites_create", "invites_accept", "rules_update", "death_entry", "death_pick", "death_board")
     return {name: app(name) for name in names}
 
 
@@ -124,3 +124,65 @@ def test_rejects_teams_not_playing_unscheduled_weeks_and_other_peoples_entries(a
     assert pick(api, gid, eid, 19, "DAL")[0] == 400
     assert pick(api, gid, eid, 1, "KC", who=DOM)[0] == 404
     assert pick(api, gid, eid, 1, "KC", who=SAM)[0] == 404
+
+
+def board(api, gid, who=PAT):
+    return call(api["death_board"], who, query={"id": gid})
+
+
+def test_board_hides_other_entries_picks_until_lock(api, gid):
+    schedule()
+    mine = entry(api, gid)[1]["entryId"]
+    dom = entry(api, gid, who=DOM)[1]["entryId"]
+    pick(api, gid, mine, 1, "KC")
+    pick(api, gid, dom, 1, "GB", who=DOM)
+
+    status, data = board(api, gid)
+    assert status == 200
+    rows = {r["entryId"]: r for r in data["entries"]}
+    assert rows[mine]["picks"] == {"1": "KC"}
+    assert rows[mine]["used"] == ["KC"]
+    assert rows[mine]["mine"] is True
+    assert rows[dom]["picks"] == {"1": None}
+    assert rows[dom]["used"] == []
+    assert rows[dom]["ownerName"] == "Dom"
+
+    set_clock(gid, OPEN)
+    rows = {r["entryId"]: r for r in board(api, gid)[1]["entries"]}
+    assert rows[dom]["picks"] == {"1": "GB"}
+    assert rows[dom]["used"] == ["GB"]
+
+
+def test_board_returns_the_open_weeks_games(api, gid):
+    schedule()
+    week = board(api, gid)[1]["week"]
+    assert (week["number"], week["lockAt"], week["locked"]) == (1, OPEN, False)
+    assert week["games"][0] == {
+        "gameId": "100", "kickoff": OPEN, "away": "KC", "home": "BAL", "spread": -3.5, "details": None,
+    }
+
+
+def test_board_without_a_schedule_has_no_week(api, gid):
+    assert board(api, gid)[1]["week"] is None
+
+
+def test_board_lives_status_and_order(api, gid):
+    schedule()
+    call(api["rules_update"], DOM, {"groupId": gid, "changes": {"deathSecondLife": True}})
+    alive = entry(api, gid, label="b alive")[1]["entryId"]
+    out = entry(api, gid, label="a out")[1]["entryId"]
+    table().update_item(
+        Key={"PK": f"GROUP#{gid}#S2027", "SK": f"DEATH#{out}"},
+        UpdateExpression="SET eliminatedWeek = :w, livesLeft = :l",
+        ExpressionAttributeValues={":w": 2, ":l": 0},
+    )
+    data = board(api, gid)[1]
+    assert data["startLives"] == 2
+    assert [(r["entryId"], r["status"], r["livesLeft"]) for r in data["entries"]] == [
+        (alive, "alive", 2),
+        (out, "eliminated", 0),
+    ]
+
+
+def test_board_is_members_only(api, gid):
+    assert board(api, gid, who=SAM)[0] == 404

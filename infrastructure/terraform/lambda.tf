@@ -23,6 +23,7 @@ locals {
   death_lambdas = [
     { name = "entry", description = "Add a death pool entry for the caller or a member", path_part = "entry", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
     { name = "pick", description = "Set a death pool entry's team for a week", path_part = "pick", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+    { name = "board", description = "Read a group's death pool grid and the open week (?id=)", path_part = "board", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
   ]
 
   all_api_lambdas = merge(
@@ -54,6 +55,7 @@ locals {
     members_update = ["app:GetItem", "app:UpdateItem"]
     death_entry    = ["app:GetItem", "app:Query", "app:PutItem", "nfl:GetItem"]
     death_pick     = ["app:GetItem", "app:UpdateItem", "nfl:GetItem", "nfl:Query"]
+    death_board    = ["app:Query", "nfl:GetItem", "nfl:Query"]
   }
 }
 
