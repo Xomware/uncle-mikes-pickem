@@ -111,10 +111,10 @@ def test_force_refreshes_current_and_next_week(tick, store, monkeypatch):
     assert row["mode"] == "force" and row["games"] == 9 and "ttl" in row
 
 
-def test_tiebreak_on_same_kickoff_takes_higher_event_id(tick):
+def test_tiebreak_on_same_kickoff_takes_higher_event_id(tick, store):
     games = [tick.game_fields(e) for e in board(18)["events"]]
     assert {g["timeValid"] for g in games} == {False}
-    assert tick.week_fields(games) == ("2027-01-10T05:00:00Z", "401873181")
+    assert store.week_fields(games) == ("2027-01-10T05:00:00Z", "401873181")
 
 
 def test_line_is_kept_once_the_game_starts(tick, store, monkeypatch):

@@ -16,11 +16,15 @@ import csv
 import gzip
 import io
 import urllib.request
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 GAMES_URL = "https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv.gz"
 
 # nflverse -> ESPN.
 TEAM_ALIASES = {"LA": "LAR", "WAS": "WSH"}
+# gameday and gametime are US Eastern wall-clock time.
+EASTERN = ZoneInfo("America/New_York")
 
 
 def team(code: str) -> str:
@@ -38,6 +42,11 @@ def num(raw: str) -> float | None:
     return float(raw) if raw else None
 
 
+def kickoff(gameday: str, gametime: str) -> str:
+    local = datetime.fromisoformat(f"{gameday}T{gametime}").replace(tzinfo=EASTERN)
+    return local.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 def games(text: str, season: int) -> dict[str, dict]:
     """The season's games keyed by ESPN event id."""
     out = {}
@@ -52,6 +61,9 @@ def games(text: str, season: int) -> dict[str, dict]:
             "nflverseId": r["game_id"],
             "gameType": r["game_type"],
             "week": int(r["week"]),
+            # Blank until the NFL sets the time (Week 18); 13:00 ET stands in, like ESPN's placeholder.
+            "kickoff": kickoff(r["gameday"], r["gametime"] or "13:00"),
+            "timeValid": bool(r["gametime"]),
             "away": away,
             "home": home,
             "awayScore": None if result is None else int(r["away_score"]),
