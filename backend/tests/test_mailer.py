@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from email import message_from_bytes, policy
+from pathlib import Path
 
 import boto3
 import pytest
@@ -11,6 +12,7 @@ from tests.conftest import create_table
 NOW = datetime(2027, 10, 5, 12, tzinfo=timezone.utc)
 CTX = {"name": "Pat", "group_name": "Sunday Crew"}
 MEMBER = {"PK": "GROUP#g1", "SK": "MEMBER#u-pat", "sub": "u-pat", "role": "member"}
+BRAND_DIR = Path(__file__).resolve().parents[2] / "frontend/public/brand"
 
 
 @pytest.fixture
@@ -61,6 +63,37 @@ def test_renders_html_and_text_with_footer_unsubscribe(mail):
     assert 'href="https://api.test/email/unsubscribe?token=abc"' in email.html
     assert "Unsubscribe: https://api.test/email/unsubscribe?token=abc" in email.text
     assert "<" not in email.text
+
+
+def test_layout_uses_the_turf_header_with_alt_text(mail):
+    mailer, _ = mail
+    email = mailer.render("test", CTX, "u")
+
+    assert 'src="https://pickem.xomware.com/brand/email-header.png"' in email.html
+    assert "alt=\"Uncle Mike&#39;s NFL Pick Em\"" in email.html
+    assert email.text.startswith("UNCLE MIKE'S PICK EM\n")
+    assert "SUDDEN DEATH" not in email.text
+
+
+def test_sudden_death_children_get_the_night_header(mail):
+    mailer, _ = mail
+    child = mailer.templates.from_string(
+        '{% extends "base.html" %}{% set sudden_death = true %}{% block body %}Out{% endblock %}'
+    )
+    text = mailer.templates.from_string(
+        '{% extends "base.txt" %}{% set sudden_death = true %}{% block body %}Out{% endblock %}'
+    )
+    ctx = {**CTX, "subject": "s", "brand": mailer.BRAND, "site": "https://pickem.xomware.com", "unsubscribe_url": "u"}
+
+    html = child.render(ctx)
+    assert "/brand/email-header-sudden-death.png" in html
+    assert "alt=\"Sudden Death, Uncle Mike&#39;s NFL Pick Em\"" in html
+    assert text.render(ctx).startswith("OVERTIME / SUDDEN DEATH\n")
+
+
+def test_header_images_exist():
+    for name in ("email-header.png", "email-header-sudden-death.png"):
+        assert (BRAND_DIR / name).is_file(), name
 
 
 def test_html_escapes_context(mail):

@@ -1,6 +1,8 @@
-"""POST /games/cancel {groupId, week, gameId, canceled}: void or restore a game for the group. Organizer, before lock.
+"""POST /games/cancel {groupId, week, gameId, canceled}: void or restore a game for the group. Organizer.
 
-The week's N moves with it, and every saved pick is re-ranked to fit (common/picks.rerank).
+Before lock the week's N moves with it, and every saved pick is re-ranked to fit
+(common/picks.rerank). After lock the picks stand: the game voids to 0 for everyone,
+nothing is re-ranked (PLAN.md "Decisions taken"), and the week regrades.
 """
 
 import os
@@ -10,7 +12,7 @@ import boto3
 from boto3.dynamodb.conditions import Key
 from pydantic import Field, StringConstraints
 
-from lambdas.common import picks, weeks
+from lambdas.common import picks, results, weeks
 from lambdas.common.api import ApiError, Request, api_handler, parse_body, respond, user
 from lambdas.common.groups import require_organizer
 
@@ -31,7 +33,7 @@ def handler(event, context):
     table = dynamodb.Table(os.environ["APP_TABLE"])
     group, member, feed, nfl_week = weeks.load(table, body.groupId, me["sub"], body.week)
     require_organizer(member)
-    weeks.require_unlocked(feed, nfl_week)
+    locked = feed.locked(nfl_week)
     if body.gameId not in nfl_week["gameIds"]:
         raise ApiError(400, f"That game isn't in Week {body.week}")
     if body.canceled and body.gameId == nfl_week["tiebreakGameId"]:
@@ -41,12 +43,16 @@ def handler(event, context):
     pk = weeks.week_pk(body.groupId, season, body.week)
     items = table.query(KeyConditionExpression=Key("PK").eq(pk))["Items"]
     gow_item = next((i for i in items if i["SK"] == "GOW"), None)
-    if body.canceled and gow_item and gow_item["gameId"] == body.gameId:
+    # After lock the GOW can't move, so canceling it just voids it like any other game.
+    if body.canceled and not locked and gow_item and gow_item["gameId"] == body.gameId:
         raise ApiError(409, "Choose another game of the week first")
 
     stored = next((i for i in items if i["SK"] == "CANCELED"), {"gameIds": []})
     ids = set(stored["gameIds"]) | {body.gameId} if body.canceled else set(stored["gameIds"]) - {body.gameId}
     table.put_item(Item={"PK": pk, "SK": "CANCELED", "gameIds": sorted(ids)})
+    if locked:
+        graded = results.regrade(table, group, [body.week])
+        return respond(200, {"canceled": sorted(ids), "picksUpdated": 0, "regraded": graded["weeks"]})
 
     games = [g for g in feed.games(body.week) if g["gameId"] not in ids]
     pick_items = [i for i in items if i["SK"].startswith("PICK#")]

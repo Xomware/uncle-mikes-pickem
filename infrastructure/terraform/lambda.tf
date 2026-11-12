@@ -40,6 +40,15 @@ locals {
     { name = "ledger", description = "Read what members owe and have paid, and the pots (?id=)", path_part = "ledger", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
     { name = "mark", description = "Mark a member's fee paid or unpaid", path_part = "mark", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
   ]
+  # Override and cancel are inputs: each regrades the week and refolds the season (common/results.py).
+  results_lambdas = [
+    { name = "override", description = "Set or clear a game's final score for a group, then regrade", path_part = "override", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+    { name = "regrade", description = "Regrade one week or every locked week for a group", path_part = "regrade", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+    { name = "week", description = "Read a group-week's graded results (?groupId=&week=)", path_part = "week", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+  ]
+  standings_lambdas = [
+    { name = "season", description = "Read a group's season standings (?id=)", path_part = "season", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+  ]
   replay_lambdas = [
     { name = "advance", description = "Move a replay group's virtual clock", path_part = "advance", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
   ]
@@ -65,6 +74,8 @@ locals {
     { for l in local.death_lambdas : "death_${l.name}" => l },
     { for l in local.payments_lambdas : "payments_${l.name}" => l },
     { for l in local.replay_lambdas : "replay_${l.name}" => l },
+    { for l in local.results_lambdas : "results_${l.name}" => l },
+    { for l in local.standings_lambdas : "standings_${l.name}" => l },
     { for l in local.email_lambdas : "email_${l.name}" => l },
   )
 
@@ -89,7 +100,7 @@ locals {
     gow_set        = ["app:GetItem", "app:PutItem", "nfl:GetItem"]
     picks_set      = ["app:GetItem", "app:PutItem", "nfl:GetItem", "nfl:Query"]
     picks_get      = ["app:Query", "nfl:GetItem", "nfl:Query"]
-    games_cancel   = ["app:GetItem", "app:Query", "app:PutItem", "app:UpdateItem", "nfl:GetItem", "nfl:Query"]
+    games_cancel   = ["app:GetItem", "app:Query", "app:PutItem", "app:UpdateItem", "nfl:GetItem", "nfl:Query", "ops:PutItem"]
     death_entry    = ["app:GetItem", "app:Query", "app:PutItem", "nfl:GetItem"]
     death_pick     = ["app:GetItem", "app:UpdateItem", "nfl:GetItem", "nfl:Query"]
     death_board    = ["app:Query", "nfl:GetItem", "nfl:Query"]
@@ -97,6 +108,11 @@ locals {
     payments_ledger = ["app:Query", "nfl:GetItem"]
     payments_mark   = ["app:GetItem", "app:PutItem"]
     replay_advance  = ["app:GetItem", "app:UpdateItem"]
+
+    results_override = ["app:GetItem", "app:Query", "app:PutItem", "app:DeleteItem", "app:UpdateItem", "nfl:GetItem", "nfl:Query", "ops:PutItem"]
+    results_regrade  = ["app:GetItem", "app:Query", "app:PutItem", "app:UpdateItem", "nfl:GetItem", "nfl:Query", "ops:PutItem"]
+    results_week     = ["app:GetItem", "app:Query"]
+    standings_season = ["app:GetItem", "app:Query"]
 
     email_prefs       = ["app_index:Query", "ops:GetItem"]
     email_prefs_set   = ["app:GetItem", "app:UpdateItem"]

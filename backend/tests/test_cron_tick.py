@@ -64,7 +64,8 @@ def test_mode_gating(tick):
     assert choose_mode(at(0, 31), tnf, False) is None
     assert choose_mode(at(1, 1), tnf, False) == "hourly"
     assert choose_mode(at(1, 3), tnf, False) == "live"
-    assert choose_mode(at(1, 3), [game("2026-11-13T01:15:00Z", completed=True)], False) is None
+    confirmed = {**game("2026-11-13T01:15:00Z", completed=True), "confirmedBy": ["espn", "nflverse"]}
+    assert choose_mode(at(1, 3), [confirmed], False) is None
     # A game that never finished stops holding the window 6 h after kickoff.
     assert choose_mode(at(7, 15), tnf, False) is None
     assert choose_mode(at(0, 31), [], True) == "force"
@@ -100,8 +101,11 @@ def test_force_refreshes_current_and_next_week(tick, store, monkeypatch):
         "mode": "force", "season": 2026, "weeks": [10, 11], "games": 9,
         # No predictor fixtures recorded for Week 11.
         "predictorMissing": ["401873066", "401873077", "401873078"],
+        "flagged": [],
+        "finalsChanged": [],
         # Thursday is past Week 10's GOW deadline, but no groups exist.
         "gowAuto": [],
+        "regraded": {},
     }
     # The default board doubles as Week 10's.
     assert len([c for c in calls if "/scoreboard" in c]) == 2
@@ -130,6 +134,8 @@ def test_line_is_kept_once_the_game_starts(tick, store, monkeypatch):
     live = copy.deepcopy(board(10))
     for e in live["events"]:
         e["competitions"][0]["status"]["type"] = {"name": "STATUS_IN_PROGRESS", "state": "in", "completed": False}
+        for t in e["competitions"][0]["competitors"]:
+            t["score"] = "7"
         e["competitions"][0]["odds"][0]["spread"] = -9.5
     serve(monkeypatch, tick, [live, board(11)])
     tick.handler({"force": True}, None)
