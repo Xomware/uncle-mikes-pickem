@@ -23,6 +23,9 @@ const css = (landscape: boolean) => `
 }
 @page { size: letter ${landscape ? "landscape" : "portrait"}; margin: 0.35in; }
 @media print {
+  /* Most home printers are black and white: right picks print gray, wrong ones blank, and the
+     check and X marks carry the result either way. */
+  .paper { --right: oklch(0.88 0 0); --wrong: transparent; }
   html { color-scheme: light; }
   html, body { background: none !important; }
   body > header { display: none !important; }
@@ -45,7 +48,7 @@ export function Paper({ backHref, backLabel, landscape = false, actions, childre
       <div className="mb-4 flex flex-wrap items-center gap-2 print:hidden">
         <Link
           href={backHref}
-          className="mr-auto inline-flex min-h-11 items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          className="chalk mr-auto inline-flex min-h-11 items-center gap-1.5 text-sm tracking-[0.14em] hover:text-primary"
         >
           <ArrowLeft className="size-4" aria-hidden="true" />
           {backLabel}
@@ -55,7 +58,7 @@ export function Paper({ backHref, backLabel, landscape = false, actions, childre
           <Printer aria-hidden="true" />
           Download PDF
         </Button>
-        <p className="w-full text-right text-xs text-muted-foreground">
+        <p className="chalk w-full text-right text-xs tracking-[0.12em]">
           Choose &quot;Save as PDF&quot; in the print dialog.
         </p>
       </div>
