@@ -1,0 +1,463 @@
+{
+ "header": {
+  "id": "401873052",
+  "week": 10,
+  "competitions": [
+   {
+    "date": "2026-11-13T01:15Z",
+    "competitors": [
+     {
+      "homeAway": "home",
+      "team": {
+       "id": "19",
+       "abbreviation": "NYG",
+       "displayName": "New York Giants",
+       "color": "003c7f",
+       "alternateColor": "c9243f"
+      },
+      "record": [
+       {
+        "type": "total",
+        "summary": "5-2-1"
+       },
+       {
+        "type": "home",
+        "summary": "3-1"
+       },
+       {
+        "type": "vsconf",
+        "summary": "3-2-1"
+       }
+      ]
+     },
+     {
+      "homeAway": "away",
+      "team": {
+       "id": "28",
+       "abbreviation": "WSH",
+       "displayName": "Washington Commanders",
+       "color": "5a1414",
+       "alternateColor": "ffb612"
+      },
+      "record": [
+       {
+        "type": "total",
+        "summary": "2-5-1"
+       },
+       {
+        "type": "road",
+        "summary": "0-3"
+       },
+       {
+        "type": "vsconf",
+        "summary": "2-4-1"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ "gameInfo": {
+  "venue": {
+   "id": "3839",
+   "fullName": "MetLife Stadium",
+   "address": {
+    "city": "East Rutherford",
+    "state": "NJ",
+    "zipCode": "07073",
+    "country": "USA"
+   },
+   "grass": false
+  },
+  "weather": {
+   "temperature": 52,
+   "highTemperature": 52,
+   "lowTemperature": 52,
+   "conditionId": "12",
+   "gust": 14,
+   "precipitation": 64
+  }
+ },
+ "lastFiveGames": [
+  {
+   "team": {
+    "id": "19",
+    "abbreviation": "NYG",
+    "displayName": "New York Giants"
+   },
+   "events": [
+    {
+     "id": "401872966",
+     "week": 4,
+     "atVs": "vs",
+     "gameDate": "2026-10-04T17:00Z",
+     "score": "36-24",
+     "gameResult": "W",
+     "opponent": {
+      "id": "22",
+      "abbreviation": "ARI",
+      "displayName": "Arizona Cardinals"
+     }
+    },
+    {
+     "id": "401872988",
+     "week": 5,
+     "atVs": "@",
+     "gameDate": "2026-10-11T17:00Z",
+     "score": "27-27 OT",
+     "gameResult": "T",
+     "opponent": {
+      "id": "28",
+      "abbreviation": "WSH",
+      "displayName": "Washington Commanders"
+     }
+    },
+    {
+     "id": "401873000",
+     "week": 6,
+     "atVs": "vs",
+     "gameDate": "2026-10-18T17:00Z",
+     "score": "34-27",
+     "gameResult": "L",
+     "opponent": {
+      "id": "18",
+      "abbreviation": "NO",
+      "displayName": "New Orleans Saints"
+     }
+    },
+    {
+     "id": "401873016",
+     "week": 7,
+     "atVs": "@",
+     "gameDate": "2026-10-25T17:00Z",
+     "score": "27-21 OT",
+     "gameResult": "W",
+     "opponent": {
+      "id": "34",
+      "abbreviation": "HOU",
+      "displayName": "Houston Texans"
+     }
+    },
+    {
+     "id": "401873044",
+     "week": 9,
+     "atVs": "@",
+     "gameDate": "2026-11-08T18:00Z",
+     "score": "19-11",
+     "gameResult": "W",
+     "opponent": {
+      "id": "21",
+      "abbreviation": "PHI",
+      "displayName": "Philadelphia Eagles"
+     }
+    }
+   ]
+  },
+  {
+   "team": {
+    "id": "28",
+    "abbreviation": "WSH",
+    "displayName": "Washington Commanders"
+   },
+   "events": [
+    {
+     "id": "401872965",
+     "week": 4,
+     "atVs": "vs",
+     "gameDate": "2026-10-04T13:30Z",
+     "score": "30-13",
+     "gameResult": "L",
+     "opponent": {
+      "id": "11",
+      "abbreviation": "IND",
+      "displayName": "Indianapolis Colts"
+     }
+    },
+    {
+     "id": "401872988",
+     "week": 5,
+     "atVs": "vs",
+     "gameDate": "2026-10-11T17:00Z",
+     "score": "27-27 OT",
+     "gameResult": "T",
+     "opponent": {
+      "id": "19",
+      "abbreviation": "NYG",
+      "displayName": "New York Giants"
+     }
+    },
+    {
+     "id": "401873008",
+     "week": 6,
+     "atVs": "@",
+     "gameDate": "2026-10-20T00:15Z",
+     "score": "23-17",
+     "gameResult": "L",
+     "opponent": {
+      "id": "25",
+      "abbreviation": "SF",
+      "displayName": "San Francisco 49ers"
+     }
+    },
+    {
+     "id": "401873035",
+     "week": 8,
+     "atVs": "vs",
+     "gameDate": "2026-11-02T01:20Z",
+     "score": "27-10",
+     "gameResult": "W",
+     "opponent": {
+      "id": "21",
+      "abbreviation": "PHI",
+      "displayName": "Philadelphia Eagles"
+     }
+    },
+    {
+     "id": "401873043",
+     "week": 9,
+     "atVs": "vs",
+     "gameDate": "2026-11-08T18:00Z",
+     "score": "20-13",
+     "gameResult": "L",
+     "opponent": {
+      "id": "14",
+      "abbreviation": "LAR",
+      "displayName": "Los Angeles Rams"
+     }
+    }
+   ]
+  }
+ ],
+ "injuries": [
+  {
+   "team": {
+    "id": "19",
+    "abbreviation": "NYG",
+    "displayName": "New York Giants"
+   },
+   "injuries": [
+    {
+     "status": "Out",
+     "date": "2026-11-11T01:35Z",
+     "athlete": {
+      "id": "4921249",
+      "displayName": "Colton Hood",
+      "position": {
+       "abbreviation": "CB"
+      }
+     }
+    },
+    {
+     "status": "Questionable",
+     "date": "2026-11-10T21:39Z",
+     "athlete": {
+      "id": "4433970",
+      "displayName": "J.J. McCarthy",
+      "headshot": {
+       "href": "https://a.espncdn.com/i/headshots/nfl/players/full/4433970.png",
+       "alt": "J.J. McCarthy"
+      },
+      "position": {
+       "abbreviation": "QB"
+      }
+     }
+    },
+    {
+     "status": "Out",
+     "date": "2026-11-10T21:38Z",
+     "athlete": {
+      "id": "4696981",
+      "displayName": "Cam Skattebo",
+      "headshot": {
+       "href": "https://a.espncdn.com/i/headshots/nfl/players/full/4696981.png",
+       "alt": "Cam Skattebo"
+      },
+      "position": {
+       "abbreviation": "RB"
+      }
+     }
+    },
+    {
+     "status": "Questionable",
+     "date": "2026-11-10T00:09Z",
+     "athlete": {
+      "id": "4040615",
+      "displayName": "Malik Harrison",
+      "headshot": {
+       "href": "https://a.espncdn.com/i/headshots/nfl/players/full/4040615.png",
+       "alt": "Malik Harrison"
+      },
+      "position": {
+       "abbreviation": "LB"
+      }
+     },
+     "details": {
+      "type": "Groin",
+      "location": "Groin",
+      "detail": "Not Specified",
+      "side": "Not Specified",
+      "returnDate": "2026-11-12"
+     }
+    },
+    {
+     "status": "Injured Reserve",
+     "date": "2026-10-27T21:04Z",
+     "athlete": {
+      "id": "4360516",
+      "displayName": "Tyrone Tracy Jr.",
+      "headshot": {
+       "href": "https://a.espncdn.com/i/headshots/nfl/players/full/4360516.png",
+       "alt": "Tyrone Tracy Jr."
+      },
+      "position": {
+       "abbreviation": "RB"
+      }
+     },
+     "details": {
+      "type": "Hamstring",
+      "location": "Leg",
+      "detail": "Strain",
+      "side": "Not Specified",
+      "returnDate": "2026-12-06"
+     }
+    }
+   ]
+  },
+  {
+   "team": {
+    "id": "28",
+    "abbreviation": "WSH",
+    "displayName": "Washington Commanders"
+   },
+   "injuries": [
+    {
+     "status": "Out",
+     "date": "2026-11-12T02:02Z",
+     "athlete": {
+      "id": "2576736",
+      "displayName": "Lucas Patrick",
+      "headshot": {
+       "href": "https://a.espncdn.com/i/headshots/nfl/players/full/2576736.png",
+       "alt": "Lucas Patrick"
+      },
+      "position": {
+       "abbreviation": "G"
+      }
+     },
+     "details": {
+      "type": "Concussion",
+      "location": "Head",
+      "detail": "Concussion",
+      "side": "Not Specified",
+      "returnDate": "2026-11-23"
+     }
+    },
+    {
+     "status": "Out",
+     "date": "2026-11-11T22:06Z",
+     "athlete": {
+      "id": "4567156",
+      "displayName": "Treylon Burks",
+      "headshot": {
+       "href": "https://a.espncdn.com/i/headshots/nfl/players/full/4567156.png",
+       "alt": "Treylon Burks"
+      },
+      "position": {
+       "abbreviation": "WR"
+      }
+     }
+    },
+    {
+     "status": "Out",
+     "date": "2026-11-11T20:21Z",
+     "athlete": {
+      "id": "4361088",
+      "displayName": "Colson Yankoff",
+      "headshot": {
+       "href": "https://a.espncdn.com/i/headshots/nfl/players/full/4361088.png",
+       "alt": "Colson Yankoff"
+      },
+      "position": {
+       "abbreviation": "TE"
+      }
+     },
+     "details": {
+      "type": "Knee",
+      "location": "Leg",
+      "detail": "Not Specified",
+      "side": "Not Specified",
+      "returnDate": "2026-11-23"
+     }
+    },
+    {
+     "status": "Injured Reserve",
+     "date": "2026-11-07T23:15Z",
+     "athlete": {
+      "id": "4361577",
+      "displayName": "Dyami Brown",
+      "headshot": {
+       "href": "https://a.espncdn.com/i/headshots/nfl/players/full/4361577.png",
+       "alt": "Dyami Brown"
+      },
+      "position": {
+       "abbreviation": "WR"
+      }
+     },
+     "details": {
+      "type": "Calf",
+      "location": "Leg",
+      "detail": "Not Specified",
+      "side": "Not Specified",
+      "returnDate": "2026-12-06"
+     }
+    },
+    {
+     "status": "Injured Reserve",
+     "date": "2026-11-04T19:13Z",
+     "athlete": {
+      "id": "3925354",
+      "displayName": "Daron Payne",
+      "headshot": {
+       "href": "https://a.espncdn.com/i/headshots/nfl/players/full/3925354.png",
+       "alt": "Daron Payne"
+      },
+      "position": {
+       "abbreviation": "DT"
+      }
+     },
+     "details": {
+      "type": "Foot",
+      "location": "Leg",
+      "detail": "Surgery",
+      "side": "Left",
+      "returnDate": "2027-02-15"
+     }
+    }
+   ]
+  }
+ ],
+ "pickcenter": [
+  {
+   "provider": {
+    "name": "DraftKings"
+   },
+   "details": "NYG -2.5",
+   "spread": -2.5,
+   "overUnder": 40.5,
+   "awayTeamOdds": {
+    "moneyLine": 110
+   },
+   "homeTeamOdds": {
+    "moneyLine": -130
+   }
+  }
+ ],
+ "broadcasts": [
+  {
+   "media": {
+    "shortName": "Prime Video"
+   }
+  }
+ ]
+}
