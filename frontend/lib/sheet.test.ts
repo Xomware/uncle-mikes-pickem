@@ -116,11 +116,13 @@ describe("groupGridCsv", () => {
 
 it("lays the season table out by week, blank for a week a late joiner has no score", () => {
   const standings: SeasonStandings = {
+    groupId: "g",
     season: 2026,
     throughWeek: 2,
+    final: false,
     rows: [
-      { sub: "a", name: "Amy", place: "1", total: 210, gow: 12, weeks: { "1": 109, "2": 101 } },
-      { sub: "b", name: "Zed", place: "2", total: 96, gow: -15, weeks: { "2": 96 } },
+      { member: "a", name: "Amy", place: "1", total: 210, gow: 12, weeks: { "1": 109, "2": 101 } },
+      { member: "b", name: "Zed", place: "2", total: 96, gow: -15, weeks: { "1": null, "2": 96 } },
     ],
   };
   expect(standingsCsv(standings)).toEqual([

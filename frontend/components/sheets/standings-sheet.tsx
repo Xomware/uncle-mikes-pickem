@@ -36,10 +36,10 @@ export function StandingsSheet() {
   const fetcher = useCallback(async () => {
     const [detail, standings, death] = await Promise.all([
       getGroup(id),
-      unlessMissing(getSeasonStandings(id)),
+      getSeasonStandings(id),
       unlessMissing(getDeathBoard(id)),
     ]);
-    const shown = week ?? standings?.throughWeek;
+    const shown = week ?? (standings.throughWeek || undefined);
     const result = shown ? await unlessMissing(getWeekResult(id, shown)) : null;
     return { detail, standings, death, result };
   }, [id, week]);
@@ -55,7 +55,9 @@ export function StandingsSheet() {
   }
   const { detail, standings, death, result } = load.data;
   const { group } = detail;
-  const csv = standings && (() => downloadCsv(`${group.season}-standings.csv`, toCsv(standingsCsv(standings))));
+  // The table is empty, not missing, until the first week is graded.
+  const graded = standings.throughWeek > 0;
+  const csv = graded && (() => downloadCsv(`${group.season}-standings.csv`, toCsv(standingsCsv(standings))));
 
   return (
     <Paper
@@ -79,9 +81,14 @@ export function StandingsSheet() {
               {group.season} NFL Pool <span className="text-base font-semibold">{group.name}</span>
             </h1>
           </div>
-          {standings && <p className="font-semibold">Through Week {standings.throughWeek}</p>}
+          {graded && (
+            <p className="font-semibold">
+              Through Week {standings.throughWeek}
+              {!standings.final && " (provisional)"}
+            </p>
+          )}
         </header>
-        {standings ? (
+        {graded ? (
           <div className="mt-3 grid grid-cols-1 gap-6 lg:grid-cols-[auto_1fr] print:mt-1 print:grid-cols-[auto_1fr] print:gap-4">
             <WeekResults result={result} />
             <SeasonTable standings={standings} />
@@ -103,7 +110,7 @@ function WeekResults({ result }: { result: WeekResult | null }) {
   return (
     <table className="border-collapse self-start">
       <caption className="pb-1 text-left text-sm font-bold whitespace-nowrap">
-        Week {result.week} results{result.provisional && " (provisional)"}
+        Week {result.week} results{result.status !== "final" && ` (${result.status})`}
       </caption>
       <thead>
         <tr className="border-b-2 border-(--ink)">
@@ -113,7 +120,7 @@ function WeekResults({ result }: { result: WeekResult | null }) {
         </tr>
       </thead>
       <tbody>
-        {result.rows.map((r) => (
+        {result.members.map((r) => (
           <tr key={r.sub} className={cn("border-b border-(--rule)", winners.has(r.sub) && "bg-(--right) font-bold")}>
             <td className={CELL}>{r.place}</td>
             <td className={cn(CELL, "max-w-36 truncate normal-case")}>
@@ -149,7 +156,7 @@ function SeasonTable({ standings }: { standings: SeasonStandings }) {
         </thead>
         <tbody>
           {standings.rows.map((r) => (
-            <tr key={r.sub} className="border-b border-(--rule)">
+            <tr key={r.member} className="border-b border-(--rule)">
               <td className={CELL}>{r.place}</td>
               <td className={cn(CELL, "max-w-36 truncate font-semibold normal-case")}>{r.name}</td>
               {SEASON_WEEKS.map((w) => (
