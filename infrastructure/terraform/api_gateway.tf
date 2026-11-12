@@ -24,6 +24,11 @@ locals {
       invoke_arn = aws_lambda_function.api["members_${l.name}"].invoke_arn
     })
   ]
+  payments_endpoints = [
+    for l in local.payments_lambdas : merge(l, {
+      invoke_arn = aws_lambda_function.api["payments_${l.name}"].invoke_arn
+    })
+  ]
 }
 
 module "api" {
@@ -55,5 +60,7 @@ module "api" {
     invites = { path_prefix = "invites", endpoints = local.invites_endpoints }
     rules   = { path_prefix = "rules", endpoints = local.rules_endpoints }
     members = { path_prefix = "members", endpoints = local.members_endpoints }
+
+    payments = { path_prefix = "payments", endpoints = local.payments_endpoints }
   }
 }
