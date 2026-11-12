@@ -46,8 +46,8 @@ export function AuthCallback() {
   if (failed && auth.status !== "signedIn") {
     return (
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4">
-        <div role="alert" className="rounded-xl border bg-card p-6">
-          <h1 className="text-2xl font-bold uppercase">That sign-in did not finish</h1>
+        <div role="alert" className="panel p-6">
+          <h1 className="font-stencil text-4xl leading-none font-black uppercase">That sign-in did not finish</h1>
           <p className="mt-2 leading-relaxed text-muted-foreground">
             The link may have expired, or the window sat open too long. Nothing changed on your account.
           </p>
