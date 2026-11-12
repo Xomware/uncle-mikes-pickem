@@ -34,9 +34,9 @@ export function AuthGuard({ children }: AuthGuardProps) {
   if (auth.status === "signedOut") {
     return (
       <div className="mx-auto w-full max-w-md px-4 py-12">
-        <div className="rounded-xl border bg-card p-6">
+        <div className="panel p-6">
           <LogIn className="size-6 text-primary" aria-hidden="true" />
-          <h1 className="mt-3 text-2xl font-bold uppercase">Sign in to continue</h1>
+          <h1 className="mt-3 font-stencil text-4xl leading-none font-black uppercase">Sign in to continue</h1>
           <p className="mt-2 mb-6 leading-relaxed text-muted-foreground">
             Your groups and picks are only visible to members. Sign in with the Google account you joined with.
           </p>

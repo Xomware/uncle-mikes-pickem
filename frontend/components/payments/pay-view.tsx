@@ -20,12 +20,12 @@ export function PayView() {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6" aria-busy={load.status === "loading"}>
-      <Link href={groupHref(id)} className="inline-flex min-h-11 items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link href={groupHref(id)} className="chalk inline-flex min-h-11 items-center gap-1.5 text-sm tracking-[0.14em] hover:text-primary">
         <ArrowLeft className="size-4" aria-hidden="true" />
         Back to group
       </Link>
-      <h1 className="mt-2 text-4xl font-bold uppercase">Pay</h1>
-      {load.status === "loading" && <span className="mt-6 block h-64 animate-pulse rounded-xl bg-muted" />}
+      <h1 className="paint worn mt-1 text-5xl leading-none sm:text-6xl">Pay</h1>
+      {load.status === "loading" && <span className="mt-6 block h-64 animate-pulse rounded-xl bg-card/70" />}
       {load.status === "error" && (
         <div className="mt-6">
           <LoadError title="Couldn't load what you owe" message={load.message} onRetry={retry} />
@@ -43,9 +43,9 @@ function Balance({ ledger }: { ledger: Ledger }) {
 
   return (
     <>
-      <section className="mt-6 rounded-xl border bg-card p-5">
+      <section className="scoreboard mt-6 p-5">
         <p className="text-muted-foreground">{group.name} · {group.season} season</p>
-        <p className="mt-1 font-display text-5xl font-bold">{dollars(me.balance)}</p>
+        <p className="led mt-2 text-6xl leading-none">{dollars(me.balance)}</p>
         <p className="text-sm text-muted-foreground">{me.balance > 0 ? "left to pay" : "owed"}</p>
         <ul className="mt-4 divide-y border-t">
           {me.lines.map((line) => (
@@ -65,7 +65,7 @@ function Balance({ ledger }: { ledger: Ledger }) {
         </p>
       )}
       {me.balance > 0 && !methods.length && (
-        <p className="mt-6 text-muted-foreground">The organizer hasn&apos;t added a way to pay yet.</p>
+        <p className="panel mt-6 p-4 text-muted-foreground">The organizer hasn&apos;t added a way to pay yet.</p>
       )}
       {me.balance > 0 && methods.length > 0 && (
         <section className="mt-6 space-y-3">
@@ -89,7 +89,7 @@ function Balance({ ledger }: { ledger: Ledger }) {
         </section>
       )}
 
-      <p className="mt-6 text-sm text-muted-foreground">
+      <p className="mt-6 rounded-md bg-card/85 p-3 text-sm text-muted-foreground">
         Payment goes directly to the organizer. This app never touches your money; the organizer marks you paid once it
         arrives.
       </p>
@@ -111,7 +111,7 @@ function CopyHandle({ label, handle }: { label: string; handle: string }) {
   }
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border bg-card p-4">
+    <div className="flex items-center gap-3 panel p-4">
       <span className="min-w-0 flex-1">
         <span className="block text-sm text-muted-foreground">{label}</span>
         <span className="block font-mono break-all select-all">{handle}</span>

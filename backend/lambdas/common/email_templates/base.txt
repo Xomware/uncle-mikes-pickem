@@ -1,4 +1,10 @@
-UNCLE MIKE'S NFL PICK EM
+{% if sudden_death is defined and sudden_death %}
+OVERTIME / SUDDEN DEATH
+UNCLE MIKE'S PICK EM
+{% else %}
+UNCLE MIKE'S PICK EM
+{% endif %}
+==============================
 
 {% block body %}{% endblock %}
 

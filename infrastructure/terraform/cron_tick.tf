@@ -31,13 +31,22 @@ data "aws_iam_policy_document" "cron_tick" {
   }
 
   # Auto GOW: scan for groups, read each group-week's canceled games, then a
-  # conditional put.
+  # conditional put. Regrade (common/results.py): query group and group-week
+  # partitions, put RESULT and STANDINGS, update DEATH entries.
   statement {
-    sid       = "AutoGow"
-    actions   = ["dynamodb:Scan", "dynamodb:GetItem", "dynamodb:PutItem"]
+    sid       = "AutoGowAndRegrade"
+    actions   = ["dynamodb:Scan", "dynamodb:Query", "dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem"]
     resources = [aws_dynamodb_table.app.arn]
   }
 
+  # A final nflverse disagrees with, or hasn't confirmed in 6 h (common/finals.py).
+  statement {
+    sid       = "FinalsAlert"
+    actions   = ["sns:Publish"]
+    resources = [aws_sns_topic.alarms.arn]
+  }
+
+  # Poll rows, and the EVENTS rows grading emits for the result and elimination emails.
   statement {
     sid       = "PollRuns"
     actions   = ["dynamodb:PutItem"]
@@ -66,9 +75,10 @@ resource "aws_lambda_function" "cron_tick" {
 
   environment {
     variables = {
-      NFL_TABLE = aws_dynamodb_table.nfl.id
-      APP_TABLE = aws_dynamodb_table.app.id
-      OPS_TABLE = aws_dynamodb_table.ops.id
+      NFL_TABLE        = aws_dynamodb_table.nfl.id
+      APP_TABLE        = aws_dynamodb_table.app.id
+      OPS_TABLE        = aws_dynamodb_table.ops.id
+      ALARMS_TOPIC_ARN = aws_sns_topic.alarms.arn
     }
   }
 
