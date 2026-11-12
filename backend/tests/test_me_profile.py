@@ -46,7 +46,7 @@ def test_returns_claims_and_upserts(me):
     assert json.loads(out["body"]) == {
         "data": {"sub": "u1", "email": "dom@x.com", "name": "Dom"},
         "error": None,
-        "meta": None,
+        "meta": {},
     }
     first = item("u1")
     assert first["email"] == "dom@x.com"

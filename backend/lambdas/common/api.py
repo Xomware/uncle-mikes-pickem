@@ -28,7 +28,7 @@ def respond(status: int, data=None, error: dict | None = None, meta: dict | None
             "Access-Control-Allow-Headers": "Authorization,Content-Type",
             "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
         },
-        "body": json.dumps({"data": data, "error": error, "meta": meta}),
+        "body": json.dumps({"data": data, "error": error, "meta": meta or {}}),
     }
 
 
