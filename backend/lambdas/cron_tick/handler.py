@@ -3,7 +3,8 @@
 Scheduled every 2 minutes. A tick works only inside a game window (live: the
 current week) or on the hourly refresh (current and next week, so Tuesday's
 GOW pick has next week's games). The 15:00Z hourly refresh also fetches ESPN's
-predictor for hype. {"force": true} runs that refresh now.
+predictor for hype. {"force": true} runs that refresh now. Hourly and forced
+ticks then set the top-hype GOW for any group still without one past Tuesday noon ET.
 Every tick that works writes a poll row to pickem-ops.
 """
 
@@ -14,8 +15,9 @@ import os
 from datetime import datetime, timedelta, timezone
 
 import boto3
+from boto3.dynamodb.conditions import Attr
 
-from lambdas.common import espn, hype, nfl_store
+from lambdas.common import espn, gow, hype, nfl_store, weeks
 
 WINDOW_BEFORE = timedelta(minutes=15)
 # A suspended or postponed game never completes; don't let it hold the window open.
@@ -171,6 +173,48 @@ def refresh(now: datetime, mode: str) -> dict:
     return {"season": season, "weeks": weeks, "games": games, "predictorMissing": missed}
 
 
+def season_groups(table, season: int):
+    # Replay groups run on their own clock; replay advance owns their GOW.
+    kwargs = {"FilterExpression": Attr("SK").eq("META") & Attr("season").eq(season) & Attr("clock").not_exists()}
+    while True:
+        page = table.scan(**kwargs)
+        yield from page["Items"]
+        if "LastEvaluatedKey" not in page:
+            return
+        kwargs["ExclusiveStartKey"] = page["LastEvaluatedKey"]
+
+
+def auto_gow(now: datetime) -> list[str]:
+    """Set the top-hype GOW for each group past the Tuesday deadline without one. Returns "<group>#W<nn>"."""
+    current = nfl_store.current_week()
+    if not current:
+        return []
+    season, week = current
+    due = [
+        w
+        for w in (nfl_store.get_week(season, n) for n in (week, week + 1))
+        if w and gow.deadline(w["lockAt"]) <= now < parse(w["lockAt"])
+    ]
+    if not due:
+        return []
+    table = dynamodb.Table(os.environ["APP_TABLE"])
+    groups = list(season_groups(table, season))
+    chosen = []
+    for w in due:
+        top = gow.top_game(nfl_store.list_games(season, w["week"]))
+        for g in groups:
+            pk = weeks.week_pk(g["groupId"], season, w["week"])
+            try:
+                table.put_item(
+                    Item=gow.item(pk, top["gameId"], "auto", nfl_store.iso(now)),
+                    ConditionExpression="attribute_not_exists(SK)",
+                )
+            except table.meta.client.exceptions.ConditionalCheckFailedException:
+                continue  # the organizer already chose
+            chosen.append(f"{g['groupId']}#W{w['week']:02d}")
+    return chosen
+
+
 def record_run(now: datetime, mode: str, result: dict) -> None:
     dynamodb.Table(os.environ["OPS_TABLE"]).put_item(
         Item={
@@ -193,6 +237,8 @@ def handler(event, context):
 
     try:
         result = refresh(now, mode)
+        if mode != "live":
+            result["gowAuto"] = auto_gow(now)
     except Exception as e:
         # The failed run is the row someone goes looking for; re-raise so Errors fires.
         record_run(now, mode, {"error": f"{type(e).__name__}: {e}"})

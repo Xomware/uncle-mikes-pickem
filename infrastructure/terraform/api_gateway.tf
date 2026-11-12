@@ -24,6 +24,11 @@ locals {
       invoke_arn = aws_lambda_function.api["members_${l.name}"].invoke_arn
     })
   ]
+  gow_endpoints = [
+    for l in local.gow_lambdas : merge(l, {
+      invoke_arn = aws_lambda_function.api["gow_${l.name}"].invoke_arn
+    })
+  ]
 }
 
 module "api" {
@@ -55,5 +60,6 @@ module "api" {
     invites = { path_prefix = "invites", endpoints = local.invites_endpoints }
     rules   = { path_prefix = "rules", endpoints = local.rules_endpoints }
     members = { path_prefix = "members", endpoints = local.members_endpoints }
+    gow     = { path_prefix = "gow", endpoints = local.gow_endpoints }
   }
 }

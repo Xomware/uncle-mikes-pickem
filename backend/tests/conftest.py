@@ -1,6 +1,7 @@
 import importlib
 import json
 import os
+from datetime import datetime, timedelta
 
 import boto3
 import pytest
@@ -85,6 +86,31 @@ def create_table(name):
             {"AttributeName": "SK", "AttributeType": "S"},
         ],
     )
+
+
+def seed_week(season, week, lock_at, games):
+    """Write a WEEK and its GAMEs to pickem-nfl and make it CURRENT.
+
+    Each game is (gameId, away, home, hype score); they kick off an hour apart from lock_at.
+    """
+    from lambdas.common import nfl_store
+
+    first = datetime.fromisoformat(lock_at.replace("Z", "+00:00"))
+    for i, (gid, away, home, score) in enumerate(games):
+        nfl_store.save_game(
+            season,
+            week,
+            {
+                "gameId": gid,
+                "kickoff": nfl_store.iso(first + timedelta(hours=i)),
+                "away": {"abbr": away},
+                "home": {"abbr": home},
+                "hype": {"score": score},
+            },
+        )
+    ids = [g[0] for g in games]
+    nfl_store.save_week(season, week, lock_at, ids[-1], ids, "2000-01-01T00:00:00Z")
+    nfl_store.set_current(season, week)
 
 
 @pytest.fixture
