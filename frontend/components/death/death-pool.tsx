@@ -9,6 +9,7 @@ import { ReplayTheDown } from "@/components/death/replay-the-down";
 import { SuddenDeathLockup } from "@/components/death/sudden-death-lockup";
 import { Helmet } from "@/components/field/helmet";
 import { Coin } from "@/components/field/icons";
+import { TeamLogo } from "@/components/field/team-logo";
 import { LoadError } from "@/components/load-error";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
@@ -246,6 +247,7 @@ function TeamButton({ team, line, used, selected, pending, onChoose, className }
         className,
       )}
     >
+      <TeamLogo abbr={team} className={cn("size-7", used && "grayscale")} />
       <span className={cn("font-display text-xl font-extrabold", used && "line-through")}>{team}</span>
       <span className="flex-1 text-sm text-muted-foreground">{used ? "Used" : line}</span>
       {selected && <Check className="size-5 text-flood" aria-label="Your pick" />}

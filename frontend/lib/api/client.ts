@@ -149,6 +149,10 @@ export const acceptInvite = (code: string, entryType: EntryType) =>
 
 export interface Team {
   abbr: string;
+  // ESPN's logo URL and hex colors (no '#'). Missing on rows written before F14.3.
+  logo?: string | null;
+  color?: string | null;
+  alternateColor?: string | null;
 }
 
 export interface Game {

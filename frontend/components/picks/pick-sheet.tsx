@@ -4,9 +4,10 @@ import { ChevronDown, ChevronUp, CircleAlert, CircleCheck, LoaderCircle, Star, U
 import { type ReactNode, useState } from "react";
 
 import { LightBank } from "@/components/field/icons";
+import { TeamLogo } from "@/components/field/team-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { type Game, type WeekView, cancelGame, setGow, setPicks } from "@/lib/api/client";
+import { type Game, type Team, type WeekView, cancelGame, setGow, setPicks } from "@/lib/api/client";
 import { isOrganizer } from "@/lib/groups";
 import { type Sheet, confAt, isComplete, pickedCount, sameSheet, spreadText, swap, toPayload, toSheet } from "@/lib/picks";
 import { etTime } from "@/lib/time";
@@ -249,11 +250,11 @@ function GameRow({ game, conf, team, isGow, isTiebreak, editable, selected, firs
             </div>
           )}
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1" role="group" aria-label={`Pick ${matchup}`}>
-            <TeamButton abbr={game.away.abbr} picked={team} editable={editable} onPick={onPick} />
+            <TeamButton team={game.away} picked={team} editable={editable} onPick={onPick} />
             <span aria-hidden="true" className="px-0.5 text-xs text-muted-foreground">
               @
             </span>
-            <TeamButton abbr={game.home.abbr} picked={team} editable={editable} onPick={onPick} />
+            <TeamButton team={game.home} picked={team} editable={editable} onPick={onPick} />
           </div>
           <p className="mt-1 truncate text-xs text-muted-foreground">{details.join(" · ")}</p>
         </div>
@@ -275,27 +276,28 @@ function GameRow({ game, conf, team, isGow, isTiebreak, editable, selected, firs
 }
 
 interface TeamProps {
-  abbr: string;
+  team: Team;
   picked: string | null;
   editable: boolean;
   onPick: (team: string) => void;
 }
 
-function TeamButton({ abbr, picked, editable, onPick }: TeamProps) {
-  const on = picked === abbr;
+function TeamButton({ team, picked, editable, onPick }: TeamProps) {
+  const on = picked === team.abbr;
   return (
     <button
       type="button"
       disabled={!editable}
       aria-pressed={on}
-      onClick={() => onPick(abbr)}
+      onClick={() => onPick(team.abbr)}
       className={cn(
-        "h-11 rounded-md border font-display text-xl font-extrabold tracking-wide outline-none focus-visible:ring-3 focus-visible:ring-ring/60 disabled:opacity-100",
+        "flex h-11 items-center justify-center gap-1.5 rounded-md border font-display text-xl font-extrabold tracking-wide outline-none focus-visible:ring-3 focus-visible:ring-ring/60 disabled:opacity-100",
         on ? "border-primary bg-primary text-primary-foreground" : "bg-input/30 enabled:hover:bg-input/60",
         !editable && !on && "text-muted-foreground",
       )}
     >
-      {abbr}
+      <TeamLogo {...team} className="size-7" />
+      {team.abbr}
     </button>
   );
 }

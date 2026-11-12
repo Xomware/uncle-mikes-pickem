@@ -5,6 +5,7 @@ import { gridWeeks } from "@/lib/death";
 import { Lives } from "@/components/death/lives";
 import { Helmet } from "@/components/field/helmet";
 import { PenaltyFlag } from "@/components/field/icons";
+import { TeamLogo } from "@/components/field/team-logo";
 import { cn } from "@/lib/utils";
 
 const OUT_BG = "bg-[color-mix(in_oklch,var(--card),var(--wrong-muted)_35%)]";
@@ -111,7 +112,8 @@ function Cell({ team, fatal, after }: { team: string | null | undefined; fatal: 
           {team ?? "None"}
         </span>
       ) : (
-        <span className={cn("font-display font-bold", !team && "text-muted-foreground")}>
+        <span className={cn("inline-flex flex-col items-center gap-0.5 font-display font-bold", !team && "text-muted-foreground")}>
+          {team && <TeamLogo abbr={team} className="size-5" />}
           {team ?? <span aria-label="No pick">-</span>}
         </span>
       )}
