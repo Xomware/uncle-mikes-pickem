@@ -25,7 +25,7 @@ def handler(event, context):
     if not meta or not mine:
         raise ApiError(404, "Group not found")
     season = int(meta["season"])
-    rules = rules_for([i for i in items if i["SK"].startswith(f"RULES#S{season}#")], next_unlocked_week(season))
+    rules = rules_for([i for i in items if i["SK"].startswith(f"RULES#S{season}#")], next_unlocked_week(meta))
 
     pk = ledger.season_pk(gid, season)
 

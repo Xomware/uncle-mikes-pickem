@@ -10,7 +10,7 @@ from typing import Annotated
 import boto3
 from pydantic import Field, StringConstraints
 
-from lambdas.common import clock, nfl_store
+from lambdas.common import nfl_store
 from lambdas.common.api import ApiError, Request, api_handler, parse_body, respond, user
 from lambdas.common.death import LAST_WEEK, check_pick, entries_pk
 from lambdas.common.groups import membership
@@ -41,12 +41,13 @@ def handler(event, context):
     if entry.get("eliminatedWeek"):
         raise ApiError(409, f"{entry['label']} was eliminated in Week {entry['eliminatedWeek']}")
 
-    week = nfl_store.get_week(season, body.week)
+    feed = nfl_store.for_group(group)
+    week = feed.week(body.week)
     if not week:
         raise ApiError(404, f"Week {body.week} isn't on the schedule yet")
-    if week["lockAt"] <= nfl_store.iso(clock.now(group)):
+    if feed.locked(week):
         raise ApiError(409, f"Week {body.week} is locked")
-    teams = {g[side]["abbr"] for g in nfl_store.list_games(season, body.week) for side in ("away", "home")}
+    teams = {g[side]["abbr"] for g in feed.games(body.week) for side in ("away", "home")}
     if body.team not in teams:
         raise ApiError(400, f"{body.team} doesn't play in Week {body.week}")
     try:

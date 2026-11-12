@@ -34,6 +34,11 @@ locals {
       invoke_arn = aws_lambda_function.api["payments_${l.name}"].invoke_arn
     })
   ]
+  replay_endpoints = [
+    for l in local.replay_lambdas : merge(l, {
+      invoke_arn = aws_lambda_function.api["replay_${l.name}"].invoke_arn
+    })
+  ]
 }
 
 module "api" {
@@ -68,5 +73,6 @@ module "api" {
     death   = { path_prefix = "death", endpoints = local.death_endpoints }
 
     payments = { path_prefix = "payments", endpoints = local.payments_endpoints }
+    replay   = { path_prefix = "replay", endpoints = local.replay_endpoints }
   }
 }

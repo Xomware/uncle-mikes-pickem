@@ -5,6 +5,7 @@ import os
 import boto3
 from boto3.dynamodb.conditions import Key
 
+from lambdas.common import nfl_store
 from lambdas.common.api import ApiError, api_handler, query_param, respond, user
 from lambdas.common.groups import next_unlocked_week
 from lambdas.common.rules import rules_for
@@ -37,7 +38,11 @@ def handler(event, context):
                 for m in sorted(members, key=lambda m: (RANK[m["role"]], m["name"].lower()))
             ],
             # What the next unlocked week will play under, which is what the settings form edits.
-            "rules": rules_for(versions, next_unlocked_week(int(meta["season"]))),
+            "rules": rules_for(versions, next_unlocked_week(meta)),
             "rulesVersion": max((v["version"] for v in versions), default=0),
+            # Replay groups only: the virtual clock and each week's lock, for the replay clock bar.
+            "replay": {"clock": meta["clock"], "lockAts": nfl_store.replay_lock_ats(int(meta["season"]))}
+            if meta.get("replay")
+            else None,
         },
     )
