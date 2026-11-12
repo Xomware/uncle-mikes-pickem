@@ -192,7 +192,8 @@ def auto_gow() -> list[str]:
         if not week or not gow.deadline(week["lockAt"]) <= feed.now < nfl_store.parse(week["lockAt"]):
             continue
         pk = weeks.week_pk(group["groupId"], feed.season, n)
-        top = gow.top_game(feed.games(n))
+        canceled = weeks.canceled_ids(table, pk)
+        top = gow.top_game([g for g in feed.games(n) if g["gameId"] not in canceled])
         try:
             table.put_item(
                 Item=gow.item(pk, top["gameId"], "auto", nfl_store.iso(feed.now)),

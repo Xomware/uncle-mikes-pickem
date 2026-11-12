@@ -24,6 +24,17 @@ def load(table, group_id: str, sub: str, week: int) -> tuple[dict, dict, nfl_sto
     return group, member, feed, nfl_week
 
 
+def canceled_ids(table, pk: str) -> set[str]:
+    """Games the organizer voided for this group-week (POST /games/cancel)."""
+    item = table.get_item(Key={"PK": pk, "SK": "CANCELED"}).get("Item")
+    return set(item["gameIds"]) if item else set()
+
+
+def open_games(table, pk: str, feed: nfl_store.Feed, week: int) -> list[dict]:
+    canceled = canceled_ids(table, pk)
+    return [g for g in feed.games(week) if g["gameId"] not in canceled]
+
+
 def require_unlocked(feed: nfl_store.Feed, nfl_week: dict) -> None:
     # nfl_week is read fresh on every call: a flex can move the first kickoff until it passes.
     if feed.locked(nfl_week):

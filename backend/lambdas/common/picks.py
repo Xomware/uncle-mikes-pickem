@@ -27,5 +27,16 @@ def complete(picks: dict[str, dict], games: list[dict], tiebreak: int | None) ->
     return tiebreak is not None and len(picks) == len(games) and all(p["team"] for p in picks.values())
 
 
+def rerank(picks: dict[str, dict], games: list[dict]) -> dict[str, dict]:
+    """Fit a pick to a changed set of open games: drop closed ones and renumber 1..k in the same order.
+
+    For a full ranking, canceling the game at conf c moves every conf above c down by one.
+    A restored game is left unpicked, so the pick goes incomplete until it's saved again.
+    """
+    open_ids = {g["gameId"] for g in games}
+    kept = sorted((gid for gid in picks if gid in open_ids), key=lambda gid: picks[gid]["conf"])
+    return {gid: {**picks[gid], "conf": i} for i, gid in enumerate(kept, start=1)}
+
+
 def public(item: dict) -> dict:
     return {k: item.get(k) for k in ("sub", "picks", "tiebreak", "complete", "submittedAt")}
