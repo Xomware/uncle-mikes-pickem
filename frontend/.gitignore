@@ -1,0 +1,4 @@
+/coverage
+*.tsbuildinfo
+next-env.d.ts
+!.env.example
