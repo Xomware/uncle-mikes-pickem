@@ -3,6 +3,7 @@
 import { ChevronDown, ChevronUp, CircleAlert, CircleCheck, LoaderCircle, Star, Undo2 } from "lucide-react";
 import { type ReactNode, useState } from "react";
 
+import { LightBank } from "@/components/field/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { type Game, type WeekView, cancelGame, setGow, setPicks } from "@/lib/api/client";
@@ -71,7 +72,7 @@ export function PickSheet({ view, locked, reload }: Props) {
   return (
     <div className="mt-6 pb-28">
       {!gow && !locked && (
-        <p className="mb-4 rounded-lg border p-3 text-sm text-muted-foreground">
+        <p className="panel mb-4 p-3 text-sm text-muted-foreground">
           Picks open once the organizer chooses the game of the week.
           {isOrganizer(role) && " Use Manage games to choose it."}
         </p>
@@ -82,7 +83,7 @@ export function PickSheet({ view, locked, reload }: Props) {
           <Button variant="outline" aria-pressed={managing} onClick={() => setManaging((m) => !m)}>
             {managing ? "Done managing" : "Manage games"}
           </Button>
-          {managing && dirty && <span className="text-sm text-muted-foreground">Save your picks first.</span>}
+          {managing && dirty && <span className="chalk text-xs tracking-[0.12em]">Save your picks first.</span>}
         </div>
       )}
       {organizerError && (
@@ -93,14 +94,19 @@ export function PickSheet({ view, locked, reload }: Props) {
       )}
 
       {editable && (
-        <p className="mb-2 text-sm text-muted-foreground">
+        <p className="mb-3 rounded-md bg-card/90 px-3 py-2 text-sm text-muted-foreground">
           {selected === null
             ? "Tap a team to pick it. Tap a number, then another, to swap confidence."
             : `Tap another number to swap with ${confAt(sheet, selected)}.`}
         </p>
       )}
 
-      <ol className="space-y-2">
+      {/* The drive: top confidence sits on the goal line, 1 is the long way back. */}
+      <div className="endzone flex items-end justify-between rounded-t-lg px-3 pt-3 pb-1.5">
+        <span className="paint worn text-2xl leading-none">End zone</span>
+        <span className="chalk text-xs tracking-[0.16em]">Most confident</span>
+      </div>
+      <ol className="space-y-2 pt-2">
         {sheet.order.map((id, index) => (
           <GameRow
             key={id}
@@ -137,10 +143,10 @@ export function PickSheet({ view, locked, reload }: Props) {
 
       {canceled.length > 0 && (
         <section className="mt-6">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase">Canceled</h2>
+          <h2 className="chalk text-sm">Canceled</h2>
           <ul className="mt-2 space-y-2">
             {canceled.map((g) => (
-              <li key={g.gameId} className="flex min-h-11 items-center gap-3 rounded-lg border border-dashed px-3 text-muted-foreground">
+              <li key={g.gameId} className="flex min-h-11 items-center gap-3 rounded-lg border border-dashed bg-card/90 px-3 text-muted-foreground">
                 <span className="flex-1 line-through">
                   {g.away.abbr} @ {g.home.abbr}
                 </span>
@@ -156,8 +162,8 @@ export function PickSheet({ view, locked, reload }: Props) {
         </section>
       )}
 
-      <label className="mt-6 block">
-        <span className="font-semibold">Tiebreak</span>
+      <label className="panel mt-6 block p-4">
+        <span className="font-display text-lg font-bold tracking-wide uppercase">Tiebreak</span>
         <span className="block text-sm text-muted-foreground">
           Total points in {tiebreakGame ? `${tiebreakGame.away.abbr} @ ${tiebreakGame.home.abbr}` : "the last game"}
         </span>
@@ -204,7 +210,14 @@ function GameRow({ game, conf, team, isGow, isTiebreak, editable, selected, firs
   ].filter(Boolean);
 
   return (
-    <li className={cn("rounded-xl border bg-card p-2", isGow && "border-primary/60")}>
+    <li
+      className={cn(
+        "panel p-2",
+        // Primetime: the row sits under a bank of stadium lights.
+        isGow &&
+          "border-primary/70 bg-[image:radial-gradient(ellipse_90%_70%_at_50%_-10%,oklch(0.92_0.1_95/0.26),transparent_70%)] shadow-[0_0_24px_-6px_oklch(0.9_0.12_95/0.55)]",
+      )}
+    >
       <div className="flex items-stretch gap-2">
         <button
           type="button"
@@ -213,10 +226,12 @@ function GameRow({ game, conf, team, isGow, isTiebreak, editable, selected, firs
           aria-label={`Confidence ${conf} for ${matchup}${selected ? ", selected" : ""}`}
           onClick={onConf}
           className={cn(
-            "flex w-12 shrink-0 items-center justify-center rounded-lg border bg-secondary font-display text-2xl font-bold tabular-nums outline-none focus-visible:ring-3 focus-visible:ring-ring/60 disabled:opacity-100",
-            selected && "border-primary bg-primary text-primary-foreground",
+            // A yard marker: stencilled numeral on turf, the arrow pointing at the goal line.
+            "flex w-13 shrink-0 flex-col items-center justify-center gap-0.5 rounded-md bg-turf font-stencil text-3xl leading-none font-black text-chalk shadow-[inset_0_-3px_0_var(--chalk)] outline-none focus-visible:ring-3 focus-visible:ring-ring/60 enabled:hover:brightness-110 disabled:opacity-100",
+            selected && "bg-primary text-primary-foreground shadow-[inset_0_-3px_0_var(--primary-foreground)]",
           )}
         >
+          <span aria-hidden="true" className="h-1.5 w-2.5 bg-current [clip-path:polygon(50%_0,100%_100%,0_100%)]" />
           {conf}
         </button>
 
@@ -224,12 +239,12 @@ function GameRow({ game, conf, team, isGow, isTiebreak, editable, selected, firs
           {(isGow || isTiebreak) && (
             <div className="mb-1 flex flex-wrap gap-1.5">
               {isGow && (
-                <span className="inline-flex items-center gap-1 rounded-md bg-primary/15 px-1.5 py-0.5 text-xs font-semibold text-primary uppercase">
-                  <Star className="size-3 fill-current" aria-hidden="true" />
-                  Game of the week
+                <span className="inline-flex items-center gap-1 font-display text-sm font-extrabold tracking-[0.2em] text-primary uppercase">
+                  <LightBank className="size-4" />
+                  Primetime<span className="sr-only">, game of the week</span>
                 </span>
               )}
-              {isTiebreak && <span className="rounded-md border px-1.5 py-0.5 text-xs text-muted-foreground uppercase">Tiebreak</span>}
+              {isTiebreak && <span className="rounded-sm border px-1.5 py-0.5 font-display text-xs font-bold tracking-wider text-muted-foreground uppercase">Tiebreak</span>}
             </div>
           )}
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1" role="group" aria-label={`Pick ${matchup}`}>
@@ -274,7 +289,7 @@ function TeamButton({ abbr, picked, editable, onPick }: TeamProps) {
       aria-pressed={on}
       onClick={() => onPick(abbr)}
       className={cn(
-        "h-11 rounded-lg border font-display text-lg font-bold outline-none focus-visible:ring-3 focus-visible:ring-ring/60 disabled:opacity-100",
+        "h-11 rounded-md border font-display text-xl font-extrabold tracking-wide outline-none focus-visible:ring-3 focus-visible:ring-ring/60 disabled:opacity-100",
         on ? "border-primary bg-primary text-primary-foreground" : "bg-input/30 enabled:hover:bg-input/60",
         !editable && !on && "text-muted-foreground",
       )}
@@ -297,7 +312,7 @@ function SaveBar({ sheet, dirty, save, onSave }: { sheet: Sheet; dirty: boolean;
   else if (save.kind === "saved") status = complete ? "Saved. All picks in." : `Draft saved. ${missing.join(", ")}.`;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/95 backdrop-blur">
+    <div className="fixed inset-x-0 bottom-0 z-10 border-t-2 border-primary bg-board">
       <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3 sm:px-6">
         <p role="status" aria-live="polite" className="flex min-w-0 flex-1 items-center gap-2 text-sm">
           {!dirty && complete && save.kind !== "failed" && <CircleCheck className="size-4 shrink-0 text-primary" aria-hidden="true" />}

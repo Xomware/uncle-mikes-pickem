@@ -1,8 +1,10 @@
-import { Lock, X } from "lucide-react";
+import { Lock } from "lucide-react";
 
 import type { DeathBoard, DeathEntry } from "@/lib/api/client";
 import { gridWeeks } from "@/lib/death";
 import { Lives } from "@/components/death/lives";
+import { Helmet } from "@/components/field/helmet";
+import { PenaltyFlag } from "@/components/field/icons";
 import { cn } from "@/lib/utils";
 
 const OUT_BG = "bg-[color-mix(in_oklch,var(--card),var(--wrong-muted)_35%)]";
@@ -14,17 +16,15 @@ export function DeathGrid({ board }: { board: DeathBoard }) {
 
   return (
     <section className="mt-8">
-      <h2 className="text-xl font-semibold uppercase">
-        The board{" "}
-        <span className="text-muted-foreground">
-          ({alive} of {entries.length} alive)
-        </span>
-      </h2>
+      <h2 className="paint worn text-4xl leading-none">The board</h2>
+      <p className="chalk mt-2 text-xs tracking-[0.14em]">
+        {alive} of {entries.length} helmets lit
+      </p>
       {entries.length === 0 ? (
-        <p className="mt-3 text-muted-foreground">No entries yet.</p>
+        <p className="panel mt-3 p-4 text-muted-foreground">No entries yet.</p>
       ) : (
         // The table scrolls sideways inside its card; the page never does.
-        <div className="mt-3 overflow-x-auto rounded-xl border bg-card">
+        <div className="panel relative mt-3 overflow-x-auto">
           <table className="w-full border-collapse text-sm">
             <caption className="sr-only">Death pool picks by week</caption>
             <thead>
@@ -62,11 +62,12 @@ function Row({ entry, weeks, startLives }: { entry: DeathEntry; weeks: number[];
       {/* Opaque background: the sticky column covers week cells scrolling under it. */}
       <th scope="row" className={cn("sticky left-0 z-10 px-3 py-2 text-left font-normal", out ? OUT_BG : "bg-card")}>
         <span className="flex items-center gap-2">
+          <Helmet out={out} className="h-6 w-7 shrink-0" />
           <span className="min-w-0">
             <span
               className={cn(
                 "block max-w-32 truncate font-semibold sm:max-w-48",
-                out && "text-muted-foreground line-through decoration-wrong decoration-2",
+                out && "text-muted-foreground line-through decoration-blood decoration-2",
                 entry.mine && !out && "text-primary",
               )}
             >
@@ -105,7 +106,8 @@ function Cell({ team, fatal, after }: { team: string | null | undefined; fatal: 
     <td className="px-1 py-2 text-center">
       {fatal ? (
         <span className="inline-flex items-center gap-0.5 rounded bg-wrong-muted px-1.5 py-0.5 font-display font-bold text-wrong line-through">
-          <X className="size-3" aria-hidden="true" />
+          <PenaltyFlag className="size-4" />
+          <span className="sr-only">Lost with </span>
           {team ?? "None"}
         </span>
       ) : (

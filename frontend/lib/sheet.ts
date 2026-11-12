@@ -97,7 +97,7 @@ export const sheetGames = (view: WeekView) =>
 
 export function groupGridCsv(view: WeekView, result: WeekResult | null): Cell[][] {
   const games = sheetGames(view);
-  const totals = new Map(result?.rows.map((r) => [r.sub, r]));
+  const totals = new Map(result?.members.map((r) => [r.sub, r]));
   const matchup = (g: Game) => `${g.away.abbr} @ ${g.home.abbr}${g.gameId === view.gow?.gameId ? " (GOW)" : ""}`;
   const rows = gridRows(view, "").map((row) => [
     row.name,
