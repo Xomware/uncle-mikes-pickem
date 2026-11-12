@@ -64,10 +64,17 @@ export function GroupSheet({ id, week }: { id: string; week?: number }) {
   );
 }
 
+const STATUS_PREFIX: Record<WeekResult["status"], string> = {
+  open: "Games still playing · ",
+  provisional: "Provisional · ",
+  final: "",
+};
+
 function GroupGridSheet({ view, result }: { view: WeekView; result: WeekResult | null }) {
   const games = sheetGames(view);
   const gowId = view.gow?.gameId;
-  const totals = new Map(result?.rows.map((r) => [r.sub, r]));
+  const totals = new Map(result?.members.map((r) => [r.sub, r]));
+  const winners = new Set(result?.winners);
   const rows = gridRows(view, "");
 
   return (
@@ -93,7 +100,7 @@ function GroupGridSheet({ view, result }: { view: WeekView; result: WeekResult |
           </p>
           <p className="text-xs font-semibold">
             {result
-              ? `${result.provisional ? "Provisional · " : ""}Tiebreak total ${result.tiebreakTotal ?? "pending"}`
+              ? `${STATUS_PREFIX[result.status]}Tiebreak total ${result.tiebreakTotal ?? "pending"}`
               : "Not graded yet"}
           </p>
         </div>
@@ -127,16 +134,19 @@ function GroupGridSheet({ view, result }: { view: WeekView; result: WeekResult |
             {rows.map((row) => {
               const total = totals.get(row.sub);
               return (
-                <tr key={row.sub} className="border-b border-(--rule) break-inside-avoid">
+                <tr key={row.sub} className={cn("border-b border-(--rule) break-inside-avoid", winners.has(row.sub) && "font-black")}>
                   <th
                     scope="row"
                     className="sticky left-0 max-w-32 truncate bg-(--paper) py-px pr-2 text-left font-semibold normal-case print:static print:max-w-28 print:bg-transparent print:py-[1pt]"
                   >
                     {row.name}
+                    {winners.has(row.sub) && " (won)"}
                   </th>
                   {games.map((g) => {
                     const pick = row.picks?.picks[g.gameId];
-                    const result = outcome(pick, g);
+                    // The graded result knows overrides and voids; the game's winner is the fallback before grading.
+                    const graded = total?.games[g.gameId];
+                    const result = total ? (graded === "right" ? "correct" : graded === "wrong" ? "wrong" : null) : outcome(pick, g);
                     return (
                       <td
                         key={g.gameId}
