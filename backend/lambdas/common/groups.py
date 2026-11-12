@@ -2,6 +2,10 @@
 
 from datetime import datetime, timezone
 
+from lambdas.common.api import ApiError
+
+ORGANIZERS = ("owner", "admin")
+
 
 def last_locked_week(season: int) -> int | None:
     """Latest week of `season` whose lock has passed. None while the NFL store has no data for it."""
@@ -30,6 +34,19 @@ def member_item(group: dict, sub: str, name: str, role: str) -> dict:
         "joinedWeek": next_unlocked_week(int(group["season"])),
         "joinedAt": datetime.now(timezone.utc).isoformat(),
     }
+
+
+def membership(table, group_id: str, sub: str) -> dict:
+    """The caller's MEMBER item. A non-member gets the same 404 as a missing group."""
+    item = table.get_item(Key={"PK": f"GROUP#{group_id}", "SK": f"MEMBER#{sub}"}).get("Item")
+    if not item:
+        raise ApiError(404, "Group not found")
+    return item
+
+
+def require_organizer(member: dict) -> None:
+    if member["role"] not in ORGANIZERS:
+        raise ApiError(403, "Only the group's owner or an admin can do that")
 
 
 def group_summary(member: dict) -> dict:

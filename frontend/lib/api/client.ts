@@ -47,3 +47,16 @@ export interface Profile {
 }
 
 export const getProfile = () => request<Profile>("/me/profile");
+
+const post = <T>(path: string, body: unknown) => request<T>(path, { method: "POST", body: JSON.stringify(body) });
+
+export type Role = "owner" | "admin" | "member";
+
+export interface GroupSummary {
+  groupId: string;
+  name: string;
+  season: number;
+  role: Role;
+}
+
+export const acceptInvite = (code: string) => post<GroupSummary & { joined: boolean }>("/invites/accept", { code });
