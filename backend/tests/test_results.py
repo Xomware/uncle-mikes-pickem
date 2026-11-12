@@ -179,7 +179,7 @@ def db(app, monkeypatch):
     t = table()
     t.put_item(Item={"PK": "GROUP#g", "SK": "META", "groupId": "g", "season": 2027, "replay": False, "clock": "2027-09-12T00:00:00Z"})
     for sub in ("a", "b"):
-        t.put_item(Item={"PK": "GROUP#g", "SK": f"MEMBER#{sub}", **member(sub)})
+        t.put_item(Item={"PK": "GROUP#g", "SK": f"MEMBER#{sub}", **member(sub), "name": sub.upper()})
     pk = "GROUP#g#S2027#W01"
     t.put_item(Item={"PK": pk, "SK": "GOW", "gameId": "100"})
     t.put_item(Item={"PK": pk, **sheet("a", {"100": {"team": "H0", "conf": 2}, "101": {"team": "H1", "conf": 1}}, 30)})
@@ -211,13 +211,13 @@ def group(t):
 def test_regrade_writes_once_and_announces_when_final(db):
     finish("100", 10, 20, confirmed=False)
     finish("101", 14, 21)
-    assert results.regrade(db, group(db)) == [1]
+    assert results.regrade(db, group(db))["weeks"] == [1]
     assert stored(db)["status"] == "provisional"
     assert emitted() == []
-    assert results.regrade(db, group(db)) == []
+    assert results.regrade(db, group(db))["weeks"] == []
 
     finish("100", 10, 20)
-    assert results.regrade(db, group(db)) == [1]
+    assert results.regrade(db, group(db))["weeks"] == [1]
     result = stored(db)
     assert result["status"] == "final"
     assert {m: r["weekly"] for m, r in result["members"].items()} == {"a": 3, "b": 2}
@@ -231,11 +231,11 @@ def test_correction_that_flips_the_winner_announces_v2(db):
     finish("101", 14, 21)
     results.regrade(db, group(db))
     db.put_item(Item={"PK": "GROUP#g#S2027#W01", "SK": "OVERRIDE#100", "awayScore": 24, "homeScore": 20})
-    assert results.regrade(db, group(db), [1]) == [1]
+    assert results.regrade(db, group(db), [1])["weeks"] == [1]
     assert stored(db)["winners"] == ["b"]
     assert [e["eventId"] for e in emitted()] == ["result#W01", "result#W01#v2"]
 
 
 def test_unlocked_weeks_are_skipped(db):
     db.update_item(Key={"PK": "GROUP#g", "SK": "META"}, UpdateExpression="SET clock = :c", ExpressionAttributeValues={":c": "2027-09-01T00:00:00Z"})
-    assert results.regrade(db, group(db), [1]) == []
+    assert results.regrade(db, group(db), [1])["weeks"] == []

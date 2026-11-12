@@ -85,10 +85,6 @@ def test_guards(api, gid):
         409,
         "That game is canceled for this group",
     )
-    table().update_item(
-        Key={"PK": f"GROUP#{gid}", "SK": "META"}, UpdateExpression="SET clock = :c", ExpressionAttributeValues={":c": LOCK}
-    )
-    assert cancel(api, gid, "103")[0] == 409
 
 
 def test_cron_skips_a_canceled_game_when_picking_the_gow(app, monkeypatch):

@@ -18,7 +18,7 @@ from decimal import Decimal
 
 from boto3.dynamodb.conditions import Key
 
-from lambdas.common import clock, events, finals, grade, nfl_store, standings
+from lambdas.common import clock, events, finals, grade, nfl_store, season as season_fold, standings
 from lambdas.common.rules import rules_for
 from lambdas.common.weeks import week_pk
 
@@ -124,10 +124,13 @@ def save(table, pk: str, group_id: str, season: int, result: dict, old: dict) ->
     table.put_item(Item=json.loads(json.dumps(item), parse_float=Decimal))
 
 
-def regrade(table, group: dict, weeks: Iterable[int] | None = None) -> list[int]:
-    """Regrade `weeks`, or every locked week. Returns the weeks whose RESULT was rewritten.
+def regrade(table, group: dict, weeks: Iterable[int] | None = None) -> dict:
+    """Regrade `weeks`, or every locked week, then refold STANDINGS and the death pool.
 
-    An unlocked week is skipped: its picks are hidden and still changing.
+    Returns {weeks: RESULTs rewritten, standings: rewritten?, eliminated: entry ids}.
+    An unlocked week is skipped: its picks are hidden and still changing. So is a week
+    with no schedule (a live group joined mid-season has no Weeks 1-9 rows). The folds
+    always run, since death picks aren't RESULT inputs.
     """
     feed = nfl_store.for_group(group)
     gid, season = group["groupId"], feed.season
@@ -139,13 +142,16 @@ def regrade(table, group: dict, weeks: Iterable[int] | None = None) -> list[int]
     for week in sorted(set(range(1, last + 1) if weeks is None else weeks)):
         if week > last:
             continue
+        nfl_week = feed.week(week)
+        if not nfl_week:
+            continue
         pk = week_pk(gid, season, week)
         week_items = nfl_store.plain(table.query(KeyConditionExpression=Key("PK").eq(pk))["Items"])
-        tiebreak_id = feed.week(week)["tiebreakGameId"]
+        tiebreak_id = nfl_week["tiebreakGameId"]
         result = week_result(week, feed.games(week), week_items, members, versions, tiebreak_id, feed.replay)
         old = next((i for i in week_items if i["SK"] == "RESULT"), {})
         if old.get("inputHash") == result["inputHash"]:
             continue
         save(table, pk, gid, season, result, old)
         changed.append(week)
-    return changed
+    return {"weeks": changed, **season_fold.fold(table, gid, season, last, members, versions)}
