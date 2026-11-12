@@ -1,4 +1,4 @@
-"""GET /groups/get?id=g: the group, its members and the caller's role. Members only."""
+"""GET /groups/get?id=g: the group, its members, the caller's role and current settings. Members only."""
 
 import os
 
@@ -6,6 +6,8 @@ import boto3
 from boto3.dynamodb.conditions import Key
 
 from lambdas.common.api import ApiError, api_handler, query_param, respond, user
+from lambdas.common.groups import next_unlocked_week
+from lambdas.common.rules import rules_for
 
 dynamodb = boto3.resource("dynamodb")
 
@@ -23,6 +25,7 @@ def handler(event, context):
     # A non-member can't tell a private group from a missing one.
     if not meta or not mine:
         raise ApiError(404, "Group not found")
+    versions = [i for i in items if i["SK"].startswith(f"RULES#S{meta['season']}#")]
 
     return respond(
         200,
@@ -30,8 +33,11 @@ def handler(event, context):
             "group": {k: meta[k] for k in ("groupId", "name", "season", "ownerSub")},
             "role": mine["role"],
             "members": [
-                {k: m.get(k) for k in ("sub", "name", "role", "joinedWeek")}
+                {k: m.get(k) for k in ("sub", "name", "role", "entryType", "joinedWeek")}
                 for m in sorted(members, key=lambda m: (RANK[m["role"]], m["name"].lower()))
             ],
+            # What the next unlocked week will play under, which is what the settings form edits.
+            "rules": rules_for(versions, next_unlocked_week(int(meta["season"]))),
+            "rulesVersion": max((v["version"] for v in versions), default=0),
         },
     )
