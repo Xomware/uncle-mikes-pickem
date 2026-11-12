@@ -4,7 +4,8 @@ import urllib.request
 
 SITE = "https://site.api.espn.com/apis/site/v2/sports/football/nfl"
 STANDINGS = "https://site.api.espn.com/apis/v2/sports/football/nfl/standings"
-GAMBIT = "https://gambit-api.fantasy.espn.com/apis/v1/challenges"
+CORE = "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl"
+GAMBIT ="https://gambit-api.fantasy.espn.com/apis/v1/challenges"
 
 # ESPN has 403'd blank and default urllib agents; a plain browser-ish UA is
 # what reeses settled on.

@@ -25,13 +25,17 @@ def tick(store, monkeypatch):
 
 
 def serve(monkeypatch, tick, boards, status=200):
-    """espn.get serving the default scoreboard as boards[0] and ?week=N from boards."""
+    """espn.get serving the default scoreboard as boards[0], ?week=N from boards, and
+    recorded predictors; a game with no predictor fixture is a 404."""
     calls = []
 
     def get(url):
         calls.append(url)
         if status != 200:
             return status, b"forbidden"
+        if url.endswith("/predictor"):
+            path = FIXTURES / f"predictor-{url.split('/events/')[1].split('/')[0]}.json"
+            return (200, path.read_bytes()) if path.exists() else (404, b"{}")
         week = int(url.split("week=")[1].split("&")[0]) if "week=" in url else boards[0]["week"]["number"]
         return 200, json.dumps(next(b for b in boards if b["week"]["number"] == week)).encode()
 
@@ -88,8 +92,13 @@ def test_game_fields_keep_espn_spread_sign(tick):
 def test_force_refreshes_current_and_next_week(tick, store, monkeypatch):
     calls = serve(monkeypatch, tick, [board(10), board(11)])
     out = tick.handler({"force": True}, None)
-    assert out == {"mode": "force", "season": 2026, "weeks": [10, 11], "games": 9}
-    assert len(calls) == 2  # the default board doubles as Week 10's
+    assert out == {
+        "mode": "force", "season": 2026, "weeks": [10, 11], "games": 9,
+        # No predictor fixtures recorded for Week 11.
+        "predictorMissing": ["401873066", "401873077", "401873078"],
+    }
+    # The default board doubles as Week 10's.
+    assert len([c for c in calls if "/scoreboard" in c]) == 2
 
     assert store.current_week() == (2026, 10)
     w10 = store.get_week(2026, 10)
