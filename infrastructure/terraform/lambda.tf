@@ -20,6 +20,10 @@ locals {
   members_lambdas = [
     { name = "update", description = "Change a member's entry type or role", path_part = "update", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
   ]
+  payments_lambdas = [
+    { name = "ledger", description = "Read what members owe and have paid, and the pots (?id=)", path_part = "ledger", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+    { name = "mark", description = "Mark a member's fee paid or unpaid", path_part = "mark", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+  ]
 
   all_api_lambdas = merge(
     { for l in local.me_lambdas : "me_${l.name}" => l },
@@ -27,6 +31,7 @@ locals {
     { for l in local.invites_lambdas : "invites_${l.name}" => l },
     { for l in local.rules_lambdas : "rules_${l.name}" => l },
     { for l in local.members_lambdas : "members_${l.name}" => l },
+    { for l in local.payments_lambdas : "payments_${l.name}" => l },
   )
 
   # One role per function, granted only the table actions its handler makes.
@@ -47,6 +52,9 @@ locals {
     invites_accept = ["app:GetItem", "app:PutItem", "nfl:GetItem"]
     rules_update   = ["app:GetItem", "app:Query", "app:PutItem", "nfl:GetItem"]
     members_update = ["app:GetItem", "app:UpdateItem"]
+
+    payments_ledger = ["app:Query", "nfl:GetItem"]
+    payments_mark   = ["app:GetItem", "app:PutItem"]
   }
 }
 
