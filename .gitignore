@@ -8,3 +8,4 @@ out/
 .terraform/
 *.tfplan
 .env*
+.claude/worktrees/

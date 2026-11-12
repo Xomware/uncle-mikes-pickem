@@ -3,6 +3,7 @@
 from datetime import datetime, timezone
 from typing import Literal
 
+from lambdas.common import clock, nfl_store
 from lambdas.common.api import ApiError
 
 ORGANIZERS = ("owner", "admin")
@@ -11,8 +12,16 @@ EntryType = Literal["weekly", "season"]
 
 def last_locked_week(season: int) -> int | None:
     """Latest week of `season` whose lock has passed. None while the NFL store has no data for it."""
-    # Stub until common/nfl_store.py (F3) lands; the swap is this line.
-    return None
+    current = nfl_store.current_week()
+    if current is None or current[0] < season:
+        return None
+    if current[0] > season:
+        return 18
+    week = current[1]
+    stored = nfl_store.get_week(season, week)
+    if stored and stored["lockAt"] <= nfl_store.iso(clock.now()):
+        return week
+    return week - 1 or None
 
 
 def next_unlocked_week(season: int) -> int:

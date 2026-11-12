@@ -1,9 +1,18 @@
 import importlib
 import json
+import os
 
 import boto3
 import pytest
 from moto import mock_aws
+
+# Handler and store modules build boto3 resources at import, before any fixture
+# runs. Pin a region and fake credentials so collection never reaches a real
+# AWS config (a dev machine's `aws login` profile needs botocore[crt]).
+os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
+os.environ["AWS_ACCESS_KEY_ID"] = "testing"
+os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
+os.environ.pop("AWS_PROFILE", None)
 
 DOM = {"sub": "u-dom", "email": "dom@example.com", "name": "Dom"}
 PAT = {"sub": "u-pat", "email": "pat@example.com", "name": "Pat"}
@@ -14,6 +23,7 @@ SAM = {"sub": "u-sam", "email": "sam@example.com", "name": "Sam"}
 def app(monkeypatch):
     """A moto pickem-app table with GSI1. Yields a loader that binds a handler module to it."""
     monkeypatch.setenv("APP_TABLE", "app")
+    monkeypatch.setenv("NFL_TABLE", "nfl")
     monkeypatch.setenv("CORS_ALLOW_ORIGIN", "https://pickem.xomware.com")
     monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
     with mock_aws():
@@ -34,6 +44,11 @@ def app(monkeypatch):
                 }
             ],
         )
+
+        create_table("nfl")
+        from lambdas.common import nfl_store
+
+        monkeypatch.setattr(nfl_store, "dynamodb", boto3.resource("dynamodb"))
 
         def load(name):
             module = importlib.import_module(f"lambdas.{name}.handler")

@@ -40,12 +40,12 @@ locals {
   # One line per key: merge conflicts here are resolved by keeping both lines.
   api_grants = {
     me_profile     = ["app:UpdateItem"]
-    groups_create  = ["app:PutItem"]
+    groups_create  = ["app:PutItem", "nfl:GetItem"]
     groups_mine    = ["app_index:Query"]
-    groups_get     = ["app:Query"]
+    groups_get     = ["app:Query", "nfl:GetItem"]
     invites_create = ["app:GetItem", "app:PutItem"]
-    invites_accept = ["app:GetItem", "app:PutItem"]
-    rules_update   = ["app:GetItem", "app:Query", "app:PutItem"]
+    invites_accept = ["app:GetItem", "app:PutItem", "nfl:GetItem"]
+    rules_update   = ["app:GetItem", "app:Query", "app:PutItem", "nfl:GetItem"]
     members_update = ["app:GetItem", "app:UpdateItem"]
   }
 }
