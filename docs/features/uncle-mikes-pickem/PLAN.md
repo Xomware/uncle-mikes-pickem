@@ -162,6 +162,12 @@ Standalone. No dependency on F2+. Separate from `cron_tick` on purpose: it archi
 - [ ] **13.4** Rooting guide: the result in each remaining game that maximizes each member's win probability. ~150. Deps: 13.2.
 - [ ] **13.5** Analytics UI. ~200. Deps: 13.1–13.4.
 
+### F14. Brand + printable sheets (v1, requested by Dom 2026-11-12)
+- [ ] **14.1 Brand kit.** An "Uncle Mike's NFL Pick Em" wordmark and crest as SVG, PNG renders for email (email clients don't load SVG), color tokens shared by the site and email, plus favicon and OG image. No emojis.
+- [ ] **14.2 Branded email layout.** The mailer base template uses the brand header, colors and footer. Every email template extends it.
+- [ ] **14.3 Printable weekly sheet.** A print-styled page laid out like Uncle Mike's paper sheet: games with "@", spread, your pick and confidence, the GOW marker, the MNF tiebreaker, name and fees. "Save as PDF" goes through the browser's print dialog, with no server PDF. It works blank (pre-pick) and filled.
+- [ ] **14.4 Group sheets.** After lock: everyone's picks on one printable grid with green/red once graded. A standings sheet (weekly results + season table by week, like the 2026 standings workbook). CSV download for both.
+
 ## Out of Scope
 - Moving money, or any payment processor.
 - Per-game lock (the data model supports it; RULES says the whole week locks at first kickoff).
