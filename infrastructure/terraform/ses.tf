@@ -5,6 +5,15 @@
 locals {
   email_domain     = var.domain_name
   mail_from_domain = "mail.${var.domain_name}"
+
+  # What a function that renders or sends email needs beyond lambda_variables.
+  email_env = {
+    EMAIL_SENDER      = "noreply@${local.email_domain}"
+    EMAIL_CONFIG_SET  = aws_sesv2_configuration_set.mail.configuration_set_name
+    UNSUBSCRIBE_PARAM = aws_ssm_parameter.email_unsubscribe_secret.name
+    API_URL           = "https://${local.api_domain_name}"
+    SITE_URL          = "https://${var.domain_name}"
+  }
 }
 
 resource "aws_sesv2_configuration_set" "mail" {
@@ -101,4 +110,25 @@ resource "aws_ssm_parameter" "email_unsubscribe_secret" {
   type   = "SecureString"
   key_id = "alias/aws/ssm"
   value  = var.email_unsubscribe_secret
+}
+
+# Signing and checking unsubscribe links (common/unsubscribe.py).
+data "aws_iam_policy_document" "unsubscribe_key" {
+  statement {
+    sid       = "UnsubscribeKey"
+    actions   = ["ssm:GetParameter"]
+    resources = [aws_ssm_parameter.email_unsubscribe_secret.arn]
+  }
+}
+
+# Sending as the domain through the configuration set and nothing else. In the
+# SES sandbox, SES also authorizes the send against each verified recipient's
+# identity, so a sandbox test send to an address outside this domain is denied
+# until production access is granted.
+data "aws_iam_policy_document" "send_email" {
+  statement {
+    sid       = "SendEmail"
+    actions   = ["ses:SendEmail", "ses:SendRawEmail"]
+    resources = [aws_sesv2_email_identity.domain.arn, aws_sesv2_configuration_set.mail.arn]
+  }
 }
