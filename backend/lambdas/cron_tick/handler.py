@@ -117,6 +117,9 @@ def game_fields(event: dict) -> dict:
     # Only before kickoff, so the stored line is the closing line.
     if status["state"] == "pre" and c.get("odds"):
         game["lines"] = lines(c["odds"][0])
+    # The forecast as of kickoff; the summary's gameInfo.weather has numbers but no description.
+    if status["state"] == "pre" and event.get("weather"):
+        game["weather"] = {k: event["weather"].get(k) for k in ("displayValue", "temperature", "conditionId")}
     return game
 
 

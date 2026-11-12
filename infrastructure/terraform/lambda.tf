@@ -26,6 +26,7 @@ locals {
   ]
   games_lambdas = [
     { name = "cancel", description = "Void or restore a game for a group's week", path_part = "cancel", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+    { name = "info", description = "Read one game's line, form, injuries, weather and head-to-head (?groupId=&gameId=)", path_part = "info", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
   ]
   gow_lambdas = [
     { name = "set", description = "Choose a group's game of the week", path_part = "set", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
@@ -101,6 +102,7 @@ locals {
     picks_set      = ["app:GetItem", "app:PutItem", "nfl:GetItem", "nfl:Query"]
     picks_get      = ["app:Query", "nfl:GetItem", "nfl:Query"]
     games_cancel   = ["app:GetItem", "app:Query", "app:PutItem", "app:UpdateItem", "nfl:GetItem", "nfl:Query", "ops:PutItem"]
+    games_info     = ["app:GetItem", "nfl:BatchGetItem", "nfl:GetItem", "nfl:PutItem"]
     death_entry    = ["app:GetItem", "app:Query", "app:PutItem", "nfl:GetItem"]
     death_pick     = ["app:GetItem", "app:UpdateItem", "nfl:GetItem", "nfl:Query"]
     death_board    = ["app:Query", "nfl:GetItem", "nfl:Query"]
@@ -121,8 +123,9 @@ locals {
     email_test        = ["app:GetItem"]
   }
 
-  # Beyond table actions: policy documents from ses.tf. One line per key.
+  # Beyond table actions: policy documents from ses.tf and capture.tf. One line per key.
   api_policies = {
+    games_info        = [data.aws_iam_policy_document.capture_read.json]
     email_unsubscribe = [data.aws_iam_policy_document.unsubscribe_key.json]
     email_preview     = [data.aws_iam_policy_document.unsubscribe_key.json]
     email_test        = [data.aws_iam_policy_document.unsubscribe_key.json, data.aws_iam_policy_document.send_email.json]
@@ -130,6 +133,7 @@ locals {
 
   # Environment beyond lambda_variables. One line per key.
   api_env = {
+    games_info        = { CAPTURE_BUCKET = aws_s3_bucket.capture.id }
     email_unsubscribe = local.email_env
     email_preview     = local.email_env
     email_test        = local.email_env

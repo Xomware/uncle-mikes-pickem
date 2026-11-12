@@ -74,5 +74,28 @@ def games(text: str, season: int) -> dict[str, dict]:
             "spread": None if spread is None else -spread,
             "overUnder": num(r["total_line"]),
             "divGame": r["div_game"] == "1",
+            # outdoors | open | closed | dome; blank until set for some retractable roofs.
+            "roof": r["roof"] or None,
         }
     return out
+
+
+def meetings(text: str, a: str, b: str, before: str, limit: int = 5) -> list[dict]:
+    """Final games between ESPN teams `a` and `b` kicking off before `before` (UTC iso), newest first."""
+    out = []
+    for r in csv.DictReader(io.StringIO(text)):
+        if not r["result"] or {team(r["away_team"]), team(r["home_team"])} != {a, b}:
+            continue
+        at = kickoff(r["gameday"], r["gametime"] or "13:00")
+        if at < before:
+            out.append({
+                "season": int(r["season"]),
+                "week": int(r["week"]),
+                "gameType": r["game_type"],
+                "kickoff": at,
+                "away": team(r["away_team"]),
+                "home": team(r["home_team"]),
+                "awayScore": int(r["away_score"]),
+                "homeScore": int(r["home_score"]),
+            })
+    return sorted(out, key=lambda m: m["kickoff"], reverse=True)[:limit]
