@@ -35,9 +35,9 @@ export function JoinInvite() {
 
   return (
     <div className="mx-auto w-full max-w-md px-4 py-12">
-      <div className="rounded-xl border bg-card p-6">
+      <div className="panel p-6">
         <UserPlus className="size-6 text-primary" aria-hidden="true" />
-        <h1 className="mt-3 text-2xl font-bold uppercase">You&apos;re invited</h1>
+        <h1 className="mt-3 font-stencil text-4xl leading-none font-black uppercase">You&apos;re invited</h1>
         <p className="mt-2 leading-relaxed text-muted-foreground">
           Join the group to make weekly picks and see the standings.
         </p>
