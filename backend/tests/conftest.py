@@ -14,6 +14,7 @@ SAM = {"sub": "u-sam", "email": "sam@example.com", "name": "Sam"}
 def app(monkeypatch):
     """A moto pickem-app table with GSI1. Yields a loader that binds a handler module to it."""
     monkeypatch.setenv("APP_TABLE", "app")
+    monkeypatch.setenv("NFL_TABLE", "nfl")
     monkeypatch.setenv("CORS_ALLOW_ORIGIN", "https://pickem.xomware.com")
     monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
     with mock_aws():
@@ -34,6 +35,11 @@ def app(monkeypatch):
                 }
             ],
         )
+
+        create_table("nfl")
+        from lambdas.common import nfl_store
+
+        monkeypatch.setattr(nfl_store, "dynamodb", boto3.resource("dynamodb"))
 
         def load(name):
             module = importlib.import_module(f"lambdas.{name}.handler")
