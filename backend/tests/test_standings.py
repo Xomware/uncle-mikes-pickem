@@ -16,14 +16,14 @@ def test_missed_score_is_lowest_minus_one():
 
 def test_week_board_missed_on_both_boards_from_different_people():
     # Lowest weekly is b (40); lowest yearly is a (50 - 15 = 35).
-    board = week_board({"a": g(50, -15), "b": g(40, 10)}, ["a", "b", "c"])
+    board = week_board({"a": g(50, -15), "b": g(40, 10)}, ["a", "b", "c"], ["a", "b", "c"])
     assert board["c"] == {"weekly": 39, "yearly": 34, "gow": 0, "missed": True, "place": "3"}
     assert board["a"]["place"] == "1"
 
 
 def test_late_joiner_gets_missed_score_for_earlier_weeks():
-    w1 = week_board({"a": g(60), "b": g(70)}, ["a", "b", "late"])
-    w2 = week_board({"a": g(60), "b": g(70), "late": g(80)}, ["a", "b", "late"])
+    w1 = week_board({"a": g(60), "b": g(70)}, ["a", "b", "late"], ["a", "b", "late"])
+    w2 = week_board({"a": g(60), "b": g(70), "late": g(80)}, ["a", "b", "late"], ["a", "b", "late"])
     assert w1["late"]["weekly"] == 59
     table = {r["member"]: r["total"] for r in season([w1, w2])}
     assert table == {"a": 120, "b": 140, "late": 139}
@@ -54,3 +54,10 @@ def test_season_gow_breaks_total_tie():
 def test_season_shares_place_when_total_and_gow_tie():
     w1 = {"a": {"yearly": 50, "gow": 10}, "b": {"yearly": 50, "gow": 10}}
     assert [r["place"] for r in season([w1])] == ["1*", "1*"]
+
+
+def test_weekly_only_members_dont_set_the_yearly_floor():
+    # w is weekly-only with the lowest yearly (20); the yearly missed score comes from a (50) alone.
+    board = week_board({"a": g(50), "w": g(30, -10)}, ["a", "w", "c"], ["a", "c"])
+    assert board["c"]["yearly"] == 49
+    assert board["c"]["weekly"] == 29

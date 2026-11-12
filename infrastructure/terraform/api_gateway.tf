@@ -54,6 +54,16 @@ locals {
       invoke_arn = aws_lambda_function.api["replay_${l.name}"].invoke_arn
     })
   ]
+  results_endpoints = [
+    for l in local.results_lambdas : merge(l, {
+      invoke_arn = aws_lambda_function.api["results_${l.name}"].invoke_arn
+    })
+  ]
+  standings_endpoints = [
+    for l in local.standings_lambdas : merge(l, {
+      invoke_arn = aws_lambda_function.api["standings_${l.name}"].invoke_arn
+    })
+  ]
   email_endpoints = [
     for l in local.email_lambdas : merge(l, {
       invoke_arn = aws_lambda_function.api["email_${l.name}"].invoke_arn
@@ -97,6 +107,9 @@ module "api" {
 
     payments = { path_prefix = "payments", endpoints = local.payments_endpoints }
     replay   = { path_prefix = "replay", endpoints = local.replay_endpoints }
-    email    = { path_prefix = "email", endpoints = local.email_endpoints }
+
+    results   = { path_prefix = "results", endpoints = local.results_endpoints }
+    standings = { path_prefix = "standings", endpoints = local.standings_endpoints }
+    email     = { path_prefix = "email", endpoints = local.email_endpoints }
   }
 }
