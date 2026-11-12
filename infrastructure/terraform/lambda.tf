@@ -20,6 +20,9 @@ locals {
   members_lambdas = [
     { name = "update", description = "Change a member's entry type or role", path_part = "update", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
   ]
+  picks_lambdas = [
+    { name = "set", description = "Save the caller's picks for a week", path_part = "set", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+  ]
   gow_lambdas = [
     { name = "set", description = "Choose a group's game of the week", path_part = "set", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
   ]
@@ -31,6 +34,7 @@ locals {
     { for l in local.rules_lambdas : "rules_${l.name}" => l },
     { for l in local.members_lambdas : "members_${l.name}" => l },
     { for l in local.gow_lambdas : "gow_${l.name}" => l },
+    { for l in local.picks_lambdas : "picks_${l.name}" => l },
   )
 
   # One role per function, granted only the table actions its handler makes.
@@ -52,6 +56,7 @@ locals {
     rules_update   = ["app:GetItem", "app:Query", "app:PutItem", "nfl:GetItem"]
     members_update = ["app:GetItem", "app:UpdateItem"]
     gow_set        = ["app:GetItem", "app:PutItem", "nfl:GetItem"]
+    picks_set      = ["app:GetItem", "app:PutItem", "nfl:GetItem", "nfl:Query"]
   }
 }
 
