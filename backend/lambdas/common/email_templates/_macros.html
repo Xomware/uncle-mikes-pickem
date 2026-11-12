@@ -1,0 +1,20 @@
+{# Shared pieces for email bodies. Inline styles only: mail clients drop <style>. #}
+{% macro h1(text) %}<h1 style="margin:0 0 12px;font:700 22px/1.3 Arial,Helvetica,sans-serif;color:#123f20;text-transform:uppercase;letter-spacing:1px;">{{ text }}</h1>{% endmacro %}
+{% macro h2(text) %}<h2 style="margin:24px 0 8px;font:700 15px/1.3 Arial,Helvetica,sans-serif;color:#123f20;text-transform:uppercase;letter-spacing:1px;">{{ text }}</h2>{% endmacro %}
+{% macro button(href, label, color="#f5cf2a", edge="#8a7414", ink="#13301c") %}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 12px;">
+  <tr>
+    <td bgcolor="{{ color }}" style="background-color:{{ color }};border-radius:4px;border-bottom:3px solid {{ edge }};">
+      <a href="{{ href }}" style="display:inline-block;padding:12px 20px;font:700 15px Arial,Helvetica,sans-serif;letter-spacing:1px;text-transform:uppercase;color:{{ ink }};text-decoration:none;">{{ label }}</a>
+    </td>
+  </tr>
+</table>
+{% endmacro %}
+{% macro scoreboard(big, label, sub) %}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 16px;">
+  <tr>
+    <td bgcolor="#16120d" style="background-color:#16120d;border-radius:4px;padding:10px 18px;font:700 34px/1 'Courier New',Courier,monospace;color:#f5cf2a;">{{ big }}</td>
+    <td style="padding:0 0 0 14px;font:14px/1.4 Arial,Helvetica,sans-serif;color:#17231b;"><strong style="text-transform:uppercase;letter-spacing:1px;">{{ label }}</strong><br>{{ sub }}</td>
+  </tr>
+</table>
+{% endmacro %}

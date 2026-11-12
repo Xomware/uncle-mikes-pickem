@@ -1,0 +1,38 @@
+{% extends "base.txt" %}
+{% block body %}
+{{ ("YOU WON WEEK %d" % week) if won else ("WEEK %d IS FINAL" % week) }}
+
+Hi {{ name }}, {% if won %}nobody in {{ group_name }} beat you this week.{% elif missed %}no picks were in at lock, so you get the missed-week score.{% else %}here's how your week went.{% endif %}
+
+{{ score }} points, {{ place }} of {{ entrants }}{{ " (missed week)" if missed else "" }}
+{% if winners %}
+{{ "Winner" if winners|length == 1 else "Winners" }}: {{ winners|map(attribute="name")|join(", ") }} with {{ winning_score }} points.
+{% if tiebreak_total is not none %}
+Monday night total {{ tiebreak_total }}{% for w in winners %}; {{ w.name }} guessed {{ w.tiebreak }}{% endfor %}.
+{% endif %}
+{% endif %}
+{% if gow %}
+
+GAME OF THE WEEK
+{{ gow.matchup }}, {% if gow.winner == "tie" %}a tie{% else %}{{ gow.winner }} won{% endif %} {{ gow.score }}.
+{% if gow.team %}
+You had {{ gow.team }} at {{ gow.conf }}: {{ "%+d" % gow.points }} on your yearly score.
+{% else %}
+No GOW pick this week.
+{% endif %}
+{% endif %}
+{% if grid and not missed %}
+
+YOUR SHEET
+{% for g in grid %}
+{{ "%-10s %-6s %-4s %3s %4s" % (g.matchup, g.score or "void", g.team or "-", g.conf or "", "+%d" % g.conf if g.status == "right" else "0" if g.status in ("wrong", "tie") else "-") }}{{ "  GOW" if g.gow else "" }}
+{% endfor %}
+{% endif %}
+{% if season %}
+
+SEASON
+{{ season.place|capitalize }} of {{ season.of }} with {{ season.total }} points ({{ "%+d" % season.gow }} GOW).
+{% endif %}
+
+Standings: {{ site }}/group/?id={{ group_id|urlencode }}
+{% endblock %}
