@@ -1,6 +1,6 @@
 import type { LedgerLine, PaymentKind, PaymentMethod } from "@/lib/api/client";
 
-export const paymentNote = (group: string, season: number) => `Uncle Mike's Pick Em – ${group} – ${season}`;
+export const paymentNote = (group: string, season: number) => `${group} ${season}`;
 
 export const dollars = (n: number) =>
   n.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: Number.isInteger(n) ? 0 : 2 });

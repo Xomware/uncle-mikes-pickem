@@ -10,7 +10,7 @@ describe("payLink", () => {
     expect(url.origin + url.pathname).toBe("https://venmo.com/dom-g");
     expect(url.searchParams.get("txn")).toBe("pay");
     expect(url.searchParams.get("amount")).toBe("110.00");
-    expect(url.searchParams.get("note")).toBe("Uncle Mike's Pick Em – Sunday Crew – 2027");
+    expect(url.searchParams.get("note")).toBe("Sunday Crew 2027");
   });
 
   it("puts the amount in the Cash App path, with or without the $", () => {
