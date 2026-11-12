@@ -13,7 +13,7 @@ const POINTS = [
 export default function LandingPage() {
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 pt-6 pb-10 sm:px-6">
-      <Brand href="/" />
+      <Brand href="/" size="hero" />
 
       <div className="mt-10 grid gap-10 md:mt-16 md:grid-cols-[1.1fr_1fr] md:items-center">
         <section>

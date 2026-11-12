@@ -11,6 +11,16 @@
   read as a correct pick. Dark is the only mode for now.
 */
 
+/* Brand art colours. scripts/brand.mjs draws with these and the email layout
+   (backend/lambdas/common/mailer.py COLORS) mirrors them; a backend test fails
+   if the three drift apart. */
+:root {
+  --brand-navy: #142034;
+  --brand-field: #1b2b45;
+  --brand-gold: #f1ba4b;
+  --brand-cream: #f3ead3;
+}
+
 @theme inline {
   --font-sans: var(--font-body);
   --font-display: var(--font-heading);
@@ -40,6 +50,11 @@
   --color-wrong: var(--wrong);
   --color-wrong-muted: var(--wrong-muted);
 
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-field: var(--brand-field);
+  --color-brand-gold: var(--brand-gold);
+  --color-brand-cream: var(--brand-cream);
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -65,9 +80,9 @@
   --input: oklch(0.36 0.03 255);
 
   /* Gold, dark text on top: 0.82 lightness against 0.2 clears 4.5:1. */
-  --primary: oklch(0.82 0.14 82);
+  --primary: var(--brand-gold);
   --primary-foreground: oklch(0.2 0.03 255);
-  --ring: oklch(0.82 0.14 82);
+  --ring: var(--brand-gold);
 
   --correct: oklch(0.78 0.16 150);
   --correct-muted: oklch(0.32 0.07 150);

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" role="img" aria-label="Uncle Mike's NFL Pick Em">
+<title>Uncle Mike's NFL Pick Em</title>
+<rect width="100" height="100" rx="18" fill="#142034"/>
+<rect x="5" y="5" width="90" height="90" rx="14" fill="none" stroke="#f1ba4b" stroke-width="3"/>
+<g stroke-linejoin="miter" stroke-miterlimit="4">
+  <path d="M16.56 22L26.68 22L26.68 55.88L34.6 55.88L34.6 22L44.72 22L44.72 61.16L39.88 66L21.4 66L16.56 61.16ZM46.48 22L56.6 22L56.6 66L46.48 66ZM73.32 22L83.44 22L83.44 66L73.32 66ZM57.31 22L64.96 40.06L64.96 66L64.41 66L46.48 23.68L46.48 22ZM83.44 23.68L65.51 66L64.96 66L64.96 40.06L72.61 22L83.44 22Z" fill="#f3ead3" stroke="#f3ead3" stroke-width="7.48"/>
+  <path d="M16.56 22L26.68 22L26.68 55.88L34.6 55.88L34.6 22L44.72 22L44.72 61.16L39.88 66L21.4 66L16.56 61.16ZM46.48 22L56.6 22L56.6 66L46.48 66ZM73.32 22L83.44 22L83.44 66L73.32 66ZM57.31 22L64.96 40.06L64.96 66L64.41 66L46.48 23.68L46.48 22ZM83.44 23.68L65.51 66L64.96 66L64.96 40.06L72.61 22L83.44 22Z" fill="#142034" stroke="#142034" stroke-width="3.52"/>
+  <path d="M16.56 22L26.68 22L26.68 55.88L34.6 55.88L34.6 22L44.72 22L44.72 61.16L39.88 66L21.4 66L16.56 61.16ZM46.48 22L56.6 22L56.6 66L46.48 66ZM73.32 22L83.44 22L83.44 66L73.32 66ZM57.31 22L64.96 40.06L64.96 66L64.41 66L46.48 23.68L46.48 22ZM83.44 23.68L65.51 66L64.96 66L64.96 40.06L72.61 22L83.44 22Z" fill="#f1ba4b"/>
+</g>
+<g fill="#f3ead3"><rect x="34" y="79.42" width="32" height="1.15"/><rect x="38.75" y="77.76" width="1.15" height="4.48"/><rect x="44.09" y="77.76" width="1.15" height="4.48"/><rect x="49.42" y="77.76" width="1.15" height="4.48"/><rect x="54.75" y="77.76" width="1.15" height="4.48"/><rect x="60.09" y="77.76" width="1.15" height="4.48"/></g>
+</svg>

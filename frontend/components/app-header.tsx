@@ -40,7 +40,7 @@ export function AppHeader() {
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "inline-flex h-11 items-center border-b-2 border-transparent px-3 text-sm font-medium text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/60",
+                  "inline-flex h-11 items-center border-b-2 whitespace-nowrap border-transparent px-3 text-sm font-medium text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/60",
                   active && "border-primary text-foreground",
                 )}
               >
