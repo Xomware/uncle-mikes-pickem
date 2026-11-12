@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
+import { FieldTitle } from "@/components/field/field-title";
 import { LoadError } from "@/components/load-error";
 import { GroupGrid } from "@/components/picks/group-grid";
 import { PickSheet } from "@/components/picks/pick-sheet";
@@ -17,7 +18,7 @@ import { sheetHref } from "@/lib/sheet";
 import { cn } from "@/lib/utils";
 
 const LAST_WEEK = 18;
-const SHEET_LINK = "inline-flex min-h-11 items-center gap-1 text-sm text-primary underline-offset-4 hover:underline";
+const SHEET_LINK = "chalk inline-flex min-h-11 items-center gap-1.5 text-xs tracking-[0.14em] hover:text-primary";
 
 export function PicksWeek() {
   const params = useSearchParams();
@@ -28,15 +29,16 @@ export function PicksWeek() {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:px-6" aria-busy={load.status === "loading"}>
-      <Link href={groupHref(id)} className="inline-flex min-h-11 items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link href={groupHref(id)} className="chalk inline-flex min-h-11 items-center gap-1.5 text-sm tracking-[0.14em] hover:text-primary">
         <ArrowLeft className="size-4" aria-hidden="true" />
         Back to group
       </Link>
       {load.status === "loading" && (
         <div className="mt-2 animate-pulse space-y-3">
-          <span className="block h-10 w-40 rounded bg-muted" />
-          <span className="block h-28 rounded-xl bg-muted" />
-          <span className="block h-28 rounded-xl bg-muted" />
+          <span className="block h-12 w-44 rounded bg-card/70" />
+          <span className="block h-16 rounded-lg bg-board" />
+          <span className="block h-28 rounded-xl bg-card/70" />
+          <span className="block h-28 rounded-xl bg-card/70" />
           <span className="sr-only">Loading picks</span>
         </div>
       )}
@@ -54,13 +56,14 @@ function WeekBody({ view, reload }: { view: WeekView; reload: () => void }) {
 
   return (
     <>
-      <div className="mt-1 flex items-center gap-2">
-        <h1 className="mr-auto text-4xl font-bold uppercase">Week {week.week}</h1>
+      <div className="mt-1 flex items-start gap-2">
+        <FieldTitle sub={group.name} className="mr-auto">
+          Week {week.week}
+        </FieldTitle>
         <WeekLink groupId={group.groupId} week={week.week - 1} label="Previous week" />
         <WeekLink groupId={group.groupId} week={week.week + 1} label="Next week" />
       </div>
-      <p className="truncate text-muted-foreground">{group.name}</p>
-      <div className="flex flex-wrap gap-x-4">
+      <div className="mt-2 flex flex-wrap gap-x-5">
         <Link href={sheetHref(group.groupId, week.week)} className={SHEET_LINK}>
           <Printer className="size-4" aria-hidden="true" />
           Printable sheet
@@ -73,25 +76,30 @@ function WeekBody({ view, reload }: { view: WeekView; reload: () => void }) {
         )}
       </div>
 
-      <p
-        role="status"
-        className={cn(
-          "mt-4 flex items-center gap-2 rounded-lg border p-3 text-sm",
-          locked ? "text-muted-foreground" : "border-primary/40 bg-primary/10",
-        )}
-      >
-        {locked ? <Lock className="size-4 shrink-0" aria-hidden="true" /> : <Timer className="size-4 shrink-0 text-primary" aria-hidden="true" />}
+      {/* The game clock: time to lock on the scoreboard. */}
+      <p role="status" className="scoreboard mt-5 flex items-center gap-3 px-4 py-3 text-sm">
         {locked ? (
-          "Picks are locked. Everyone's picks are visible."
+          <Lock className="size-5 shrink-0 text-led" aria-hidden="true" />
         ) : (
-          <span>
-            Locks in <strong className="font-semibold tabular-nums">{left}</strong>, at{" "}
-            {new Date(week.lockAt).toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" })}
-          </span>
+          <Timer className="size-5 shrink-0 text-led" aria-hidden="true" />
+        )}
+        {locked ? (
+          <>
+            <span className="led text-2xl">LOCKED</span>
+            <span className="text-muted-foreground">Everyone&apos;s picks are visible.</span>
+          </>
+        ) : (
+          <>
+            <span className="min-w-0 flex-1 text-muted-foreground">
+              <span className="block font-display text-xs font-bold tracking-[0.2em] uppercase">Picks lock in</span>
+              {new Date(week.lockAt).toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" })}
+            </span>
+            <strong className="led text-3xl leading-none">{left}</strong>
+          </>
         )}
       </p>
       {week.locked !== locked && (
-        <button type="button" onClick={reload} className="mt-2 min-h-11 text-sm text-primary underline-offset-4 hover:underline">
+        <button type="button" onClick={reload} className="chalk mt-2 min-h-11 text-xs tracking-[0.12em] underline-offset-4 hover:underline">
           Reload to see the group&apos;s picks
         </button>
       )}
@@ -105,13 +113,13 @@ function WeekLink({ groupId, week, label }: { groupId: string; week: number; lab
   const Icon = label.startsWith("Previous") ? ChevronLeft : ChevronRight;
   if (week < 1 || week > LAST_WEEK) {
     return (
-      <span aria-hidden="true" className={cn(buttonVariants({ variant: "outline", size: "default" }), "w-11 px-0 opacity-40")}>
+      <span aria-hidden="true" className={cn(buttonVariants({ variant: "secondary" }), "w-11 px-0 opacity-40")}>
         <Icon />
       </span>
     );
   }
   return (
-    <Link href={picksHref(groupId, week)} aria-label={label} className={cn(buttonVariants({ variant: "outline" }), "w-11 px-0")}>
+    <Link href={picksHref(groupId, week)} aria-label={label} className={cn(buttonVariants({ variant: "secondary" }), "w-11 px-0")}>
       <Icon aria-hidden="true" />
     </Link>
   );

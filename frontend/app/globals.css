@@ -5,15 +5,18 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
-  Dark-first sports look: a deep navy canvas tinted toward the same hue as
-  the text, a gold accent for actions, and green/red reserved for results.
-  Correct and wrong never double as brand colours, so a green button can't be
-  read as a correct pick. Dark is the only mode for now.
+  Gridiron: the page is a mowed field, content sits on dark sideline panels and
+  scoreboards over it, and headings are paint on the grass. Goalpost yellow is
+  the action colour. Green and red stay reserved for results and always come
+  with a TD stamp or a penalty flag, so colour is never the only signal.
+  Sudden Death (the death pool) swaps to a night game: see .sudden-death.
 */
 
 @theme inline {
   --font-sans: var(--font-body);
   --font-display: var(--font-heading);
+  --font-stencil: var(--font-stencil);
+  --font-led: var(--font-led);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -40,6 +43,14 @@
   --color-wrong: var(--wrong);
   --color-wrong-muted: var(--wrong-muted);
 
+  --color-chalk: var(--chalk);
+  --color-turf: var(--turf-1);
+  --color-led: var(--led);
+  --color-flag: var(--flag);
+  --color-board: var(--board);
+  --color-blood: var(--blood);
+  --color-flood: var(--flood);
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -47,33 +58,64 @@
 }
 
 .dark {
-  --radius: 0.5rem;
+  --radius: 0.375rem;
 
-  --background: oklch(0.17 0.025 255);
-  --foreground: oklch(0.96 0.008 255);
-  --card: oklch(0.21 0.03 255);
+  /* Field. White chalk on either stripe clears 6:1, so paint can sit on grass. */
+  --turf-1: oklch(0.43 0.1 146);
+  --turf-2: oklch(0.48 0.11 144);
+  --endzone-1: oklch(0.3 0.075 152);
+  --endzone-2: oklch(0.335 0.08 152);
+  --chalk: oklch(0.97 0.012 105);
+
+  --background: var(--turf-1);
+  --foreground: oklch(0.96 0.01 105);
+  /* Sideline panels: green-black, low chroma so result greens read against them. */
+  --card: oklch(0.205 0.02 165);
   --card-foreground: var(--foreground);
-  --popover: oklch(0.23 0.03 255);
+  --popover: oklch(0.23 0.02 165);
   --popover-foreground: var(--foreground);
-  --secondary: oklch(0.27 0.03 255);
+  --secondary: oklch(0.27 0.022 165);
   --secondary-foreground: var(--foreground);
-  --muted: oklch(0.25 0.028 255);
-  --muted-foreground: oklch(0.74 0.025 255);
-  --accent: oklch(0.29 0.035 255);
+  --muted: oklch(0.27 0.02 165);
+  --muted-foreground: oklch(0.78 0.025 150);
+  --accent: oklch(0.29 0.025 165);
   --accent-foreground: var(--foreground);
-  --border: oklch(0.32 0.03 255);
-  --input: oklch(0.36 0.03 255);
+  --border: oklch(0.34 0.025 165);
+  --input: oklch(0.38 0.025 165);
 
-  /* Gold, dark text on top: 0.82 lightness against 0.2 clears 4.5:1. */
-  --primary: oklch(0.82 0.14 82);
-  --primary-foreground: oklch(0.2 0.03 255);
-  --ring: oklch(0.82 0.14 82);
+  /* Goalpost yellow with dark text clears 10:1. */
+  --primary: oklch(0.87 0.17 96);
+  --primary-foreground: oklch(0.2 0.04 150);
+  --ring: oklch(0.87 0.17 96);
 
-  --correct: oklch(0.78 0.16 150);
-  --correct-muted: oklch(0.32 0.07 150);
-  --wrong: oklch(0.7 0.18 25);
-  --wrong-muted: oklch(0.32 0.08 25);
+  --correct: oklch(0.84 0.18 148);
+  --correct-muted: oklch(0.32 0.08 150);
+  --wrong: oklch(0.74 0.17 25);
+  --wrong-muted: oklch(0.31 0.085 25);
   --destructive: var(--wrong);
+
+  --flag: oklch(0.88 0.18 98);
+  --board: oklch(0.165 0.008 70);
+  --led: oklch(0.84 0.16 75);
+  --blood: oklch(0.6 0.22 27);
+  --flood: oklch(0.96 0.015 240);
+}
+
+/* Night game. Scoped to the death pool; :has() flips the field behind it too. */
+.sudden-death,
+:root:has(.sudden-death) {
+  --turf-1: oklch(0.2 0.04 160);
+  --turf-2: oklch(0.225 0.045 158);
+  --chalk: oklch(0.93 0.015 240);
+  --card: oklch(0.15 0.01 20);
+  --secondary: oklch(0.22 0.015 20);
+  --muted: oklch(0.22 0.015 20);
+  --muted-foreground: oklch(0.78 0.015 240);
+  --border: oklch(0.32 0.03 20);
+  --input: oklch(0.34 0.02 20);
+  --primary: oklch(0.93 0.015 240);
+  --primary-foreground: oklch(0.16 0.02 20);
+  --ring: oklch(0.7 0.2 27);
 }
 
 @layer base {
@@ -82,17 +124,120 @@
   }
   html {
     color-scheme: dark;
+    background: var(--turf-1);
   }
   body {
-    @apply bg-background font-sans text-foreground;
+    @apply font-sans text-foreground;
     /* clip, not hidden: hidden would break position: sticky on the header. */
     overflow-x: clip;
+    /* 5-yard mow stripes with a chalk line on each, yard ticks at the sidelines and hashes. */
+    --yard: 24px;
+    background:
+      url("./art/hash.svg") left 10px top 0 / 18px var(--yard) repeat-y,
+      url("./art/hash.svg") right 10px top 0 / 18px var(--yard) repeat-y,
+      url("./art/hash.svg") calc(50% - 11rem) 0 / 18px var(--yard) repeat-y,
+      url("./art/hash.svg") calc(50% + 11rem) 0 / 18px var(--yard) repeat-y,
+      repeating-linear-gradient(
+        to bottom,
+        transparent 0 calc(var(--yard) * 5 - 3px),
+        color-mix(in oklch, var(--chalk) 62%, transparent) calc(var(--yard) * 5 - 3px) calc(var(--yard) * 5)
+      ),
+      url("./art/grass.svg") 0 0 / 240px 240px,
+      repeating-linear-gradient(
+        to bottom,
+        var(--turf-1) 0 calc(var(--yard) * 5),
+        var(--turf-2) calc(var(--yard) * 5) calc(var(--yard) * 10)
+      );
+  }
+  :root:has(.sudden-death) body {
+    background:
+      radial-gradient(ellipse 70% 40% at 0% 0%, color-mix(in oklch, var(--flood) 22%, transparent), transparent 70%),
+      radial-gradient(ellipse 70% 40% at 100% 0%, color-mix(in oklch, var(--flood) 22%, transparent), transparent 70%),
+      repeating-linear-gradient(
+        to bottom,
+        transparent 0 calc(var(--yard) * 5 - 3px),
+        color-mix(in oklch, var(--chalk) 22%, transparent) calc(var(--yard) * 5 - 3px) calc(var(--yard) * 5)
+      ),
+      /* The grass texture is drawn for daylight; under the lights most of it falls into shadow. */
+      linear-gradient(oklch(0.13 0.03 160 / 0.72), oklch(0.13 0.03 160 / 0.72)),
+      url("./art/grass.svg") 0 0 / 240px 240px,
+      repeating-linear-gradient(
+        to bottom,
+        var(--turf-1) 0 calc(var(--yard) * 5),
+        var(--turf-2) calc(var(--yard) * 5) calc(var(--yard) * 10)
+      );
   }
   h1,
   h2,
   h3 {
     @apply font-display;
   }
+}
+
+/* A dark sideline panel over the grass. */
+@utility panel {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background-color: var(--card);
+  box-shadow: 0 1px 0 oklch(1 0 0 / 0.05) inset, 0 12px 28px -14px oklch(0.1 0.03 160 / 0.9);
+}
+
+/* Paint on grass: stencil letters, chalk white, scuffed by the worn mask. */
+@utility paint {
+  font-family: var(--font-stencil);
+  font-weight: 900;
+  text-transform: uppercase;
+  color: var(--chalk);
+  text-shadow: 0.04em 0.05em 0 oklch(0.2 0.05 150 / 0.55);
+}
+
+/* Scuffs out flecks of paint or chalk, like a field late in the season. */
+@utility worn {
+  -webkit-mask-image: url("./art/worn.svg");
+  mask-image: url("./art/worn.svg");
+  -webkit-mask-size: 180px;
+  mask-size: 180px;
+}
+
+/* Hand-chalked sub-lines. */
+@utility chalk {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--chalk);
+  text-shadow: 0 0 1px var(--chalk), 0 1px 2px oklch(0.15 0.04 150 / 0.7);
+}
+
+/* A painted end zone: diagonal paint stripes and the goal line along the bottom. */
+@utility endzone {
+  background:
+    repeating-linear-gradient(-55deg, var(--endzone-1) 0 22px, var(--endzone-2) 22px 44px),
+    var(--endzone-1);
+  border-bottom: 6px solid var(--chalk);
+  box-shadow: 0 1px 0 oklch(0.15 0.05 150 / 0.6);
+}
+
+/* Stadium scoreboard: a black housing with an LED dot screen. */
+@utility scoreboard {
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle, oklch(1 0 0 / 0.045) 0 0.7px, transparent 1.1px) 0 0 / 4px 4px,
+    linear-gradient(to bottom, oklch(1 0 0 / 0.04), transparent 40%),
+    var(--board);
+  border: 1px solid oklch(0.32 0.01 70);
+  box-shadow:
+    0 0 0 3px oklch(0.12 0.005 70),
+    0 0 0 4px oklch(0.3 0.01 70),
+    0 16px 30px -12px oklch(0.08 0.02 150 / 0.95);
+}
+
+@utility led {
+  font-family: var(--font-led);
+  font-weight: 800;
+  color: var(--led);
+  text-shadow: 0 0 6px color-mix(in oklch, var(--led) 55%, transparent);
+  font-variant-numeric: tabular-nums;
 }
 
 @media (prefers-reduced-motion: reduce) {
