@@ -10,7 +10,7 @@ import boto3
 from boto3.dynamodb.conditions import Key
 from pydantic import Field, StringConstraints
 
-from lambdas.common import nfl_store, picks, weeks
+from lambdas.common import picks, weeks
 from lambdas.common.api import ApiError, Request, api_handler, parse_body, respond, user
 from lambdas.common.groups import require_organizer
 
@@ -29,9 +29,9 @@ def handler(event, context):
     me = user(event)
     body = parse_body(event, CancelGame)
     table = dynamodb.Table(os.environ["APP_TABLE"])
-    group, member, nfl_week = weeks.load(table, body.groupId, me["sub"], body.week)
+    group, member, feed, nfl_week = weeks.load(table, body.groupId, me["sub"], body.week)
     require_organizer(member)
-    weeks.require_unlocked(group, nfl_week)
+    weeks.require_unlocked(feed, nfl_week)
     if body.gameId not in nfl_week["gameIds"]:
         raise ApiError(400, f"That game isn't in Week {body.week}")
     if body.canceled and body.gameId == nfl_week["tiebreakGameId"]:
@@ -48,7 +48,7 @@ def handler(event, context):
     ids = set(stored["gameIds"]) | {body.gameId} if body.canceled else set(stored["gameIds"]) - {body.gameId}
     table.put_item(Item={"PK": pk, "SK": "CANCELED", "gameIds": sorted(ids)})
 
-    games = [g for g in nfl_store.list_games(season, body.week) if g["gameId"] not in ids]
+    games = [g for g in feed.games(body.week) if g["gameId"] not in ids]
     pick_items = [i for i in items if i["SK"].startswith("PICK#")]
     for item in pick_items:
         fitted = picks.rerank(item["picks"], games)

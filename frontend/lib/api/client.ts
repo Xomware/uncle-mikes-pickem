@@ -93,10 +93,53 @@ export interface GroupDetail {
   members: Member[];
   rules: Rules;
   rulesVersion: number;
+  /** Replay groups only: the virtual clock and each week's lock, keyed by week number. */
+  replay: { clock: string; lockAts: Record<string, string> } | null;
+}
+
+export type PaymentKind = "weekly" | "yearly" | "death";
+
+export interface LedgerLine {
+  kind: PaymentKind;
+  owed: number;
+  paid: boolean;
+  entryId?: string;
+  label?: string | null;
+  amount?: number;
+  method?: PaymentMethod;
+  paidOn?: string;
+}
+
+export interface LedgerRow {
+  sub: string;
+  name: string;
+  entryType: EntryType;
+  lines: LedgerLine[];
+  owed: number;
+  paid: number;
+  balance: number;
+}
+
+export interface Pot {
+  entries: number;
+  total: number;
+  collected: number;
+  payouts: number[];
+}
+
+/** members holds only the caller's row unless the caller is an organizer. */
+export interface Ledger {
+  group: { groupId: string; name: string; season: number };
+  role: Role;
+  fees: Pots<number>;
+  methods: Rules["payments"];
+  members: LedgerRow[];
+  pots: Pots<Pot>;
 }
 
 export const myGroups = () => request<GroupSummary[]>("/groups/mine");
-export const createGroup = (name: string, season: number) => post<GroupSummary>("/groups/create", { name, season });
+export const createGroup = (name: string, season: number, replay: boolean) =>
+  post<GroupSummary>("/groups/create", { name, season, replay });
 export const getGroup = (id: string) => request<GroupDetail>(`/groups/get?id=${encodeURIComponent(id)}`);
 export const createInvite = (groupId: string) => post<{ code: string; expiresAt: string }>("/invites/create", { groupId });
 export const updateRules = (groupId: string, changes: Partial<Rules>) =>
@@ -161,3 +204,58 @@ export const setGow = (groupId: string, week: number, gameId: string) =>
   post<{ gow: Gow }>("/gow/set", { groupId, week, gameId });
 export const cancelGame = (groupId: string, week: number, gameId: string, canceled: boolean) =>
   post<{ canceled: string[] }>("/games/cancel", { groupId, week, gameId, canceled });
+export interface DeathGame {
+  gameId: string;
+  kickoff: string;
+  away: string;
+  home: string;
+  /** The home team's line, negative when home is favored. */
+  spread: number | null;
+  details: string | null;
+}
+
+export interface DeathEntry {
+  entryId: string;
+  label: string;
+  ownerSub: string;
+  ownerName: string;
+  mine: boolean;
+  /** Week number to team. null is another entry's pick, hidden until that week locks. */
+  picks: Record<string, string | null>;
+  used: string[];
+  livesLeft: number;
+  status: "alive" | "eliminated";
+  eliminatedWeek: number | null;
+}
+
+export interface DeathBoard {
+  season: number;
+  startLives: number;
+  week: { number: number; lockAt: string; locked: boolean; games: DeathGame[] } | null;
+  entries: DeathEntry[];
+}
+
+export const getDeathBoard = (groupId: string) =>
+  request<DeathBoard>(`/death/board?id=${encodeURIComponent(groupId)}`);
+export const addDeathEntry = (groupId: string, label?: string, sub?: string) =>
+  post<{ entryId: string; ownerSub: string; label: string }>("/death/entry", { groupId, label, sub });
+export const setDeathPick = (groupId: string, entryId: string, week: number, team: string) =>
+  post<{ entryId: string; label: string; picks: Record<string, string> }>("/death/pick", { groupId, entryId, week, team });
+
+export const advanceReplay = (groupId: string, to: string) =>
+  post<{ groupId: string; clock: string }>("/replay/advance", { groupId, to });
+
+export const getLedger = (id: string) => request<Ledger>(`/payments/ledger?id=${encodeURIComponent(id)}`);
+
+export interface Mark {
+  groupId: string;
+  sub: string;
+  kind: PaymentKind;
+  entryId?: string;
+  paid: boolean;
+  amount?: number;
+  method?: PaymentMethod;
+  paidOn?: string;
+}
+
+export const markPayment = (mark: Mark) => post<Omit<Mark, "groupId">>("/payments/mark", mark);

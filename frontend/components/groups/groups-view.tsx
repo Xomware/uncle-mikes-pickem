@@ -11,6 +11,7 @@ import { Input, Select } from "@/components/ui/input";
 import { createGroup, myGroups } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
 import { ROLE_LABEL, groupHref, seasonOptions } from "@/lib/groups";
+import { REPLAY_SEASON } from "@/lib/replay";
 
 export function GroupsView() {
   const { load, retry } = useLoad(myGroups);
@@ -61,6 +62,7 @@ function CreateGroupForm() {
   const [seasons] = useState(() => seasonOptions(new Date()));
   const [name, setName] = useState("");
   const [season, setSeason] = useState(seasons[0]);
+  const [replay, setReplay] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,7 +71,7 @@ function CreateGroupForm() {
     setSaving(true);
     setError(null);
     try {
-      const group = await createGroup(name.trim(), season);
+      const group = await createGroup(name.trim(), season, replay && season === REPLAY_SEASON);
       router.push(groupHref(group.groupId));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create the group.");
@@ -97,6 +99,22 @@ function CreateGroupForm() {
           </Select>
         </label>
       </div>
+      {season === REPLAY_SEASON && (
+        <label className="mt-4 flex min-h-11 items-start gap-3">
+          <input
+            type="checkbox"
+            checked={replay}
+            onChange={(e) => setReplay(e.target.checked)}
+            className="mt-1 size-5 accent-primary"
+          />
+          <span>
+            <span className="block font-medium">Replay {REPLAY_SEASON}</span>
+            <span className="text-sm text-muted-foreground">
+              Starts before Week 1 on a clock you move, with real {REPLAY_SEASON} games and results.
+            </span>
+          </span>
+        </label>
+      )}
       {error && (
         <p role="alert" className="mt-3 text-wrong">
           {error}

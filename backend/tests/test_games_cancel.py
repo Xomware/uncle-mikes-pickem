@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from lambdas.common import picks
+from lambdas.common import clock, picks
 from tests.conftest import DOM, PAT, call, seed_week, table
 
 LOCK = "2027-09-10T00:20:00Z"
@@ -91,12 +91,14 @@ def test_guards(api, gid):
     assert cancel(api, gid, "103")[0] == 409
 
 
-def test_cron_skips_a_canceled_game_when_picking_the_gow(app):
+def test_cron_skips_a_canceled_game_when_picking_the_gow(app, monkeypatch):
     seed_week(2027, 1, LOCK, GAMES)
     create = app("groups_create")
     tick = app("cron_tick")
     gid = call(create, DOM, {"name": "Pool", "season": 2027})[1]["groupId"]
     table().put_item(Item={"PK": f"GROUP#{gid}#S2027#W01", "SK": "CANCELED", "gameIds": ["103"]})
-    tick.auto_gow(datetime(2027, 9, 8, tzinfo=timezone.utc))
+    fixed = datetime(2027, 9, 8, tzinfo=timezone.utc)
+    monkeypatch.setattr(clock, "datetime", type("dt", (datetime,), {"now": staticmethod(lambda tz=None: fixed)}))
+    tick.auto_gow()
     gow = table().get_item(Key={"PK": f"GROUP#{gid}#S2027#W01", "SK": "GOW"})["Item"]
     assert gow["gameId"] == "102"

@@ -1,22 +1,27 @@
 "use client";
 
-import { ListOrdered, Settings } from "lucide-react";
+import { ListOrdered, ReceiptText, Settings, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 
+import { DeathPool } from "@/components/death/death-pool";
 import { InviteLink } from "@/components/groups/invite-link";
+import { ReplayBar } from "@/components/groups/replay-bar";
 import { LoadError } from "@/components/load-error";
 import { buttonVariants } from "@/components/ui/button";
 import { type GroupDetail, getGroup } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
 import { ENTRY_LABEL, ROLE_LABEL, isOrganizer } from "@/lib/groups";
 import { picksHref } from "@/lib/picks";
+import { cn } from "@/lib/utils";
+
+const TABS = { members: "Members", death: "Death pool" } as const;
 
 export function GroupHome() {
   const id = useSearchParams().get("id") ?? "";
   const fetcher = useCallback(() => getGroup(id), [id]);
-  const { load, retry } = useLoad(fetcher);
+  const { load, retry, setData } = useLoad(fetcher);
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6" aria-busy={load.status === "loading"}>
@@ -28,22 +33,38 @@ export function GroupHome() {
         </div>
       )}
       {load.status === "error" && <LoadError title="Couldn't load this group" message={load.message} onRetry={retry} />}
-      {load.status === "ready" && <GroupDetails detail={load.data} />}
+      {load.status === "ready" && <GroupDetails detail={load.data} onChange={setData} />}
     </div>
   );
 }
 
-function GroupDetails({ detail }: { detail: GroupDetail }) {
-  const { group, role, members } = detail;
+function GroupDetails({ detail, onChange }: { detail: GroupDetail; onChange: (detail: GroupDetail) => void }) {
+  const { group, role, members, replay } = detail;
+  const [tab, setTab] = useState<keyof typeof TABS>("members");
   return (
     <>
-      <div className="flex items-start gap-3">
-        <div className="min-w-0 flex-1">
-          <h1 className="text-3xl font-bold break-words uppercase sm:text-4xl">{group.name}</h1>
-          <p className="mt-1 text-muted-foreground">
-            {group.season} season · You&apos;re {ROLE_LABEL[role].toLowerCase()}
-          </p>
-        </div>
+      <h1 className="text-3xl font-bold break-words uppercase sm:text-4xl">{group.name}</h1>
+      <p className="mt-1 text-muted-foreground">
+        {group.season} season · You&apos;re {ROLE_LABEL[role].toLowerCase()}
+      </p>
+      <Link href={picksHref(group.groupId)} className={buttonVariants({ size: "lg", className: "mt-4 w-full sm:w-auto" })}>
+        <ListOrdered aria-hidden="true" />
+        Make your picks
+      </Link>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Link href={`/group/pay/?id=${encodeURIComponent(group.groupId)}`} className={buttonVariants({ variant: "outline" })}>
+          <Wallet aria-hidden="true" />
+          Pay
+        </Link>
+        {isOrganizer(role) && (
+          <Link
+            href={`/group/payments/?id=${encodeURIComponent(group.groupId)}`}
+            className={buttonVariants({ variant: "outline" })}
+          >
+            <ReceiptText aria-hidden="true" />
+            Payments
+          </Link>
+        )}
         {isOrganizer(role) && (
           <Link
             href={`/group/settings/?id=${encodeURIComponent(group.groupId)}`}
@@ -55,14 +76,47 @@ function GroupDetails({ detail }: { detail: GroupDetail }) {
         )}
       </div>
 
-      <Link href={picksHref(group.groupId)} className={buttonVariants({ size: "lg", className: "mt-6 w-full sm:w-auto" })}>
-        <ListOrdered aria-hidden="true" />
-        Make your picks
-      </Link>
+      {replay && (
+        <ReplayBar
+          groupId={group.groupId}
+          organizer={isOrganizer(role)}
+          replay={replay}
+          onMoved={(clock) => onChange({ ...detail, replay: { ...replay, clock } })}
+        />
+      )}
 
-      {isOrganizer(role) && <InviteLink groupId={group.groupId} />}
+      <div role="tablist" aria-label="Group sections" className="mt-6 flex gap-1 border-b">
+        {(Object.keys(TABS) as (keyof typeof TABS)[]).map((key) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={tab === key}
+            onClick={() => setTab(key)}
+            className={cn(
+              "-mb-px h-11 border-b-2 px-4 font-semibold uppercase outline-none focus-visible:ring-3 focus-visible:ring-ring/60",
+              tab === key ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {TABS[key]}
+          </button>
+        ))}
+      </div>
 
-      <section className="mt-8">
+      {tab === "death" && (
+        <DeathPool
+          // A moved replay clock changes the open week and what's locked: refetch.
+          key={replay?.clock}
+          groupId={group.groupId}
+          organizer={isOrganizer(role)}
+          members={members}
+          fee={detail.rules.fees.death}
+        />
+      )}
+
+      {tab === "members" && isOrganizer(role) && <InviteLink groupId={group.groupId} />}
+
+      <section className="mt-8" hidden={tab !== "members"}>
         <h2 className="text-xl font-semibold uppercase">
           Members <span className="text-muted-foreground">({members.length})</span>
         </h2>
