@@ -23,6 +23,7 @@ import {
 } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
 import { formatLine, takenTeams, teamLine, withPick } from "@/lib/death";
+import { etTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -94,7 +95,7 @@ export function DeathPoolView({ board, onChange, ...props }: ViewProps) {
 
 function WeekStatus({ week }: { week: DeathBoard["week"] }) {
   if (!week) return <p className="mt-1 text-muted-foreground">The schedule isn&apos;t out yet.</p>;
-  const lock = new Date(week.lockAt).toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" });
+  const lock = etTime(week.lockAt);
   return (
     <p className="mt-1 flex items-center gap-1.5 text-muted-foreground">
       {week.locked && <Lock className="size-4" aria-hidden="true" />}
@@ -196,7 +197,7 @@ function TeamPicker({ games, taken, current, pending, onChoose }: PickerProps) {
       {games.map((g) => (
         <li key={g.gameId}>
           <p className="mb-1 text-xs text-muted-foreground">
-            {new Date(g.kickoff).toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" })}
+            {etTime(g.kickoff)}
           </p>
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
             {[g.away, g.home].map((team, i) => (
