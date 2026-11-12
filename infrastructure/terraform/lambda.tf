@@ -20,6 +20,12 @@ locals {
   members_lambdas = [
     { name = "update", description = "Change a member's entry type or role", path_part = "update", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
   ]
+  death_lambdas = [
+    { name = "entry", description = "Add a death pool entry for the caller or a member", path_part = "entry", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+    { name = "pick", description = "Set a death pool entry's team for a week", path_part = "pick", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+    { name = "board", description = "Read a group's death pool grid and the open week (?id=)", path_part = "board", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+  ]
+
   payments_lambdas = [
     { name = "ledger", description = "Read what members owe and have paid, and the pots (?id=)", path_part = "ledger", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
     { name = "mark", description = "Mark a member's fee paid or unpaid", path_part = "mark", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
@@ -31,6 +37,7 @@ locals {
     { for l in local.invites_lambdas : "invites_${l.name}" => l },
     { for l in local.rules_lambdas : "rules_${l.name}" => l },
     { for l in local.members_lambdas : "members_${l.name}" => l },
+    { for l in local.death_lambdas : "death_${l.name}" => l },
     { for l in local.payments_lambdas : "payments_${l.name}" => l },
   )
 
@@ -52,6 +59,9 @@ locals {
     invites_accept = ["app:GetItem", "app:PutItem", "nfl:GetItem"]
     rules_update   = ["app:GetItem", "app:Query", "app:PutItem", "nfl:GetItem"]
     members_update = ["app:GetItem", "app:UpdateItem"]
+    death_entry    = ["app:GetItem", "app:Query", "app:PutItem", "nfl:GetItem"]
+    death_pick     = ["app:GetItem", "app:UpdateItem", "nfl:GetItem", "nfl:Query"]
+    death_board    = ["app:Query", "nfl:GetItem", "nfl:Query"]
 
     payments_ledger = ["app:Query", "nfl:GetItem"]
     payments_mark   = ["app:GetItem", "app:PutItem"]

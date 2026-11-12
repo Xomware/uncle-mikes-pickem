@@ -3,14 +3,18 @@
 import { ReceiptText, Settings, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 
+import { DeathPool } from "@/components/death/death-pool";
 import { InviteLink } from "@/components/groups/invite-link";
 import { LoadError } from "@/components/load-error";
 import { buttonVariants } from "@/components/ui/button";
 import { type GroupDetail, getGroup } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
 import { ENTRY_LABEL, ROLE_LABEL, isOrganizer } from "@/lib/groups";
+import { cn } from "@/lib/utils";
+
+const TABS = { members: "Members", death: "Death pool" } as const;
 
 export function GroupHome() {
   const id = useSearchParams().get("id") ?? "";
@@ -34,6 +38,7 @@ export function GroupHome() {
 
 function GroupDetails({ detail }: { detail: GroupDetail }) {
   const { group, role, members } = detail;
+  const [tab, setTab] = useState<keyof typeof TABS>("members");
   return (
     <>
       <h1 className="text-3xl font-bold break-words uppercase sm:text-4xl">{group.name}</h1>
@@ -65,9 +70,36 @@ function GroupDetails({ detail }: { detail: GroupDetail }) {
         )}
       </div>
 
-      {isOrganizer(role) && <InviteLink groupId={group.groupId} />}
+      <div role="tablist" aria-label="Group sections" className="mt-6 flex gap-1 border-b">
+        {(Object.keys(TABS) as (keyof typeof TABS)[]).map((key) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={tab === key}
+            onClick={() => setTab(key)}
+            className={cn(
+              "-mb-px h-11 border-b-2 px-4 font-semibold uppercase outline-none focus-visible:ring-3 focus-visible:ring-ring/60",
+              tab === key ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {TABS[key]}
+          </button>
+        ))}
+      </div>
 
-      <section className="mt-8">
+      {tab === "death" && (
+        <DeathPool
+          groupId={group.groupId}
+          organizer={isOrganizer(role)}
+          members={members}
+          fee={detail.rules.fees.death}
+        />
+      )}
+
+      {tab === "members" && isOrganizer(role) && <InviteLink groupId={group.groupId} />}
+
+      <section className="mt-8" hidden={tab !== "members"}>
         <h2 className="text-xl font-semibold uppercase">
           Members <span className="text-muted-foreground">({members.length})</span>
         </h2>
