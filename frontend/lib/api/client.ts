@@ -93,6 +93,8 @@ export interface GroupDetail {
   members: Member[];
   rules: Rules;
   rulesVersion: number;
+  /** Replay groups only: the virtual clock and each week's lock, keyed by week number. */
+  replay: { clock: string; lockAts: Record<string, string> } | null;
 }
 
 export type PaymentKind = "weekly" | "yearly" | "death";
@@ -136,7 +138,8 @@ export interface Ledger {
 }
 
 export const myGroups = () => request<GroupSummary[]>("/groups/mine");
-export const createGroup = (name: string, season: number) => post<GroupSummary>("/groups/create", { name, season });
+export const createGroup = (name: string, season: number, replay: boolean) =>
+  post<GroupSummary>("/groups/create", { name, season, replay });
 export const getGroup = (id: string) => request<GroupDetail>(`/groups/get?id=${encodeURIComponent(id)}`);
 export const createInvite = (groupId: string) => post<{ code: string; expiresAt: string }>("/invites/create", { groupId });
 export const updateRules = (groupId: string, changes: Partial<Rules>) =>
@@ -181,6 +184,9 @@ export const addDeathEntry = (groupId: string, label?: string, sub?: string) =>
   post<{ entryId: string; ownerSub: string; label: string }>("/death/entry", { groupId, label, sub });
 export const setDeathPick = (groupId: string, entryId: string, week: number, team: string) =>
   post<{ entryId: string; label: string; picks: Record<string, string> }>("/death/pick", { groupId, entryId, week, team });
+
+export const advanceReplay = (groupId: string, to: string) =>
+  post<{ groupId: string; clock: string }>("/replay/advance", { groupId, to });
 
 export const getLedger = (id: string) => request<Ledger>(`/payments/ledger?id=${encodeURIComponent(id)}`);
 
