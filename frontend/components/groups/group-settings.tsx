@@ -28,19 +28,19 @@ export function GroupSettings() {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6" aria-busy={load.status === "loading"}>
-      <Link href={groupHref(id)} className="inline-flex min-h-11 items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link href={groupHref(id)} className="chalk inline-flex min-h-11 items-center gap-1.5 text-sm tracking-[0.14em] hover:text-primary">
         <ArrowLeft className="size-4" aria-hidden="true" />
         Back to group
       </Link>
-      <h1 className="mt-2 text-4xl font-bold uppercase">Settings</h1>
-      {load.status === "loading" && <span className="mt-6 block h-64 animate-pulse rounded-xl bg-muted" />}
+      <h1 className="paint worn mt-1 text-5xl leading-none sm:text-6xl">Settings</h1>
+      {load.status === "loading" && <span className="mt-6 block h-64 animate-pulse rounded-xl bg-card/70" />}
       {load.status === "error" && (
         <div className="mt-6">
           <LoadError title="Couldn't load settings" message={load.message} onRetry={retry} />
         </div>
       )}
       {load.status === "ready" && !isOrganizer(load.data.role) && (
-        <p className="mt-6 text-muted-foreground">Only the group&apos;s owner or an admin can change settings.</p>
+        <p className="panel mt-6 p-4 text-muted-foreground">Only the group&apos;s owner or an admin can change settings.</p>
       )}
       {load.status === "ready" && isOrganizer(load.data.role) && (
         <>
@@ -107,7 +107,7 @@ function SettingsEditor({ detail, onSaved, onEdit }: EditorProps) {
   return (
     <form onSubmit={save} noValidate className="mt-6 space-y-6">
       {detail.rulesVersion > 0 && (
-        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+        <p className="flex items-center gap-2 rounded-md bg-card/85 px-3 py-2 text-sm text-muted-foreground">
           <CircleCheck className="size-4 text-correct" aria-hidden="true" />
           Version {detail.rulesVersion}. Changes apply from the next week that hasn&apos;t locked.
         </p>
@@ -222,7 +222,7 @@ function SettingsEditor({ detail, onSaved, onEdit }: EditorProps) {
         )}
       </Section>
 
-      <div className="sticky bottom-0 -mx-4 border-t bg-background/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0">
+      <div className="sticky bottom-0 -mx-4 border-t-2 border-primary bg-board px-4 py-3 sm:static sm:border-t-0 sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0">
         {Object.keys(errors).length > 0 && (
           <p role="alert" className="mb-2 text-wrong">
             Fix the highlighted fields.
@@ -244,10 +244,10 @@ function SettingsEditor({ detail, onSaved, onEdit }: EditorProps) {
 
 function Section({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
   return (
-    <fieldset className="space-y-4 rounded-xl border bg-card p-5">
+    <fieldset className="space-y-4 panel p-5">
       <legend className="sr-only">{title}</legend>
       <div>
-        <h2 className="text-xl font-semibold uppercase">{title}</h2>
+        <h2 className="font-display text-2xl font-extrabold uppercase">{title}</h2>
         {hint && <p className="mt-1 text-sm text-muted-foreground">{hint}</p>}
       </div>
       {children}
