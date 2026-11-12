@@ -102,8 +102,10 @@ def test_force_refreshes_current_and_next_week(tick, store, monkeypatch):
         # No predictor fixtures recorded for Week 11.
         "predictorMissing": ["401873066", "401873077", "401873078"],
         "flagged": [],
+        "finalsChanged": [],
         # Thursday is past Week 10's GOW deadline, but no groups exist.
         "gowAuto": [],
+        "regraded": {},
     }
     # The default board doubles as Week 10's.
     assert len([c for c in calls if "/scoreboard" in c]) == 2
