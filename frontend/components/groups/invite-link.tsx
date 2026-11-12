@@ -41,8 +41,8 @@ export function InviteLink({ groupId }: { groupId: string }) {
   }
 
   return (
-    <section className="mt-6 rounded-xl border bg-card p-5">
-      <h2 className="text-xl font-semibold uppercase">Invite people</h2>
+    <section className="mt-6 panel p-5">
+      <h2 className="font-display text-2xl font-extrabold uppercase">Invite people</h2>
       {state.status !== "ready" && (
         <>
           <p className="mt-1 text-muted-foreground">Anyone with the link can join after signing in with Google.</p>

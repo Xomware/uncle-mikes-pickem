@@ -1,41 +1,42 @@
-import { Check, Star, X } from "lucide-react";
-
+import { LightBank } from "@/components/field/icons";
+import { ResultMark } from "@/components/field/result-mark";
 import type { WeekView } from "@/lib/api/client";
 import { gridRows, outcome } from "@/lib/picks";
 import { cn } from "@/lib/utils";
 
-/** Everyone's picks after lock: a row per member, a column per open game, green/red once results exist. */
+/** Everyone's picks after lock, on the scoreboard: a row per member, a column per open game. */
 export function GroupGrid({ view }: { view: WeekView }) {
   const games = view.games.filter((g) => !g.canceled);
   const me = view.mine?.sub ?? "";
   const rows = gridRows(view, me);
 
   return (
-    <section className="mt-6">
-      <h2 className="text-xl font-semibold uppercase">Group picks</h2>
-      <p className="mt-1 text-sm text-muted-foreground">Team and confidence. Scroll sideways for every game.</p>
+    <section className="mt-8">
+      <h2 className="paint worn text-4xl leading-none">Group picks</h2>
+      <p className="chalk mt-2 text-xs tracking-[0.14em]">Team and confidence. Scroll sideways for every game.</p>
       {/* The table scrolls inside its box so the page itself never scrolls sideways on a phone. */}
-      <div className="mt-3 overflow-x-auto rounded-xl border bg-card" tabIndex={0} role="region" aria-label="Group picks">
-        <table className="border-separate border-spacing-0 text-sm">
+      <div className="scoreboard relative mt-4 overflow-x-auto p-1" tabIndex={0} role="region" aria-label="Group picks">
+        <table className="border-separate border-spacing-0.5 text-sm">
           <thead>
             <tr>
-              <th scope="col" className="sticky left-0 z-[1] min-w-28 border-b bg-card px-3 py-2 text-left font-semibold">
-                Member
+              <th scope="col" className="sticky left-0 z-[1] min-w-28 bg-board px-2 py-2 text-left align-bottom">
+                <span className="led text-base">PLAYER</span>
               </th>
               {games.map((g) => (
-                <th key={g.gameId} scope="col" className="min-w-16 border-b px-1 py-2 text-center font-semibold">
-                  <span className="block text-xs text-muted-foreground">{g.away.abbr}</span>
-                  <span className="block">{g.home.abbr}</span>
+                <th key={g.gameId} scope="col" className="min-w-16 px-1 py-2 text-center align-bottom font-display">
                   {view.gow?.gameId === g.gameId && (
-                    <span className="mt-0.5 inline-flex items-center gap-0.5 text-[0.65rem] font-semibold text-primary uppercase">
-                      <Star className="size-3 fill-current" aria-hidden="true" />
-                      GOW
+                    <span className="mb-1 flex flex-col items-center text-[0.65rem] font-extrabold tracking-wider text-primary uppercase">
+                      <LightBank className="size-4" />
+                      Prime<span className="sr-only">time, game of the week</span>
                     </span>
                   )}
+                  <span className="block text-xs font-bold text-muted-foreground">{g.away.abbr}</span>
+                  <span className="block text-base font-extrabold">{g.home.abbr}</span>
                 </th>
               ))}
-              <th scope="col" className="min-w-16 border-b px-2 py-2 text-center font-semibold">
-                Tiebreak
+              <th scope="col" className="min-w-16 px-2 py-2 text-center align-bottom">
+                <span className="led text-base">TB</span>
+                <span className="sr-only">Tiebreak</span>
               </th>
             </tr>
           </thead>
@@ -45,7 +46,7 @@ export function GroupGrid({ view }: { view: WeekView }) {
                 <th
                   scope="row"
                   className={cn(
-                    "sticky left-0 z-[1] max-w-36 truncate border-b bg-card px-3 py-2 text-left font-medium",
+                    "sticky left-0 z-[1] max-w-36 truncate border-t border-white/10 bg-board px-2 py-2 text-left font-display text-base font-bold",
                     row.sub === me && "text-primary",
                   )}
                 >
@@ -59,20 +60,19 @@ export function GroupGrid({ view }: { view: WeekView }) {
                     <td
                       key={g.gameId}
                       className={cn(
-                        "border-b px-1 py-2 text-center tabular-nums",
-                        result === "correct" && "bg-correct-muted text-correct",
-                        result === "wrong" && "bg-wrong-muted text-wrong",
+                        "rounded-sm px-1 py-1.5 text-center",
+                        result === "correct" && "bg-correct-muted",
+                        result === "wrong" && "bg-wrong-muted",
+                        !result && "bg-white/[0.04]",
                       )}
                     >
                       {pick?.team ? (
-                        <span className="inline-flex flex-col items-center leading-tight">
-                          <span className="font-semibold">{pick.team}</span>
-                          <span className="inline-flex items-center gap-0.5 text-xs">
-                            {result === "correct" && <Check className="size-3" aria-hidden="true" />}
-                            {result === "wrong" && <X className="size-3" aria-hidden="true" />}
-                            {pick.conf}
+                        <span className="inline-flex flex-col items-center gap-0.5 leading-tight">
+                          <span className="font-display text-base font-extrabold">{pick.team}</span>
+                          <span className="flex items-center gap-1">
+                            <span className="led text-sm">{pick.conf}</span>
+                            {result && <ResultMark result={result} className="text-[0.62rem]" />}
                           </span>
-                          {result && <span className="sr-only">{result}</span>}
                         </span>
                       ) : (
                         <span className="text-muted-foreground" aria-label="No pick">
@@ -82,8 +82,12 @@ export function GroupGrid({ view }: { view: WeekView }) {
                     </td>
                   );
                 })}
-                <td className="border-b px-2 py-2 text-center tabular-nums">
-                  {row.picks?.tiebreak ?? <span className="text-muted-foreground">-</span>}
+                <td className="px-2 py-2 text-center">
+                  {row.picks?.tiebreak != null ? (
+                    <span className="led text-base">{row.picks.tiebreak}</span>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
                 </td>
               </tr>
             ))}

@@ -20,8 +20,8 @@ export function EmailPrefs() {
   const { load, retry, setData } = useLoad(getEmailPrefs);
 
   return (
-    <section aria-labelledby="email-heading" className="mt-6 rounded-xl border bg-card p-5">
-      <h2 id="email-heading" className="text-2xl font-bold uppercase">
+    <section aria-labelledby="email-heading" className="mt-6 panel p-5">
+      <h2 id="email-heading" className="font-display text-2xl font-extrabold uppercase">
         Email settings
       </h2>
       {load.status === "loading" && <p className="mt-2 text-muted-foreground">Loading your email settings</p>}
@@ -103,7 +103,7 @@ function GroupPrefs({
       <legend className="float-left w-full font-semibold">
         {group.name} <span className="font-normal text-muted-foreground">{group.season}</span>
       </legend>
-      <div className="mt-2 grid gap-1">
+      <div className="clear-left grid gap-1 pt-2">
         {emailTypesFor(labels, group.role).map((type) => (
           <label key={type} className="flex min-h-11 items-center gap-3">
             <input

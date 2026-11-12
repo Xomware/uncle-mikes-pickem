@@ -5,10 +5,15 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
+def missed_score(submitted: Iterable[int]) -> int:
+    """The lowest submitter minus 1, or 0 if nobody submitted."""
+    submitted = list(submitted)
+    return min(submitted) - 1 if submitted else 0
+
+
 def fill_missed(scores: dict[str, int | None]) -> dict[str, int]:
-    """None means no pick sheet: score the lowest submitter minus 1, or 0 if nobody submitted."""
-    submitted = [s for s in scores.values() if s is not None]
-    missed = min(submitted) - 1 if submitted else 0
+    """None means no pick sheet."""
+    missed = missed_score(s for s in scores.values() if s is not None)
     return {m: missed if s is None else s for m, s in scores.items()}
 
 
@@ -22,17 +27,21 @@ def places(scores: dict[str, int | tuple]) -> dict[str, str]:
     return out
 
 
-def week_board(graded: dict[str, dict], members: Iterable[str]) -> dict[str, dict]:
+def week_board(graded: dict[str, dict], members: Iterable[str], season_members: Iterable[str]) -> dict[str, dict]:
     """Every current member gets a row. Anyone without a graded sheet, including a late
-    joiner for weeks before they joined, gets the missed score on both boards."""
+    joiner for weeks before they joined, gets the missed score on both boards.
+
+    The yearly missed score comes from season members' sheets only: weekly-only members
+    aren't on the yearly board, so their scores can't set its floor.
+    """
     members = list(members)
     weekly = fill_missed({m: graded[m]["weekly"] if m in graded else None for m in members})
-    yearly = fill_missed({m: graded[m]["yearly"] if m in graded else None for m in members})
+    yearly_missed = missed_score(graded[m]["yearly"] for m in season_members if m in graded)
     place = places(weekly)
     return {
         m: {
             "weekly": weekly[m],
-            "yearly": yearly[m],
+            "yearly": graded[m]["yearly"] if m in graded else yearly_missed,
             "gow": graded[m]["gow"] if m in graded else 0,
             "missed": m not in graded,
             "place": place[m],
