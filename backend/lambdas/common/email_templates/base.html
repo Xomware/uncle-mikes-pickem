@@ -7,31 +7,34 @@
 <meta name="supported-color-schemes" content="light">
 <title>{{ subject }}</title>
 </head>
-<body style="margin:0;padding:0;background-color:#f1f3f6;">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#f1f3f6;">{% block preheader %}{% endblock %}</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f1f3f6;">
+<body style="margin:0;padding:0;background-color:{{ c.cream }};">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:{{ c.cream }};">{% block preheader %}{% endblock %}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="{{ c.cream }}" style="background-color:{{ c.cream }};">
   <tr>
     <td align="center" style="padding:24px 12px;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background-color:#ffffff;border:1px solid #dde2ea;border-radius:8px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background-color:{{ c.paper }};border:1px solid {{ c.rule }};">
         <tr>
-          <td style="padding:20px 28px;background-color:#111a2b;border-radius:8px 8px 0 0;border-bottom:4px solid #e2b13c;">
-            <a href="{{ site }}" style="text-decoration:none;">
-              <span style="display:block;font:700 12px/1.2 Arial,Helvetica,sans-serif;letter-spacing:3px;text-transform:uppercase;color:#e2b13c;">Uncle Mike's</span>
-              <span style="display:block;font:700 24px/1.2 Arial,Helvetica,sans-serif;letter-spacing:1px;text-transform:uppercase;color:#ffffff;">NFL Pick Em</span>
+          {# The header is one image; with images blocked, the alt text sits on the same navy band in gold. #}
+          <td bgcolor="{{ c.navy }}" style="background-color:{{ c.navy }};padding:0;">
+            <a href="{{ site }}" style="display:block;text-decoration:none;">
+              <img src="{{ site }}/brand/email-header.png" width="600" height="132" alt="Uncle Mike's NFL Pick Em" style="display:block;width:100%;max-width:600px;height:auto;border:0;font:700 20px/1.3 Arial,Helvetica,sans-serif;letter-spacing:2px;text-align:center;text-transform:uppercase;color:{{ c.gold }};">
             </a>
           </td>
         </tr>
         <tr>
-          <td style="padding:28px;font:16px/1.55 Arial,Helvetica,sans-serif;color:#1a2233;">
+          <td style="padding:28px 28px 32px;font:16px/1.55 Arial,Helvetica,sans-serif;color:{{ c.ink }};">
             {% block body %}{% endblock %}
           </td>
         </tr>
         <tr>
-          <td style="padding:20px 28px;border-top:1px solid #dde2ea;font:13px/1.5 Arial,Helvetica,sans-serif;color:#5a6477;">
-            You're getting this because you're in {{ group_name }} on {{ brand }}.<br>
-            <a href="{{ unsubscribe_url }}" style="color:#5a6477;text-decoration:underline;">Unsubscribe</a>
-            &nbsp;&middot;&nbsp;
-            <a href="{{ site }}/profile/" style="color:#5a6477;text-decoration:underline;">Email settings</a>
+          <td style="padding:20px 28px 24px;border-top:3px double {{ c.rule }};font:13px/1.6 Arial,Helvetica,sans-serif;color:{{ c.muted }};">
+            <p style="margin:0 0 8px;">Payments go directly to your organizer.</p>
+            <p style="margin:0 0 8px;">You're getting this because you're in {{ group_name }}.</p>
+            <p style="margin:0;">
+              <a href="{{ unsubscribe_url }}" style="color:{{ c.muted }};text-decoration:underline;">Unsubscribe</a>
+              &nbsp;&middot;&nbsp;
+              <a href="{{ site }}/profile/" style="color:{{ c.muted }};text-decoration:underline;">Email settings</a>
+            </p>
           </td>
         </tr>
       </table>

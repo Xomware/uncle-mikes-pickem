@@ -1,5 +1,7 @@
+import re
 from datetime import datetime, timezone
 from email import message_from_bytes, policy
+from pathlib import Path
 
 import boto3
 import pytest
@@ -11,6 +13,8 @@ from tests.conftest import create_table
 NOW = datetime(2027, 10, 5, 12, tzinfo=timezone.utc)
 CTX = {"name": "Pat", "group_name": "Sunday Crew"}
 MEMBER = {"PK": "GROUP#g1", "SK": "MEMBER#u-pat", "sub": "u-pat", "role": "member"}
+REPO = Path(__file__).resolve().parents[2]
+TEMPLATES = REPO / "backend/lambdas/common/email_templates"
 
 
 @pytest.fixture
@@ -61,6 +65,33 @@ def test_renders_html_and_text_with_footer_unsubscribe(mail):
     assert 'href="https://api.test/email/unsubscribe?token=abc"' in email.html
     assert "Unsubscribe: https://api.test/email/unsubscribe?token=abc" in email.text
     assert "<" not in email.text
+
+
+def test_layout_carries_the_brand_header_and_payments_footer(mail):
+    mailer, _ = mail
+    email = mailer.render("test", CTX, "u")
+
+    assert '<img src="https://pickem.xomware.com/brand/email-header.png"' in email.html
+    assert "alt=\"Uncle Mike's NFL Pick Em\"" in email.html
+    assert "Payments go directly to your organizer." in email.html
+    assert "Payments go directly to your organizer." in email.text
+
+
+def test_every_template_extends_base():
+    for path in TEMPLATES.iterdir():
+        if path.stem != "base":
+            assert path.read_text().startswith(f'{{% extends "base{path.suffix}" %}}'), path.name
+
+
+def test_brand_colors_match_the_site_and_brand_files_exist():
+    from lambdas.common.mailer import COLORS
+
+    css = (REPO / "frontend/app/globals.css").read_text()
+    site = dict(re.findall(r"--brand-([a-z]+): (#[0-9a-f]{6});", css))
+    assert site and site == {k: COLORS[k] for k in site}
+
+    for name in re.findall(r"/brand/([\w.-]+)", (TEMPLATES / "base.html").read_text()):
+        assert (REPO / "frontend/public/brand" / name).is_file(), name
 
 
 def test_html_escapes_context(mail):

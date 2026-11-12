@@ -32,6 +32,18 @@ from lambdas.common.unsubscribe import link
 log = logging.getLogger()
 
 BRAND = "Uncle Mike's NFL Pick Em"
+# The first four mirror --brand-* in frontend/app/globals.css (a test holds them
+# together); the rest are paper tones that only email uses.
+COLORS = {
+    "navy": "#142034",
+    "field": "#1b2b45",
+    "gold": "#f1ba4b",
+    "cream": "#f3ead3",
+    "paper": "#fbf7ee",
+    "ink": "#1c2333",
+    "muted": "#5d6475",
+    "rule": "#e2d6bc",
+}
 # Longer than a season, so a replay or late regrade still finds the claim.
 CLAIM_TTL = timedelta(days=400)
 # The default policy folds headers at 78 characters, and a header with no space
@@ -61,7 +73,7 @@ def _ses():
 
 
 def render(name: str, ctx: dict, unsubscribe_url: str) -> Email:
-    ctx = {**ctx, "brand": BRAND, "site": os.environ["SITE_URL"], "unsubscribe_url": unsubscribe_url}
+    ctx = {**ctx, "brand": BRAND, "c": COLORS, "site": os.environ["SITE_URL"], "unsubscribe_url": unsubscribe_url}
     html = templates.get_template(f"{name}.html").make_module(ctx)
     return Email(html.subject, str(html), templates.get_template(f"{name}.txt").render(ctx))
 
