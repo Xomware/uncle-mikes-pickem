@@ -39,6 +39,21 @@ locals {
       invoke_arn = aws_lambda_function.api["gow_${l.name}"].invoke_arn
     })
   ]
+  death_endpoints = [
+    for l in local.death_lambdas : merge(l, {
+      invoke_arn = aws_lambda_function.api["death_${l.name}"].invoke_arn
+    })
+  ]
+  payments_endpoints = [
+    for l in local.payments_lambdas : merge(l, {
+      invoke_arn = aws_lambda_function.api["payments_${l.name}"].invoke_arn
+    })
+  ]
+  replay_endpoints = [
+    for l in local.replay_lambdas : merge(l, {
+      invoke_arn = aws_lambda_function.api["replay_${l.name}"].invoke_arn
+    })
+  ]
 }
 
 module "api" {
@@ -73,5 +88,9 @@ module "api" {
     gow     = { path_prefix = "gow", endpoints = local.gow_endpoints }
     picks   = { path_prefix = "picks", endpoints = local.picks_endpoints }
     games   = { path_prefix = "games", endpoints = local.games_endpoints }
+    death   = { path_prefix = "death", endpoints = local.death_endpoints }
+
+    payments = { path_prefix = "payments", endpoints = local.payments_endpoints }
+    replay   = { path_prefix = "replay", endpoints = local.replay_endpoints }
   }
 }

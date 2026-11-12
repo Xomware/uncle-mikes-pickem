@@ -1,6 +1,6 @@
 import pytest
 
-from lambdas.common import groups
+from lambdas.common import nfl_store
 from tests.conftest import DOM, PAT, SAM, call, seed_week, table
 
 LOCK = "2027-09-10T00:20:00Z"
@@ -94,8 +94,6 @@ def test_rejects_once_the_group_clock_reaches_lock(api, gid):
 
 
 def test_lock_is_reread_from_the_week_on_every_write(api, gid):
-    from lambdas.common import nfl_store
-
     assert save(api, gid, FULL)[0] == 200
     # A flex moves the first kickoff earlier, to a time already past.
     nfl_store.table().update_item(
@@ -108,7 +106,23 @@ def test_lock_is_reread_from_the_week_on_every_write(api, gid):
 
 def test_members_only_and_not_before_joining(api, gid, monkeypatch):
     assert save(api, gid, FULL, who=SAM)[0] == 404
-    monkeypatch.setattr(groups, "last_locked_week", lambda season: 3)
+    monkeypatch.setattr(nfl_store.Feed, "last_locked_week", lambda self: 3)
     code = call(api["invites_create"], DOM, {"groupId": gid})[1]["code"]
     call(api["invites_accept"], SAM, {"code": code, "entryType": "weekly"})
     assert save(api, gid, FULL, who=SAM) == (409, "You joined in Week 4")
+
+
+def test_a_replay_group_picks_from_replay_rows_and_locks_on_its_clock(api):
+    lock = "2026-09-11T00:20:00Z"
+    game = {"gameId": "9", "kickoff": lock, "away": {"abbr": "DAL"}, "home": {"abbr": "PHI"}, "lines": None}
+    nfl_store.save_replay(2026, {1: [game]}, "2026-11-12T00:00:00Z")
+    gid = call(api["groups_create"], DOM, {"name": "Replay", "season": 2026, "replay": True})[1]["groupId"]
+    call(api["gow_set"], DOM, {"groupId": gid, "week": 1, "gameId": "9"})
+    pick = {"9": {"team": "PHI", "conf": 1}}
+
+    status, data = save(api, gid, pick, who=DOM)
+    assert (status, data["pick"]["complete"], data["pick"]["submittedAt"]) == (200, True, "2026-09-10T23:20:00Z")
+    table().update_item(
+        Key={"PK": f"GROUP#{gid}", "SK": "META"}, UpdateExpression="SET clock = :c", ExpressionAttributeValues={":c": lock}
+    )
+    assert save(api, gid, pick, who=DOM)[0] == 409
