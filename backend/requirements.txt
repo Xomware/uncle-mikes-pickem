@@ -1,3 +1,4 @@
 pydantic>=2.9,<3
 # zoneinfo falls back to this when the Lambda image has no system tz database.
 tzdata>=2024.1
+jinja2>=3.1,<4

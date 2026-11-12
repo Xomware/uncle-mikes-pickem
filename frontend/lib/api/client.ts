@@ -202,3 +202,19 @@ export interface Mark {
 }
 
 export const markPayment = (mark: Mark) => post<Omit<Mark, "groupId">>("/payments/mark", mark);
+
+export type EmailType = "results" | "reminders" | "death" | "gowAdmin";
+export type EmailPrefs = Record<EmailType, boolean>;
+
+export interface EmailSettings {
+  address: string;
+  // SES reported the address as bouncing or complaining; no toggle will reach it.
+  suppressed: boolean;
+  types: Record<EmailType, string>;
+  groups: { groupId: string; name: string; season: number; role: Role; prefs: EmailPrefs }[];
+}
+
+export const getEmailPrefs = () => request<EmailSettings>("/email/prefs");
+export const setEmailPrefs = (groupId: string, prefs: Partial<EmailPrefs>) =>
+  post<{ groupId: string; prefs: EmailPrefs }>("/email/prefs-set", { groupId, prefs });
+export const sendTestEmail = (groupId: string) => post<{ to: string; subject: string }>("/email/test", { groupId });
