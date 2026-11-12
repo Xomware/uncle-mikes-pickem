@@ -95,6 +95,46 @@ export interface GroupDetail {
   rulesVersion: number;
 }
 
+export type PaymentKind = "weekly" | "yearly" | "death";
+
+export interface LedgerLine {
+  kind: PaymentKind;
+  owed: number;
+  paid: boolean;
+  entryId?: string;
+  label?: string | null;
+  amount?: number;
+  method?: PaymentMethod;
+  paidOn?: string;
+}
+
+export interface LedgerRow {
+  sub: string;
+  name: string;
+  entryType: EntryType;
+  lines: LedgerLine[];
+  owed: number;
+  paid: number;
+  balance: number;
+}
+
+export interface Pot {
+  entries: number;
+  total: number;
+  collected: number;
+  payouts: number[];
+}
+
+/** members holds only the caller's row unless the caller is an organizer. */
+export interface Ledger {
+  group: { groupId: string; name: string; season: number };
+  role: Role;
+  fees: Pots<number>;
+  methods: Rules["payments"];
+  members: LedgerRow[];
+  pots: Pots<Pot>;
+}
+
 export const myGroups = () => request<GroupSummary[]>("/groups/mine");
 export const createGroup = (name: string, season: number) => post<GroupSummary>("/groups/create", { name, season });
 export const getGroup = (id: string) => request<GroupDetail>(`/groups/get?id=${encodeURIComponent(id)}`);
@@ -103,3 +143,4 @@ export const updateRules = (groupId: string, changes: Partial<Rules>) =>
   post<{ rules: Rules; version: number; effectiveWeek: number }>("/rules/update", { groupId, changes });
 export const acceptInvite = (code: string, entryType: EntryType) =>
   post<GroupSummary & { joined: boolean }>("/invites/accept", { code, entryType });
+export const getLedger = (id: string) => request<Ledger>(`/payments/ledger?id=${encodeURIComponent(id)}`);
