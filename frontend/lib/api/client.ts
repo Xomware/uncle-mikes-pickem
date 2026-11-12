@@ -242,7 +242,60 @@ export const addDeathEntry = (groupId: string, label?: string, sub?: string) =>
 export const setDeathPick = (groupId: string, entryId: string, week: number, team: string) =>
   post<{ entryId: string; label: string; picks: Record<string, string> }>("/death/pick", { groupId, entryId, week, team });
 
-export const advanceReplay = (groupId: string, to: string) =>
+// Grading (F7) and standings (F8) are being built alongside these sheets. The shapes below
+// mirror common/standings.py's week_board and season rows, plus the member's name.
+export interface WeekResultRow {
+  sub: string;
+  name: string;
+  weekly: number;
+  yearly: number;
+  gow: number;
+  missed: boolean;
+  /** "1", or "1*" for a shared place. */
+  place: string;
+}
+
+export interface WeekResult {
+  season: number;
+  week: number;
+  /** A game is final on ESPN but not yet confirmed by nflverse. */
+  provisional: boolean;
+  /** The tiebreak game's total points once it is final. */
+  tiebreakTotal: number | null;
+  /** Payout winners' subs: several on an exact tiebreak tie. */
+  winners: string[];
+  rows: WeekResultRow[];
+}
+
+export interface SeasonRow {
+  sub: string;
+  name: string;
+  place: string;
+  total: number;
+  gow: number;
+  /** Week number to that week's yearly score. */
+  weeks: Record<string, number>;
+}
+
+export interface SeasonStandings {
+  season: number;
+  throughWeek: number;
+  rows: SeasonRow[];
+}
+
+export const getWeekResult = (groupId: string, week: number) =>
+  request<WeekResult>(`/results/week?groupId=${encodeURIComponent(groupId)}&week=${week}`);
+export const getSeasonStandings = (groupId: string) =>
+  request<SeasonStandings>(`/standings/season?groupId=${encodeURIComponent(groupId)}`);
+
+/** null for a 404: nothing graded yet, or the endpoint isn't deployed. */
+export const unlessMissing = <T>(pending: Promise<T>): Promise<T | null> =>
+  pending.catch((err: unknown) => {
+    if (err instanceof ApiError && err.status === 404) return null;
+    throw err;
+  });
+
+export const advanceReplay =(groupId: string, to: string) =>
   post<{ groupId: string; clock: string }>("/replay/advance", { groupId, to });
 
 export const getLedger = (id: string) => request<Ledger>(`/payments/ledger?id=${encodeURIComponent(id)}`);
