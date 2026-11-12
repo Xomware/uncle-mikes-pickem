@@ -1,6 +1,7 @@
 import { LightBank } from "@/components/field/icons";
 import { ResultMark } from "@/components/field/result-mark";
-import type { WeekView } from "@/lib/api/client";
+import { TeamLogo } from "@/components/field/team-logo";
+import type { Team, WeekView } from "@/lib/api/client";
 import { gridRows, outcome } from "@/lib/picks";
 import { cn } from "@/lib/utils";
 
@@ -9,6 +10,7 @@ export function GroupGrid({ view }: { view: WeekView }) {
   const games = view.games.filter((g) => !g.canceled);
   const me = view.mine?.sub ?? "";
   const rows = gridRows(view, me);
+  const teams: Record<string, Team> = Object.fromEntries(games.flatMap((g) => [g.away, g.home]).map((t) => [t.abbr, t]));
 
   return (
     <section className="mt-8">
@@ -30,8 +32,14 @@ export function GroupGrid({ view }: { view: WeekView }) {
                       Prime<span className="sr-only">time, game of the week</span>
                     </span>
                   )}
-                  <span className="block text-xs font-bold text-muted-foreground">{g.away.abbr}</span>
-                  <span className="block text-base font-extrabold">{g.home.abbr}</span>
+                  <span className="flex items-center justify-center gap-1 text-xs font-bold text-muted-foreground">
+                    <TeamLogo {...g.away} className="size-4" />
+                    {g.away.abbr}
+                  </span>
+                  <span className="mt-0.5 flex items-center justify-center gap-1 text-base font-extrabold">
+                    <TeamLogo {...g.home} className="size-5" />
+                    {g.home.abbr}
+                  </span>
                 </th>
               ))}
               <th scope="col" className="min-w-16 px-2 py-2 text-center align-bottom">
@@ -68,6 +76,7 @@ export function GroupGrid({ view }: { view: WeekView }) {
                     >
                       {pick?.team ? (
                         <span className="inline-flex flex-col items-center gap-0.5 leading-tight">
+                          <TeamLogo {...(teams[pick.team] ?? { abbr: pick.team })} className="size-6" />
                           <span className="font-display text-base font-extrabold">{pick.team}</span>
                           <span className="flex items-center gap-1">
                             <span className="led text-sm">{pick.conf}</span>
