@@ -106,13 +106,6 @@ def game_fields(event: dict) -> dict:
     return game
 
 
-def week_fields(games: list[dict]) -> tuple[str, str]:
-    """(lockAt, tiebreakGameId): first kickoff, and the last game with the higher event id on a tie."""
-    lock_at = min(g["kickoff"] for g in games)
-    last = max(games, key=lambda g: (g["kickoff"], int(g["gameId"])))
-    return lock_at, last["gameId"]
-
-
 def scoreboard(season: int | None = None, week: int | None = None) -> dict:
     url = f"{espn.SITE}/scoreboard"
     if week is not None:
@@ -152,7 +145,7 @@ def refresh_week(season: int, week: int, board: dict, now: datetime, predictors:
         g["hype"] = hype.hype({**stored.get(g["gameId"], {}), **g}, g["gameId"] in standalone)
         nfl_store.save_game(season, week, g)
     if games:
-        lock_at, tiebreak = week_fields(games)
+        lock_at, tiebreak = nfl_store.week_fields(games)
         nfl_store.save_week(season, week, lock_at, tiebreak, [g["gameId"] for g in games], nfl_store.iso(now))
     return len(games), missed
 
@@ -173,9 +166,9 @@ def refresh(now: datetime, mode: str) -> dict:
     return {"season": season, "weeks": weeks, "games": games, "predictorMissing": missed}
 
 
-def season_groups(table, season: int):
-    # Replay groups run on their own clock; replay advance owns their GOW.
-    kwargs = {"FilterExpression": Attr("SK").eq("META") & Attr("season").eq(season) & Attr("clock").not_exists()}
+def all_groups(table):
+    # INVITE#code items also use SK META.
+    kwargs = {"FilterExpression": Attr("SK").eq("META") & Attr("PK").begins_with("GROUP#")}
     while True:
         page = table.scan(**kwargs)
         yield from page["Items"]
@@ -184,34 +177,30 @@ def season_groups(table, season: int):
         kwargs["ExclusiveStartKey"] = page["LastEvaluatedKey"]
 
 
-def auto_gow(now: datetime) -> list[str]:
-    """Set the top-hype GOW for each group past the Tuesday deadline without one. Returns "<group>#W<nn>"."""
-    current = nfl_store.current_week()
-    if not current:
-        return []
-    season, week = current
-    due = [
-        w
-        for w in (nfl_store.get_week(season, n) for n in (week, week + 1))
-        if w and gow.deadline(w["lockAt"]) <= now < parse(w["lockAt"])
-    ]
-    if not due:
-        return []
+def auto_gow() -> list[str]:
+    """Set the top-hype GOW for each group past its next week's Tuesday deadline without one.
+
+    Each group is judged on its own feed, so a replay group's deadline and lock run on
+    its virtual clock. Returns "<group>#W<nn>" for each GOW set.
+    """
     table = dynamodb.Table(os.environ["APP_TABLE"])
-    groups = list(season_groups(table, season))
     chosen = []
-    for w in due:
-        top = gow.top_game(nfl_store.list_games(season, w["week"]))
-        for g in groups:
-            pk = weeks.week_pk(g["groupId"], season, w["week"])
-            try:
-                table.put_item(
-                    Item=gow.item(pk, top["gameId"], "auto", nfl_store.iso(now)),
-                    ConditionExpression="attribute_not_exists(SK)",
-                )
-            except table.meta.client.exceptions.ConditionalCheckFailedException:
-                continue  # the organizer already chose
-            chosen.append(f"{g['groupId']}#W{w['week']:02d}")
+    for group in all_groups(table):
+        feed = nfl_store.for_group(group)
+        n = (feed.last_locked_week() or 0) + 1
+        week = feed.week(n)
+        if not week or not gow.deadline(week["lockAt"]) <= feed.now < nfl_store.parse(week["lockAt"]):
+            continue
+        pk = weeks.week_pk(group["groupId"], feed.season, n)
+        top = gow.top_game(feed.games(n))
+        try:
+            table.put_item(
+                Item=gow.item(pk, top["gameId"], "auto", nfl_store.iso(feed.now)),
+                ConditionExpression="attribute_not_exists(SK)",
+            )
+        except table.meta.client.exceptions.ConditionalCheckFailedException:
+            continue  # the organizer already chose
+        chosen.append(f"{group['groupId']}#W{n:02d}")
     return chosen
 
 
@@ -238,7 +227,7 @@ def handler(event, context):
     try:
         result = refresh(now, mode)
         if mode != "live":
-            result["gowAuto"] = auto_gow(now)
+            result["gowAuto"] = auto_gow()
     except Exception as e:
         # The failed run is the row someone goes looking for; re-raise so Errors fires.
         record_run(now, mode, {"error": f"{type(e).__name__}: {e}"})

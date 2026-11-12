@@ -1,0 +1,32 @@
+name: Replay Load
+
+# Rebuilds the 2026 replay rows (REPLAY#2026#W..) from nflverse and the capture
+# archive. Run it after deploying replay_load, and again as 2026 finishes.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: Xomware/github-actions/actions/load-infisical-secrets@v1
+        with:
+          path: /pickem
+
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ env.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Invoke pickem-replay-load
+        run: |
+          set -euo pipefail
+          aws lambda invoke --function-name pickem-replay-load --cli-read-timeout 0 \
+            --query FunctionError --output text out.json > err.txt
+          cat out.json
+          if [ "$(cat err.txt)" != "None" ]; then exit 1; fi

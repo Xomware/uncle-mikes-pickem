@@ -71,6 +71,14 @@ data "aws_iam_policy_document" "deploy_backend" {
     actions   = ["lambda:ListFunctions"]
     resources = ["*"]
   }
+
+  # replay-load.yml runs the loader on demand.
+  statement {
+    sid       = "RunReplayLoad"
+    effect    = "Allow"
+    actions   = ["lambda:InvokeFunction"]
+    resources = [aws_lambda_function.replay_load.arn]
+  }
 }
 
 resource "aws_iam_role_policy" "deploy_backend" {
