@@ -24,6 +24,9 @@ locals {
     { name = "set", description = "Save the caller's picks for a week", path_part = "set", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
     { name = "get", description = "Read a week's games, GOW and visible picks (?groupId=&week=)", path_part = "get", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
   ]
+  games_lambdas = [
+    { name = "cancel", description = "Void or restore a game for a group's week", path_part = "cancel", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+  ]
   gow_lambdas = [
     { name = "set", description = "Choose a group's game of the week", path_part = "set", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
   ]
@@ -36,6 +39,7 @@ locals {
     { for l in local.members_lambdas : "members_${l.name}" => l },
     { for l in local.gow_lambdas : "gow_${l.name}" => l },
     { for l in local.picks_lambdas : "picks_${l.name}" => l },
+    { for l in local.games_lambdas : "games_${l.name}" => l },
   )
 
   # One role per function, granted only the table actions its handler makes.
@@ -59,6 +63,7 @@ locals {
     gow_set        = ["app:GetItem", "app:PutItem", "nfl:GetItem"]
     picks_set      = ["app:GetItem", "app:PutItem", "nfl:GetItem", "nfl:Query"]
     picks_get      = ["app:Query", "nfl:GetItem", "nfl:Query"]
+    games_cancel   = ["app:GetItem", "app:Query", "app:PutItem", "app:UpdateItem", "nfl:GetItem", "nfl:Query"]
   }
 }
 

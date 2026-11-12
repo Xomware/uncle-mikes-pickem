@@ -43,7 +43,7 @@ def handler(event, context):
     if "Item" not in table.get_item(Key={"PK": pk, "SK": "GOW"}):
         raise ApiError(409, "Picks open once the game of the week is set")
 
-    games = nfl_store.list_games(season, body.week)
+    games = weeks.open_games(table, pk, season, body.week)
     chosen = {gid: p.model_dump() for gid, p in body.picks.items()}
     try:
         picks.validate(chosen, games)

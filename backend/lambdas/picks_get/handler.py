@@ -52,6 +52,7 @@ def handler(event, context):
     locked = weeks.locked(group, nfl_week)
     week_items = table.query(KeyConditionExpression=Key("PK").eq(weeks.week_pk(gid, season, week)))["Items"]
     shown = gate.visible_picks(week_items, me["sub"], locked)
+    canceled = next((set(i["gameIds"]) for i in week_items if i["SK"] == "CANCELED"), set())
 
     return respond(
         200,
@@ -67,7 +68,10 @@ def handler(event, context):
                 # The group's clock, so a replay group's countdown runs on virtual time.
                 "now": nfl_store.iso(clock.now(group)),
             },
-            "games": [{k: g.get(k) for k in GAME_FIELDS} for g in nfl_store.list_games(season, week)],
+            "games": [
+                {**{k: g.get(k) for k in GAME_FIELDS}, "canceled": g["gameId"] in canceled}
+                for g in nfl_store.list_games(season, week)
+            ],
             "gow": gow.public(next((i for i in week_items if i["SK"] == "GOW"), None)),
             "mine": next((picks.public(i) for i in shown if i["sub"] == me["sub"]), None),
             "members": [{"sub": m["sub"], "name": m["name"]} for m in members.values()],

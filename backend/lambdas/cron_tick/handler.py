@@ -201,9 +201,11 @@ def auto_gow(now: datetime) -> list[str]:
     groups = list(season_groups(table, season))
     chosen = []
     for w in due:
-        top = gow.top_game(nfl_store.list_games(season, w["week"]))
+        games = nfl_store.list_games(season, w["week"])
         for g in groups:
             pk = weeks.week_pk(g["groupId"], season, w["week"])
+            canceled = weeks.canceled_ids(table, pk)
+            top = gow.top_game([game for game in games if game["gameId"] not in canceled])
             try:
                 table.put_item(
                     Item=gow.item(pk, top["gameId"], "auto", nfl_store.iso(now)),

@@ -31,6 +31,8 @@ def handler(event, context):
         raise ApiError(400, f"That game isn't in Week {body.week}")
 
     pk = weeks.week_pk(body.groupId, int(group["season"]), body.week)
+    if body.gameId in weeks.canceled_ids(table, pk):
+        raise ApiError(409, "That game is canceled for this group")
     item = gow.item(pk, body.gameId, me["sub"], nfl_store.iso(clock.now(group)))
     table.put_item(Item=item)
     return respond(200, {"gow": gow.public(item)})

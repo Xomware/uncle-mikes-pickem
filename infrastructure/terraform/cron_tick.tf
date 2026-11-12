@@ -30,10 +30,11 @@ data "aws_iam_policy_document" "cron_tick" {
     resources = [aws_dynamodb_table.nfl.arn]
   }
 
-  # Auto GOW: scan for each season's groups, then a conditional put per group-week.
+  # Auto GOW: scan for each season's groups, read each group-week's canceled
+  # games, then a conditional put.
   statement {
     sid       = "AutoGow"
-    actions   = ["dynamodb:Scan", "dynamodb:PutItem"]
+    actions   = ["dynamodb:Scan", "dynamodb:GetItem", "dynamodb:PutItem"]
     resources = [aws_dynamodb_table.app.arn]
   }
 
