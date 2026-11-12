@@ -6,6 +6,9 @@ GOW pick has next week's games). A game ESPN calls final keeps the window open
 until nflverse confirms it or it is flagged (common/finals.py). The 15:00Z
 hourly refresh also fetches ESPN's predictor for hype. {"force": true} runs that refresh now. Hourly and forced
 ticks then set the top-hype GOW for any group still without one past Tuesday noon ET.
+A tick that changes a final regrades those weeks for every live group of the season;
+hourly and forced ticks regrade every locked week of every current group, which is
+what picks up replay clocks, new members and death picks (common/results.py).
 Every tick that works writes a poll row to pickem-ops.
 """
 
@@ -19,7 +22,7 @@ from datetime import datetime, timedelta, timezone
 import boto3
 from boto3.dynamodb.conditions import Attr
 
-from lambdas.common import espn, finals, gow, hype, nfl_store, nflverse, weeks
+from lambdas.common import espn, finals, gow, hype, nfl_store, nflverse, results, weeks
 
 WINDOW_BEFORE = timedelta(minutes=15)
 # A suspended or postponed game never completes; don't let it hold the window open.
@@ -148,6 +151,13 @@ def confirm(game: dict, stored: dict, verse, now: datetime) -> str | None:
     return None
 
 
+def final_state(game: dict) -> tuple | None:
+    """What grading reads from a game: a change here means its week needs a regrade."""
+    if not game.get("completed"):
+        return None
+    return game["awayScore"], game["homeScore"], finals.confirmed(game)
+
+
 def alert(season: int, week: int, problems: list[str]) -> None:
     boto3.client("sns").publish(
         TopicArn=os.environ["ALARMS_TOPIC_ARN"],
@@ -171,7 +181,7 @@ def refresh_week(season: int, week: int, board: dict, now: datetime, predictors:
             g["matchupQuality"] = mq
 
     standalone = hype.standalone_ids(games)
-    flagged = []
+    flagged, changed = [], False
     for g in games:
         before = stored.get(g["gameId"], {})
         # Hourly refreshes carry no predictor, and live ones no line: take those from the stored item.
@@ -179,13 +189,15 @@ def refresh_week(season: int, week: int, board: dict, now: datetime, predictors:
         problem = confirm(g, before, verse, now)
         if problem:
             flagged.append(problem)
+        if final_state(before) != final_state({**before, **g}):
+            changed = True
         nfl_store.save_game(season, week, g)
     if games:
         lock_at, tiebreak = nfl_store.week_fields(games)
         nfl_store.save_week(season, week, lock_at, tiebreak, [g["gameId"] for g in games], nfl_store.iso(now))
     if flagged:
         alert(season, week, flagged)
-    return {"games": len(games), "predictorMissing": missed, "flagged": flagged}
+    return {"games": len(games), "predictorMissing": missed, "flagged": flagged, "finalsChanged": [week] if changed else []}
 
 
 def refresh(now: datetime, mode: str) -> dict:
@@ -197,11 +209,11 @@ def refresh(now: datetime, mode: str) -> dict:
     predictors = mode == "force" or (mode == "hourly" and now.hour == PREDICTOR_HOUR)
     # Fetched at most once a tick, and only when a final is waiting on it.
     verse = functools.cache(lambda: nflverse.games(nflverse.fetch(), season))
-    out = {"season": season, "weeks": weeks, "games": 0, "predictorMissing": [], "flagged": []}
+    out = {"season": season, "weeks": weeks, "games": 0, "predictorMissing": [], "flagged": [], "finalsChanged": []}
     for week in weeks:
         same = season_type == REGULAR and week == current
         done = refresh_week(season, week, board if same else scoreboard(season, week), now, predictors, verse)
-        for key in ("games", "predictorMissing", "flagged"):
+        for key in ("games", "predictorMissing", "flagged", "finalsChanged"):
             out[key] += done[key]
     return out
 
@@ -245,6 +257,26 @@ def auto_gow() -> list[str]:
     return chosen
 
 
+def regrade_groups(season: int, changed: list[int], sweep: bool) -> dict[str, list[int]]:
+    """Regrade `changed` weeks for the season's live groups, or with `sweep` every locked week of
+    every current group (replays included). Returns {groupId: weeks rewritten} where any were."""
+    table = dynamodb.Table(os.environ["APP_TABLE"])
+    out = {}
+    for group in all_groups(table):
+        replay = bool(group.get("replay"))
+        if not replay and int(group["season"]) != season:
+            continue
+        if sweep:
+            done = results.regrade(table, group)
+        elif changed and not replay:
+            done = results.regrade(table, group, changed)
+        else:
+            continue
+        if done["weeks"]:
+            out[group["groupId"]] = done["weeks"]
+    return out
+
+
 def record_run(now: datetime, mode: str, result: dict) -> None:
     dynamodb.Table(os.environ["OPS_TABLE"]).put_item(
         Item={
@@ -269,6 +301,7 @@ def handler(event, context):
         result = refresh(now, mode)
         if mode != "live":
             result["gowAuto"] = auto_gow()
+        result["regraded"] = regrade_groups(result["season"], result["finalsChanged"], sweep=mode != "live")
     except Exception as e:
         # The failed run is the row someone goes looking for; re-raise so Errors fires.
         record_run(now, mode, {"error": f"{type(e).__name__}: {e}"})

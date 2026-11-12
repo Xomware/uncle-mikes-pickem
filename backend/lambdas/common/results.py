@@ -128,7 +128,8 @@ def regrade(table, group: dict, weeks: Iterable[int] | None = None) -> dict:
     """Regrade `weeks`, or every locked week, then refold STANDINGS and the death pool.
 
     Returns {weeks: RESULTs rewritten, standings: rewritten?, eliminated: entry ids}.
-    An unlocked week is skipped: its picks are hidden and still changing. The folds
+    An unlocked week is skipped: its picks are hidden and still changing. So is a week
+    with no schedule (a live group joined mid-season has no Weeks 1-9 rows). The folds
     always run, since death picks aren't RESULT inputs.
     """
     feed = nfl_store.for_group(group)
@@ -141,9 +142,12 @@ def regrade(table, group: dict, weeks: Iterable[int] | None = None) -> dict:
     for week in sorted(set(range(1, last + 1) if weeks is None else weeks)):
         if week > last:
             continue
+        nfl_week = feed.week(week)
+        if not nfl_week:
+            continue
         pk = week_pk(gid, season, week)
         week_items = nfl_store.plain(table.query(KeyConditionExpression=Key("PK").eq(pk))["Items"])
-        tiebreak_id = feed.week(week)["tiebreakGameId"]
+        tiebreak_id = nfl_week["tiebreakGameId"]
         result = week_result(week, feed.games(week), week_items, members, versions, tiebreak_id, feed.replay)
         old = next((i for i in week_items if i["SK"] == "RESULT"), {})
         if old.get("inputHash") == result["inputHash"]:
