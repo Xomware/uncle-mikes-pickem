@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { DeathEntry, DeathGame } from "@/lib/api/client";
 
-import { formatLine, takenTeams, teamLine, withPick } from "./death";
+import { formatLine, gridWeeks, takenTeams, teamLine, withPick } from "./death";
 
 const game: DeathGame = { gameId: "1", kickoff: "", away: "KC", home: "BAL", spread: -3.5, details: "BAL -3.5" };
 
@@ -36,6 +36,13 @@ describe("death pool helpers", () => {
   it("treats this week's own pick as changeable, not used", () => {
     expect(takenTeams(entry, 2)).toEqual(new Set(["GB"]));
     expect(takenTeams(entry, 3)).toEqual(new Set(["GB", "KC"]));
+  });
+
+  it("shows weeks through the open week or the latest pick, whichever is later", () => {
+    expect(gridWeeks(null, [entry])).toEqual([1, 2]);
+    expect(gridWeeks(3, [entry])).toEqual([1, 2, 3]);
+    expect(gridWeeks(1, [entry])).toEqual([1, 2]);
+    expect(gridWeeks(null, [])).toEqual([1]);
   });
 
   it("swaps this week's pick into the entry", () => {

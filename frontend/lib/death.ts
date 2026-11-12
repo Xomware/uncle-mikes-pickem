@@ -18,6 +18,12 @@ export function takenTeams(entry: DeathEntry, week: number): Set<string> {
   return new Set(entry.used.filter((team) => team !== current));
 }
 
+export function gridWeeks(openWeek: number | null, entries: DeathEntry[]): number[] {
+  const picked = entries.flatMap((e) => Object.keys(e.picks).map(Number));
+  const last = Math.max(1, openWeek ?? 1, ...picked);
+  return Array.from({ length: last }, (_, i) => i + 1);
+}
+
 export function withPick(entry: DeathEntry, week: number, team: string): DeathEntry {
   const picks = { ...entry.picks, [String(week)]: team };
   const used = Object.values(picks).filter((t): t is string => t !== null);
