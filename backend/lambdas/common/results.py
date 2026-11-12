@@ -18,7 +18,7 @@ from decimal import Decimal
 
 from boto3.dynamodb.conditions import Key
 
-from lambdas.common import clock, events, finals, grade, nfl_store, standings
+from lambdas.common import clock, events, finals, grade, nfl_store, season as season_fold, standings
 from lambdas.common.rules import rules_for
 from lambdas.common.weeks import week_pk
 
@@ -124,10 +124,12 @@ def save(table, pk: str, group_id: str, season: int, result: dict, old: dict) ->
     table.put_item(Item=json.loads(json.dumps(item), parse_float=Decimal))
 
 
-def regrade(table, group: dict, weeks: Iterable[int] | None = None) -> list[int]:
-    """Regrade `weeks`, or every locked week. Returns the weeks whose RESULT was rewritten.
+def regrade(table, group: dict, weeks: Iterable[int] | None = None) -> dict:
+    """Regrade `weeks`, or every locked week, then refold STANDINGS and the death pool.
 
-    An unlocked week is skipped: its picks are hidden and still changing.
+    Returns {weeks: RESULTs rewritten, standings: rewritten?, eliminated: entry ids}.
+    An unlocked week is skipped: its picks are hidden and still changing. The folds
+    always run, since death picks aren't RESULT inputs.
     """
     feed = nfl_store.for_group(group)
     gid, season = group["groupId"], feed.season
@@ -148,4 +150,4 @@ def regrade(table, group: dict, weeks: Iterable[int] | None = None) -> list[int]
             continue
         save(table, pk, gid, season, result, old)
         changed.append(week)
-    return changed
+    return {"weeks": changed, **season_fold.fold(table, gid, season, last, members, versions)}
