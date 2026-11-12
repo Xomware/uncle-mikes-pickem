@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { LoadError } from "@/components/load-error";
+import { GroupGrid } from "@/components/picks/group-grid";
 import { PickSheet } from "@/components/picks/pick-sheet";
 import { buttonVariants } from "@/components/ui/button";
 import { type WeekView, getWeek } from "@/lib/api/client";
@@ -81,7 +82,7 @@ function WeekBody({ view, reload }: { view: WeekView; reload: () => void }) {
         </button>
       )}
 
-      <PickSheet view={view} locked={locked} reload={reload} />
+      {week.locked ? <GroupGrid view={view} /> : <PickSheet view={view} locked={locked} reload={reload} />}
     </>
   );
 }

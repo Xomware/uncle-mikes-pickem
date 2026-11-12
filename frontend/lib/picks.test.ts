@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import type { Game, WeekPicks } from "@/lib/api/client";
+import type { Game, WeekPicks, WeekView } from "@/lib/api/client";
 
-import { countdown, isComplete, spreadText, swap, toPayload, toSheet } from "./picks";
+import { countdown, gridRows, isComplete, outcome, spreadText, swap, toPayload, toSheet } from "./picks";
 
 const game = (gameId: string, away: string, home: string, extra: Partial<Game> = {}): Game => ({
   gameId,
@@ -72,6 +72,32 @@ describe("pick sheet", () => {
     expect(toPayload({ ...sheet, tiebreak: " 47 " }).tiebreak).toBe(47);
     expect(toPayload({ ...sheet, tiebreak: "47.5" }).tiebreak).toBeNull();
     expect(toPayload({ ...sheet, tiebreak: "-3" }).tiebreak).toBeNull();
+  });
+});
+
+describe("group grid", () => {
+  it("colors a pick only once its game has a winner, and never a tie", () => {
+    const pick = { team: "KC", conf: 3 };
+    expect(outcome(pick, GAMES[0])).toBeNull();
+    expect(outcome(pick, { ...GAMES[0], winner: "KC" })).toBe("correct");
+    expect(outcome(pick, { ...GAMES[0], winner: "BAL" })).toBe("wrong");
+    expect(outcome(pick, { ...GAMES[0], winner: "TIE" })).toBeNull();
+    expect(outcome({ team: null, conf: 3 }, { ...GAMES[0], winner: "KC" })).toBeNull();
+    expect(outcome(undefined, { ...GAMES[0], winner: "KC" })).toBeNull();
+  });
+
+  it("lists every member, the caller first, with null picks for a non-submitter", () => {
+    const view = {
+      members: [
+        { sub: "u-sam", name: "Sam" },
+        { sub: "u-pat", name: "Pat" },
+        { sub: "u-amy", name: "Amy" },
+      ],
+      picks: [mine({ "101": { team: "KC", conf: 1 } }), { ...mine({}), sub: "u-amy" }],
+    } as unknown as WeekView;
+    const rows = gridRows(view, "u-pat");
+    expect(rows.map((r) => r.name)).toEqual(["Pat", "Amy", "Sam"]);
+    expect(rows[2].picks).toBeNull();
   });
 });
 
