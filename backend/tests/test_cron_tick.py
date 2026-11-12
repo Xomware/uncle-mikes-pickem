@@ -7,6 +7,8 @@ import boto3
 import pytest
 from boto3.dynamodb.conditions import Key
 
+from tests.conftest import create_table
+
 FIXTURES = Path(__file__).parent / "fixtures" / "espn"
 # Thursday of Week 10, before TNF (2026-11-13T01:15Z).
 NOW = datetime(2026, 11, 12, 18, 31, tzinfo=timezone.utc)
@@ -20,6 +22,8 @@ def board(week):
 def tick(store, monkeypatch):
     from lambdas.cron_tick import handler
 
+    monkeypatch.setenv("APP_TABLE", "app")
+    create_table("app")
     monkeypatch.setattr(handler, "dynamodb", boto3.resource("dynamodb"))
     return handler
 
@@ -96,6 +100,8 @@ def test_force_refreshes_current_and_next_week(tick, store, monkeypatch):
         "mode": "force", "season": 2026, "weeks": [10, 11], "games": 9,
         # No predictor fixtures recorded for Week 11.
         "predictorMissing": ["401873066", "401873077", "401873078"],
+        # Thursday is past Week 10's GOW deadline, but no groups exist.
+        "gowAuto": [],
     }
     # The default board doubles as Week 10's.
     assert len([c for c in calls if "/scoreboard" in c]) == 2

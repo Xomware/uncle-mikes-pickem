@@ -1,6 +1,6 @@
 "use client";
 
-import { ReceiptText, Settings, Wallet } from "lucide-react";
+import { ListOrdered, ReceiptText, Settings, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useState } from "react";
@@ -13,6 +13,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { type GroupDetail, getGroup } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
 import { ENTRY_LABEL, ROLE_LABEL, isOrganizer } from "@/lib/groups";
+import { picksHref } from "@/lib/picks";
 import { cn } from "@/lib/utils";
 
 const TABS = { members: "Members", death: "Death pool" } as const;
@@ -46,6 +47,10 @@ function GroupDetails({ detail, onChange }: { detail: GroupDetail; onChange: (de
       <p className="mt-1 text-muted-foreground">
         {group.season} season · You&apos;re {ROLE_LABEL[role].toLowerCase()}
       </p>
+      <Link href={picksHref(group.groupId)} className={buttonVariants({ size: "lg", className: "mt-4 w-full sm:w-auto" })}>
+        <ListOrdered aria-hidden="true" />
+        Make your picks
+      </Link>
       <div className="mt-4 flex flex-wrap gap-2">
         <Link href={`/group/pay/?id=${encodeURIComponent(group.groupId)}`} className={buttonVariants({ variant: "outline" })}>
           <Wallet aria-hidden="true" />
