@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings } from "lucide-react";
+import { ListOrdered, Settings } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback } from "react";
@@ -11,6 +11,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { type GroupDetail, getGroup } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
 import { ENTRY_LABEL, ROLE_LABEL, isOrganizer } from "@/lib/groups";
+import { picksHref } from "@/lib/picks";
 
 export function GroupHome() {
   const id = useSearchParams().get("id") ?? "";
@@ -53,6 +54,11 @@ function GroupDetails({ detail }: { detail: GroupDetail }) {
           </Link>
         )}
       </div>
+
+      <Link href={picksHref(group.groupId)} className={buttonVariants({ size: "lg", className: "mt-6 w-full sm:w-auto" })}>
+        <ListOrdered aria-hidden="true" />
+        Make your picks
+      </Link>
 
       {isOrganizer(role) && <InviteLink groupId={group.groupId} />}
 

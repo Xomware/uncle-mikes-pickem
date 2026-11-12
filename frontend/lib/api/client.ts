@@ -103,3 +103,61 @@ export const updateRules = (groupId: string, changes: Partial<Rules>) =>
   post<{ rules: Rules; version: number; effectiveWeek: number }>("/rules/update", { groupId, changes });
 export const acceptInvite = (code: string, entryType: EntryType) =>
   post<GroupSummary & { joined: boolean }>("/invites/accept", { code, entryType });
+
+export interface Team {
+  abbr: string;
+}
+
+export interface Game {
+  gameId: string;
+  kickoff: string;
+  away: Team;
+  home: Team;
+  lines: { spread: number | null; overUnder: number | null; details: string | null } | null;
+  broadcasts: string[] | null;
+  state: "pre" | "in" | "post" | null;
+  completed: boolean | null;
+  // Set once the game is final (F7): the winning team's abbr, or "TIE".
+  winner: string | null;
+  canceled: boolean;
+}
+
+export interface PickEntry {
+  team: string | null;
+  conf: number;
+}
+
+export interface WeekPicks {
+  sub: string;
+  picks: Record<string, PickEntry>;
+  tiebreak: number | null;
+  complete: boolean;
+  submittedAt: string;
+}
+
+export interface Gow {
+  gameId: string;
+  chosenBy: string;
+  chosenAt: string;
+}
+
+export interface WeekView {
+  group: { groupId: string; name: string; season: number };
+  role: Role;
+  week: { season: number; week: number; lockAt: string; tiebreakGameId: string; locked: boolean; now: string };
+  games: Game[];
+  gow: Gow | null;
+  mine: WeekPicks | null;
+  members: { sub: string; name: string }[];
+  // Everyone's picks; the API sends them only after lock.
+  picks: WeekPicks[];
+}
+
+export const getWeek = (groupId: string, week?: number) =>
+  request<WeekView>(`/picks/get?groupId=${encodeURIComponent(groupId)}${week ? `&week=${week}` : ""}`);
+export const setPicks = (groupId: string, week: number, picks: Record<string, PickEntry>, tiebreak: number | null) =>
+  post<{ pick: WeekPicks }>("/picks/set", { groupId, week, picks, tiebreak });
+export const setGow = (groupId: string, week: number, gameId: string) =>
+  post<{ gow: Gow }>("/gow/set", { groupId, week, gameId });
+export const cancelGame = (groupId: string, week: number, gameId: string, canceled: boolean) =>
+  post<{ canceled: string[] }>("/games/cancel", { groupId, week, gameId, canceled });
