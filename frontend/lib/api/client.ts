@@ -47,3 +47,59 @@ export interface Profile {
 }
 
 export const getProfile = () => request<Profile>("/me/profile");
+
+const post = <T>(path: string, body: unknown) => request<T>(path, { method: "POST", body: JSON.stringify(body) });
+
+export type Role = "owner" | "admin" | "member";
+
+export interface GroupSummary {
+  groupId: string;
+  name: string;
+  season: number;
+  role: Role;
+}
+
+export type EntryType = "weekly" | "season";
+
+export interface Member {
+  sub: string;
+  name: string;
+  role: Role;
+  entryType: EntryType;
+  joinedWeek: number | null;
+}
+
+export type PaymentMethod = "venmo" | "zelle" | "cashapp" | "paypal" | "other";
+
+export interface Pots<T> {
+  weekly: T;
+  yearly: T;
+  death: T;
+}
+
+export interface Rules {
+  pickemTie: "zero" | "full";
+  deathTie: "loss" | "win";
+  deathSecondLife: boolean;
+  lock: "firstKickoff";
+  fees: Pots<number>;
+  potSplits: Pots<number[]>;
+  payments: { method: PaymentMethod; handle: string }[];
+}
+
+export interface GroupDetail {
+  group: { groupId: string; name: string; season: number; ownerSub: string };
+  role: Role;
+  members: Member[];
+  rules: Rules;
+  rulesVersion: number;
+}
+
+export const myGroups = () => request<GroupSummary[]>("/groups/mine");
+export const createGroup = (name: string, season: number) => post<GroupSummary>("/groups/create", { name, season });
+export const getGroup = (id: string) => request<GroupDetail>(`/groups/get?id=${encodeURIComponent(id)}`);
+export const createInvite = (groupId: string) => post<{ code: string; expiresAt: string }>("/invites/create", { groupId });
+export const updateRules = (groupId: string, changes: Partial<Rules>) =>
+  post<{ rules: Rules; version: number; effectiveWeek: number }>("/rules/update", { groupId, changes });
+export const acceptInvite = (code: string, entryType: EntryType) =>
+  post<GroupSummary & { joined: boolean }>("/invites/accept", { code, entryType });

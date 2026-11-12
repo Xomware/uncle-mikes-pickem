@@ -48,6 +48,7 @@ Confirmed with Dom on 2026-11-12. The weekly sheet and standings for the 2026 se
 ## Money
 
 - The pool owner sets the fees (weekly, yearly, death pool), the payment methods (Venmo, Zelle, Cash App, and so on) and the handles.
+- Each member has an entry type. **Weekly** plays for the weekly pot only and pays the weekly fee. **Season** plays for the weekly and yearly pots and pays both fees. The member picks one when joining, and the organizer can change it.
 - The pool owner marks who has paid. The app never moves money.
 - The pool owner sets how the pots are split between weekly winners and yearly winners.
 

@@ -67,7 +67,8 @@ def test_get_returns_group_and_members_to_members_only(api):
     assert status == 200
     assert data["group"] == {"groupId": group["groupId"], "name": "Uncle Mike's", "season": 2027, "ownerSub": "u-dom"}
     assert data["role"] == "owner"
-    assert data["members"] == [{"sub": "u-dom", "name": "Dom", "role": "owner", "joinedWeek": 1}]
+    assert data["members"] == [{"sub": "u-dom", "name": "Dom", "role": "owner", "entryType": "season", "joinedWeek": 1}]
+    assert (data["rulesVersion"], data["rules"]["pickemTie"]) == (0, "zero")
 
     assert call(api["groups_get"], PAT, query={"id": group["groupId"]}) == (404, "Group not found")
     assert call(api["groups_get"], DOM, query={"id": "nope"}) == (404, "Group not found")
