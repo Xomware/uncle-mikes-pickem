@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings, Wallet } from "lucide-react";
+import { ReceiptText, Settings, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback } from "react";
@@ -45,6 +45,15 @@ function GroupDetails({ detail }: { detail: GroupDetail }) {
           <Wallet aria-hidden="true" />
           Pay
         </Link>
+        {isOrganizer(role) && (
+          <Link
+            href={`/group/payments/?id=${encodeURIComponent(group.groupId)}`}
+            className={buttonVariants({ variant: "outline" })}
+          >
+            <ReceiptText aria-hidden="true" />
+            Payments
+          </Link>
+        )}
         {isOrganizer(role) && (
           <Link
             href={`/group/settings/?id=${encodeURIComponent(group.groupId)}`}

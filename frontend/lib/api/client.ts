@@ -144,3 +144,16 @@ export const updateRules = (groupId: string, changes: Partial<Rules>) =>
 export const acceptInvite = (code: string, entryType: EntryType) =>
   post<GroupSummary & { joined: boolean }>("/invites/accept", { code, entryType });
 export const getLedger = (id: string) => request<Ledger>(`/payments/ledger?id=${encodeURIComponent(id)}`);
+
+export interface Mark {
+  groupId: string;
+  sub: string;
+  kind: PaymentKind;
+  entryId?: string;
+  paid: boolean;
+  amount?: number;
+  method?: PaymentMethod;
+  paidOn?: string;
+}
+
+export const markPayment = (mark: Mark) => post<Omit<Mark, "groupId">>("/payments/mark", mark);
