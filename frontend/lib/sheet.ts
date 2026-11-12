@@ -1,4 +1,4 @@
-import type { Game, WeekResult, WeekView } from "@/lib/api/client";
+import type { Game, SeasonStandings, WeekResult, WeekView } from "@/lib/api/client";
 import type { Cell } from "@/lib/csv";
 import { gridRows } from "@/lib/picks";
 
@@ -110,4 +110,15 @@ export function groupGridCsv(view: WeekView, result: WeekResult | null): Cell[][
     totals.get(row.sub)?.place ?? null,
   ]);
   return [["Member", ...games.map(matchup), "Tiebreak", "Points", "Place"], ...rows];
+}
+
+export const seasonWeeks = (standings: SeasonStandings) => Array.from({ length: standings.throughWeek }, (_, i) => i + 1);
+
+/** The season table as the workbook has it: place, player, a column per graded week, total, GOW. */
+export function standingsCsv(standings: SeasonStandings): Cell[][] {
+  const weeks = seasonWeeks(standings);
+  return [
+    ["Pos", "Player", ...weeks.map((w) => `Week ${w}`), "Total", "GOW"],
+    ...standings.rows.map((r) => [r.place, r.name, ...weeks.map((w) => r.weeks[String(w)] ?? null), r.total, r.gow]),
+  ];
 }

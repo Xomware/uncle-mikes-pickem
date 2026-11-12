@@ -1,6 +1,6 @@
 "use client";
 
-import { ListOrdered, ReceiptText, Settings, Wallet } from "lucide-react";
+import { ListOrdered, Printer, ReceiptText, Settings, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useState } from "react";
@@ -55,6 +55,13 @@ function GroupDetails({ detail, onChange }: { detail: GroupDetail; onChange: (de
         <Link href={`/group/pay/?id=${encodeURIComponent(group.groupId)}`} className={buttonVariants({ variant: "outline" })}>
           <Wallet aria-hidden="true" />
           Pay
+        </Link>
+        <Link
+          href={`/group/standings-sheet/?id=${encodeURIComponent(group.groupId)}`}
+          className={buttonVariants({ variant: "outline" })}
+        >
+          <Printer aria-hidden="true" />
+          Standings sheet
         </Link>
         {isOrganizer(role) && (
           <Link

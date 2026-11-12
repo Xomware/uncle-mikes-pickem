@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import type { Game, WeekResult, WeekView } from "@/lib/api/client";
+import type { Game, SeasonStandings, WeekResult, WeekView } from "@/lib/api/client";
 
-import { byeTeams, easternTime, gameDates, GOW_LABEL, groupGridCsv, slots } from "./sheet";
+import { byeTeams, easternTime, gameDates, GOW_LABEL, groupGridCsv, slots, standingsCsv } from "./sheet";
 
 const game = (gameId: string, away: string, home: string, kickoff: string): Game => ({
   gameId,
@@ -112,4 +112,20 @@ describe("groupGridCsv", () => {
       [3, "1"],
     ]);
   });
+});
+
+it("lays the season table out by week, blank for a week a late joiner has no score", () => {
+  const standings: SeasonStandings = {
+    season: 2026,
+    throughWeek: 2,
+    rows: [
+      { sub: "a", name: "Amy", place: "1", total: 210, gow: 12, weeks: { "1": 109, "2": 101 } },
+      { sub: "b", name: "Zed", place: "2", total: 96, gow: -15, weeks: { "2": 96 } },
+    ],
+  };
+  expect(standingsCsv(standings)).toEqual([
+    ["Pos", "Player", "Week 1", "Week 2", "Total", "GOW"],
+    ["1", "Amy", 109, 101, 210, 12],
+    ["2", "Zed", null, 96, 96, -15],
+  ]);
 });
