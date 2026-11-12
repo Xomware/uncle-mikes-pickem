@@ -33,8 +33,8 @@ export function ProfileView() {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
-      <h1 className="text-4xl font-bold uppercase">Profile</h1>
-      <section aria-live="polite" aria-busy={load.status === "loading"} className="mt-6 rounded-xl border bg-card p-5">
+      <h1 className="paint worn mt-1 text-5xl leading-none sm:text-6xl">Profile</h1>
+      <section aria-live="polite" aria-busy={load.status === "loading"} className="mt-6 panel p-5">
         {load.status === "loading" && <ProfileSkeleton />}
         {load.status === "error" && (
           <div role="alert">
@@ -62,13 +62,13 @@ function ProfileDetails({ profile }: { profile: Profile }) {
     <div className="flex items-center gap-4">
       <span
         aria-hidden="true"
-        className="flex size-14 shrink-0 items-center justify-center rounded-full bg-primary font-display text-2xl font-bold text-primary-foreground"
+        className="flex size-14 shrink-0 items-center justify-center rounded-md bg-turf font-stencil text-3xl font-black text-chalk shadow-[inset_0_-3px_0_var(--chalk)]"
       >
         {initial}
       </span>
       <dl className="min-w-0">
         <dt className="sr-only">Name</dt>
-        <dd className="truncate text-xl font-semibold">{profile.name ?? "No name set"}</dd>
+        <dd className="truncate font-display text-2xl font-extrabold uppercase">{profile.name ?? "No name set"}</dd>
         <dt className="sr-only">Email</dt>
         <dd className="truncate text-muted-foreground">{profile.email}</dd>
       </dl>
