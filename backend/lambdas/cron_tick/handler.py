@@ -2,7 +2,8 @@
 
 Scheduled every 2 minutes. A tick works only inside a game window (live: the
 current week) or on the hourly refresh (current and next week, so Tuesday's
-GOW pick has next week's games). {"force": true} runs the hourly refresh now.
+GOW pick has next week's games). The 15:00Z hourly refresh also fetches ESPN's
+predictor for hype. {"force": true} runs that refresh now.
 Every tick that works writes a poll row to pickem-ops.
 """
 
@@ -14,12 +15,14 @@ from datetime import datetime, timedelta, timezone
 
 import boto3
 
-from lambdas.common import espn, nfl_store
+from lambdas.common import espn, hype, nfl_store
 
 WINDOW_BEFORE = timedelta(minutes=15)
 # A suspended or postponed game never completes; don't let it hold the window open.
 WINDOW_AFTER = timedelta(hours=6)
 RUN_TTL = timedelta(days=30)
+# ESPN's predictor updates around 10:00Z; one fetch a day after that is enough.
+PREDICTOR_HOUR = 15
 REGULAR = 2
 LAST_WEEK = 18
 
@@ -118,14 +121,38 @@ def scoreboard(season: int | None = None, week: int | None = None) -> dict:
     return json.loads(body)
 
 
-def refresh_week(season: int, week: int, board: dict, now: datetime) -> int:
+def matchup_quality(game_id: str) -> float | None:
+    """None when ESPN has no predictor for the game; the stored value is then kept."""
+    status, body = espn.get(f"{espn.CORE}/events/{game_id}/competitions/{game_id}/predictor")
+    if status != 200:
+        return None
+    stats = json.loads(body)["homeTeam"]["statistics"]
+    return next((s["value"] for s in stats if s["name"] == "matchupQuality"), None)
+
+
+def refresh_week(season: int, week: int, board: dict, now: datetime, predictors: bool) -> tuple[int, list[str]]:
+    """Write the week's games and WEEK item. Returns (games, ids missing a predictor)."""
+    stored = {g["gameId"]: g for g in nfl_store.list_games(season, week)}
     games = [game_fields(e) for e in board["events"]]
+    missed = []
     for g in games:
+        if not predictors or g["state"] != "pre":
+            continue
+        mq = matchup_quality(g["gameId"])
+        if mq is None:
+            missed.append(g["gameId"])
+        else:
+            g["matchupQuality"] = mq
+
+    standalone = hype.standalone_ids(games)
+    for g in games:
+        # Hourly refreshes carry no predictor, and live ones no line: take those from the stored item.
+        g["hype"] = hype.hype({**stored.get(g["gameId"], {}), **g}, g["gameId"] in standalone)
         nfl_store.save_game(season, week, g)
     if games:
         lock_at, tiebreak = week_fields(games)
         nfl_store.save_week(season, week, lock_at, tiebreak, [g["gameId"] for g in games], nfl_store.iso(now))
-    return len(games)
+    return len(games), missed
 
 
 def refresh(now: datetime, mode: str) -> dict:
@@ -134,11 +161,14 @@ def refresh(now: datetime, mode: str) -> dict:
     weeks = target_weeks(season_type, current, mode)
     if weeks:
         nfl_store.set_current(season, weeks[0])
-    games = 0
+    predictors = mode == "force" or (mode == "hourly" and now.hour == PREDICTOR_HOUR)
+    games, missed = 0, []
     for week in weeks:
         same = season_type == REGULAR and week == current
-        games += refresh_week(season, week, board if same else scoreboard(season, week), now)
-    return {"season": season, "weeks": weeks, "games": games}
+        n, m = refresh_week(season, week, board if same else scoreboard(season, week), now, predictors)
+        games += n
+        missed += m
+    return {"season": season, "weeks": weeks, "games": games, "predictorMissing": missed}
 
 
 def record_run(now: datetime, mode: str, result: dict) -> None:
