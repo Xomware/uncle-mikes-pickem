@@ -1,0 +1,8 @@
+{% extends "base.txt" %}
+{% block body %}
+Email is working
+
+Hi {{ name }}, this is a test from {{ group_name }}. Results, reminders and death pool updates will look like this.
+
+Open your groups: {{ site }}/groups/
+{% endblock %}

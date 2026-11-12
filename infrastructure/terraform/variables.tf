@@ -32,6 +32,12 @@ variable "lambda_runtime" {
   default = "python3.12"
 }
 
+variable "email_unsubscribe_secret" {
+  description = "HMAC key for email unsubscribe links, from Infisical /pickem EMAIL_UNSUBSCRIBE_SECRET."
+  type        = string
+  sensitive   = true
+}
+
 variable "alarm_email" {
   description = "Where capture alarms go, from Infisical /pickem ALARM_EMAIL."
   type        = string
