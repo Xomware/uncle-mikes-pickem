@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import type { Game } from "@/lib/api/client";
+import type { Game, WeekResult, WeekView } from "@/lib/api/client";
 
-import { byeTeams, easternTime, gameDates, GOW_LABEL, slots } from "./sheet";
+import { byeTeams, easternTime, gameDates, GOW_LABEL, groupGridCsv, slots } from "./sheet";
 
 const game = (gameId: string, away: string, home: string, kickoff: string): Game => ({
   gameId,
@@ -83,4 +83,33 @@ it("lists the teams without a game", () => {
 it("formats a lock time in Eastern time", () => {
   expect(easternTime("2026-11-13T01:15:00Z")).toBe("THU 11/12 8:15 PM ET");
   expect(easternTime("2026-11-15T17:00:00Z")).toBe("SUN 11/15 12:00 PM ET");
+});
+
+describe("groupGridCsv", () => {
+  const view = {
+    games: [WEEK[0], { ...WEEK[1], canceled: true }, WEEK[4]],
+    gow: { gameId: "late", chosenBy: "", chosenAt: "" },
+    members: [
+      { sub: "b", name: "Zed" },
+      { sub: "a", name: "Amy" },
+    ],
+    picks: [{ sub: "b", picks: { tnf: { team: "NE", conf: 2 }, late: { team: "KC", conf: 1 } }, tiebreak: 41 }],
+  } as unknown as WeekView;
+
+  it("has a column per open game in sheet order, the GOW marked, and members by name", () => {
+    expect(groupGridCsv(view, null)).toEqual([
+      ["Member", "NYJ @ NE", "KC @ DEN (GOW)", "Tiebreak", "Points", "Place"],
+      ["Amy", null, null, null, null, null],
+      ["Zed", "NE 2", "KC 1", 41, null, null],
+    ]);
+  });
+
+  it("adds weekly points and places once graded", () => {
+    const result = { members: [{ sub: "a", weekly: 0, place: "2" }, { sub: "b", weekly: 3, place: "1" }] } as WeekResult;
+    expect(groupGridCsv(view, result).map((r) => r.slice(-2))).toEqual([
+      ["Points", "Place"],
+      [0, "2"],
+      [3, "1"],
+    ]);
+  });
 });

@@ -1,4 +1,6 @@
-import type { Game } from "@/lib/api/client";
+import type { Game, WeekResult, WeekView } from "@/lib/api/client";
+import type { Cell } from "@/lib/csv";
+import { gridRows } from "@/lib/picks";
 
 // The paper sheet is written in Eastern time: "Sunday night" means 8:20 PM ET wherever you live.
 const ZONE = "America/New_York";
@@ -87,4 +89,25 @@ export function byeTeams(games: Game[]): string[] {
 export function easternTime(iso: string): string {
   const { weekday, date, hour, minute } = et(iso);
   return `${weekday.toUpperCase()} ${date} ${hour % 12 || 12}:${minute} ${hour < 12 ? "AM" : "PM"} ET`;
+}
+
+/** Open games in the paper sheet's order: the group grid's columns. */
+export const sheetGames = (view: WeekView) =>
+  slots(view.games.filter((g) => !g.canceled), view.gow?.gameId ?? null).flatMap((s) => s.games);
+
+export function groupGridCsv(view: WeekView, result: WeekResult | null): Cell[][] {
+  const games = sheetGames(view);
+  const totals = new Map(result?.members.map((r) => [r.sub, r]));
+  const matchup = (g: Game) => `${g.away.abbr} @ ${g.home.abbr}${g.gameId === view.gow?.gameId ? " (GOW)" : ""}`;
+  const rows = gridRows(view, "").map((row) => [
+    row.name,
+    ...games.map((g) => {
+      const pick = row.picks?.picks[g.gameId];
+      return pick?.team ? `${pick.team} ${pick.conf}` : null;
+    }),
+    row.picks?.tiebreak ?? null,
+    totals.get(row.sub)?.weekly ?? null,
+    totals.get(row.sub)?.place ?? null,
+  ]);
+  return [["Member", ...games.map(matchup), "Tiebreak", "Points", "Place"], ...rows];
 }
