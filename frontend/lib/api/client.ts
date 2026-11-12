@@ -103,3 +103,41 @@ export const updateRules = (groupId: string, changes: Partial<Rules>) =>
   post<{ rules: Rules; version: number; effectiveWeek: number }>("/rules/update", { groupId, changes });
 export const acceptInvite = (code: string, entryType: EntryType) =>
   post<GroupSummary & { joined: boolean }>("/invites/accept", { code, entryType });
+
+export interface DeathGame {
+  gameId: string;
+  kickoff: string;
+  away: string;
+  home: string;
+  /** The home team's line, negative when home is favored. */
+  spread: number | null;
+  details: string | null;
+}
+
+export interface DeathEntry {
+  entryId: string;
+  label: string;
+  ownerSub: string;
+  ownerName: string;
+  mine: boolean;
+  /** Week number to team. null is another entry's pick, hidden until that week locks. */
+  picks: Record<string, string | null>;
+  used: string[];
+  livesLeft: number;
+  status: "alive" | "eliminated";
+  eliminatedWeek: number | null;
+}
+
+export interface DeathBoard {
+  season: number;
+  startLives: number;
+  week: { number: number; lockAt: string; locked: boolean; games: DeathGame[] } | null;
+  entries: DeathEntry[];
+}
+
+export const getDeathBoard = (groupId: string) =>
+  request<DeathBoard>(`/death/board?id=${encodeURIComponent(groupId)}`);
+export const addDeathEntry = (groupId: string, label?: string, sub?: string) =>
+  post<{ entryId: string; ownerSub: string; label: string }>("/death/entry", { groupId, label, sub });
+export const setDeathPick = (groupId: string, entryId: string, week: number, team: string) =>
+  post<{ entryId: string; label: string; picks: Record<string, string> }>("/death/pick", { groupId, entryId, week, team });
