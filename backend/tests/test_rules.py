@@ -38,3 +38,11 @@ def test_rejects_unknown_settings():
         new_version([], {"pickemTie": "half"}, 1)
     with pytest.raises(ValueError):
         new_version([], {"fee": 20}, 1)
+
+
+def test_money_settings_version_like_the_rest():
+    v1 = new_version([], {"fees": {"weekly": 10, "yearly": 50, "death": 20}}, 1)
+    v2 = new_version([v1], {"payments": [{"method": "venmo", "handle": "@dom"}]}, 3)
+    assert rules_for([v1, v2], 2)["payments"] == []
+    assert rules_for([v1, v2], 3)["fees"]["yearly"] == 50
+    assert rules_for([], 1)["potSplits"] == {"weekly": [100], "yearly": [100], "death": [100]}
