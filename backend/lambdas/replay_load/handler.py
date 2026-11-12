@@ -46,25 +46,39 @@ def snapshots(boards: list[tuple[str, dict]]) -> dict[str, list[dict]]:
     return out
 
 
-def game_row(g: dict, snaps: list[dict]) -> dict:
+def team_info(boards: list[tuple[str, dict]]) -> dict[str, dict]:
+    """Logo and colors by abbr from the captured scoreboards. Every team plays in Weeks 10+, so
+    after a few captures this covers the league, Weeks 1-9 included."""
+    return {
+        c["team"]["abbreviation"]: nfl_store.team(c["team"])
+        for _, board in boards
+        for e in board["events"]
+        for c in e["competitions"][0]["competitors"]
+    }
+
+
+def game_row(g: dict, snaps: list[dict], teams: dict[str, dict]) -> dict:
+    def side(abbr: str) -> dict:
+        return teams.get(abbr) or {"abbr": abbr, "logo": nfl_store.logo_url(abbr)}
+
     return {
         "gameId": g["gameId"],
         "nflverseId": g["nflverseId"],
         "kickoff": g["kickoff"],
         "timeValid": g["timeValid"],
-        "away": {"abbr": g["away"]},
-        "home": {"abbr": g["home"]},
+        "away": side(g["away"]),
+        "home": side(g["home"]),
         "lines": {"provider": "nflverse", "details": None, "spread": g["spread"], "overUnder": g["overUnder"]},
         **{k: g[k] for k in ("awayScore", "homeScore", "winner", "tie", "final")},
         "snapshots": snaps,
     }
 
 
-def weeks(text: str, snaps: dict[str, list[dict]]) -> dict[int, list[dict]]:
+def weeks(text: str, snaps: dict[str, list[dict]], teams: dict[str, dict]) -> dict[int, list[dict]]:
     out = defaultdict(list)
     for g in nflverse.games(text, SEASON).values():
         if g["gameType"] == "REG":
-            out[g["week"]].append(game_row(g, snaps.get(g["gameId"], [])))
+            out[g["week"]].append(game_row(g, snaps.get(g["gameId"], []), teams))
     for games in out.values():
         standalone = hype.standalone_ids(games)
         for g in games:
@@ -85,6 +99,6 @@ def captured_boards() -> list[tuple[str, dict]]:
 
 def handler(event, context):
     boards = captured_boards()
-    rows = weeks(nflverse.fetch(), snapshots(boards))
+    rows = weeks(nflverse.fetch(), snapshots(boards), team_info(boards))
     nfl_store.save_replay(SEASON, rows, nfl_store.iso(datetime.now(timezone.utc)))
     return {"weeks": len(rows), "games": sum(map(len, rows.values())), "captures": len(boards)}
