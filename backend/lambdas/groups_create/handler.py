@@ -33,7 +33,7 @@ def handler(event, context):
         "ownerSub": me["sub"],
         "createdAt": datetime.now(timezone.utc).isoformat(),
     }
-    owner = member_item(group, me["sub"], me["name"], "owner")
+    owner = member_item(group, me["sub"], me["name"], "owner", "season")
     table = os.environ["APP_TABLE"]
     dynamodb.meta.client.transact_write_items(
         TransactItems=[

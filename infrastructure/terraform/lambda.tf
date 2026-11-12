@@ -14,11 +14,19 @@ locals {
     { name = "create", description = "Create an invite code for a group", path_part = "create", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
     { name = "accept", description = "Join a group with an invite code", path_part = "accept", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
   ]
+  rules_lambdas = [
+    { name = "update", description = "Write a new versioned rules item for a group", path_part = "update", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+  ]
+  members_lambdas = [
+    { name = "update", description = "Change a member's entry type or role", path_part = "update", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+  ]
 
   all_api_lambdas = merge(
     { for l in local.me_lambdas : "me_${l.name}" => l },
     { for l in local.groups_lambdas : "groups_${l.name}" => l },
     { for l in local.invites_lambdas : "invites_${l.name}" => l },
+    { for l in local.rules_lambdas : "rules_${l.name}" => l },
+    { for l in local.members_lambdas : "members_${l.name}" => l },
   )
 
   # One role per function, granted only the table actions its handler makes.
@@ -37,6 +45,8 @@ locals {
     groups_get     = ["app:Query"]
     invites_create = ["app:GetItem", "app:PutItem"]
     invites_accept = ["app:GetItem", "app:PutItem"]
+    rules_update   = ["app:GetItem", "app:Query", "app:PutItem"]
+    members_update = ["app:GetItem", "app:UpdateItem"]
   }
 }
 

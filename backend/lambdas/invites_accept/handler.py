@@ -1,4 +1,4 @@
-"""POST /invites/accept {code}: join the invite's group as a member. Accepting twice is a no-op."""
+"""POST /invites/accept {code, entryType?}: join the invite's group as a member. Accepting twice is a no-op."""
 
 import os
 from datetime import datetime, timezone
@@ -8,13 +8,14 @@ import boto3
 from pydantic import StringConstraints
 
 from lambdas.common.api import ApiError, Request, api_handler, parse_body, respond, user
-from lambdas.common.groups import group_summary, member_item
+from lambdas.common.groups import EntryType, group_summary, member_item
 
 dynamodb = boto3.resource("dynamodb")
 
 
 class AcceptInvite(Request):
     code: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=64)]
+    entryType: EntryType = "season"
 
 
 @api_handler("invites_accept")
@@ -30,7 +31,7 @@ def handler(event, context):
         raise ApiError(410, "That invite link has expired. Ask your organizer for a new one.")
 
     group = table.get_item(Key={"PK": f"GROUP#{invite['groupId']}", "SK": "META"})["Item"]
-    member = member_item(group, me["sub"], me["name"], "member")
+    member = member_item(group, me["sub"], me["name"], "member", body.entryType)
     # Never overwrite an existing member: that would reset their role and joinedWeek.
     try:
         table.put_item(Item=member, ConditionExpression="attribute_not_exists(SK)")

@@ -12,8 +12,14 @@ DEFAULTS = {
     "deathTie": "loss",
     "deathSecondLife": False,
     "lock": "firstKickoff",
+    # Whole dollars. Weekly-entry members pay the weekly fee; season members pay weekly + yearly.
+    "fees": {"weekly": 0, "yearly": 0, "death": 0},
+    # Percent of each pot by finishing place, summing to 100.
+    "potSplits": {"weekly": [100], "yearly": [100], "death": [100]},
+    "payments": [],
 }
 
+# Enumerated settings. fees, potSplits and payments are shape-checked at the API boundary.
 CHOICES = {
     "pickemTie": {"zero", "full"},
     "deathTie": {"loss", "win"},
@@ -34,7 +40,7 @@ def rules_for(versions: list[dict], week: int) -> dict:
 def new_version(versions: list[dict], changes: dict, effective_week: int) -> dict:
     """The next RULES item for `changes`, taking effect at `effective_week` (the next unlocked week)."""
     for key, value in changes.items():
-        if key not in CHOICES or value not in CHOICES[key]:
+        if key not in DEFAULTS or (key in CHOICES and value not in CHOICES[key]):
             raise ValueError(f"invalid setting {key}={value!r}")
     current = rules_for(versions, effective_week)
     flips_life = changes.get("deathSecondLife", current["deathSecondLife"]) != current["deathSecondLife"]
