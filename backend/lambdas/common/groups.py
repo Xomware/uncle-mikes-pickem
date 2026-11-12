@@ -1,31 +1,25 @@
 """Group membership on pickem-app: `GROUP#g` / `MEMBER#sub`, indexed by GSI1 `USER#sub` / `GROUP#g`."""
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Literal
 
-from lambdas.common import clock, nfl_store
+from lambdas.common import nfl_store
 from lambdas.common.api import ApiError
 
 ORGANIZERS = ("owner", "admin")
+# The only season with replay rows (F5); the real launch is 2027.
+REPLAY_SEASON = 2026
+# Replay jumps land an hour before a week's lock: its picks open, the previous week graded.
+BEFORE_LOCK = timedelta(hours=1)
 EntryType = Literal["weekly", "season"]
 
 
-def last_locked_week(season: int) -> int | None:
-    """Latest week of `season` whose lock has passed. None while the NFL store has no data for it."""
-    current = nfl_store.current_week()
-    if current is None or current[0] < season:
-        return None
-    if current[0] > season:
-        return 18
-    week = current[1]
-    stored = nfl_store.get_week(season, week)
-    if stored and stored["lockAt"] <= nfl_store.iso(clock.now()):
-        return week
-    return week - 1 or None
+def next_unlocked_week(group: dict) -> int:
+    return (nfl_store.for_group(group).last_locked_week() or 0) + 1
 
 
-def next_unlocked_week(season: int) -> int:
-    return (last_locked_week(season) or 0) + 1
+def replay_start(lock_at: str) -> str:
+    return nfl_store.iso(nfl_store.parse(lock_at) - BEFORE_LOCK)
 
 
 def member_item(group: dict, sub: str, name: str, role: str, entry_type: str) -> dict:
@@ -44,7 +38,7 @@ def member_item(group: dict, sub: str, name: str, role: str, entry_type: str) ->
         "groupName": group["name"],
         "season": group["season"],
         # The first week this member can pick; earlier weeks grade as missed.
-        "joinedWeek": next_unlocked_week(int(group["season"])),
+        "joinedWeek": next_unlocked_week(group),
         "joinedAt": datetime.now(timezone.utc).isoformat(),
     }
 

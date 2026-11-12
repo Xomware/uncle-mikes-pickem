@@ -27,6 +27,19 @@ locals {
   gow_lambdas = [
     { name = "set", description = "Choose a group's game of the week", path_part = "set", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
   ]
+  death_lambdas = [
+    { name = "entry", description = "Add a death pool entry for the caller or a member", path_part = "entry", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+    { name = "pick", description = "Set a death pool entry's team for a week", path_part = "pick", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+    { name = "board", description = "Read a group's death pool grid and the open week (?id=)", path_part = "board", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+  ]
+
+  payments_lambdas = [
+    { name = "ledger", description = "Read what members owe and have paid, and the pots (?id=)", path_part = "ledger", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+    { name = "mark", description = "Mark a member's fee paid or unpaid", path_part = "mark", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+  ]
+  replay_lambdas = [
+    { name = "advance", description = "Move a replay group's virtual clock", path_part = "advance", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+  ]
 
   all_api_lambdas = merge(
     { for l in local.me_lambdas : "me_${l.name}" => l },
@@ -36,6 +49,9 @@ locals {
     { for l in local.members_lambdas : "members_${l.name}" => l },
     { for l in local.gow_lambdas : "gow_${l.name}" => l },
     { for l in local.picks_lambdas : "picks_${l.name}" => l },
+    { for l in local.death_lambdas : "death_${l.name}" => l },
+    { for l in local.payments_lambdas : "payments_${l.name}" => l },
+    { for l in local.replay_lambdas : "replay_${l.name}" => l },
   )
 
   # One role per function, granted only the table actions its handler makes.
@@ -59,6 +75,13 @@ locals {
     gow_set        = ["app:GetItem", "app:PutItem", "nfl:GetItem"]
     picks_set      = ["app:GetItem", "app:PutItem", "nfl:GetItem", "nfl:Query"]
     picks_get      = ["app:Query", "nfl:GetItem", "nfl:Query"]
+    death_entry    = ["app:GetItem", "app:Query", "app:PutItem", "nfl:GetItem"]
+    death_pick     = ["app:GetItem", "app:UpdateItem", "nfl:GetItem", "nfl:Query"]
+    death_board    = ["app:Query", "nfl:GetItem", "nfl:Query"]
+
+    payments_ledger = ["app:Query", "nfl:GetItem"]
+    payments_mark   = ["app:GetItem", "app:PutItem"]
+    replay_advance  = ["app:GetItem", "app:UpdateItem"]
   }
 }
 

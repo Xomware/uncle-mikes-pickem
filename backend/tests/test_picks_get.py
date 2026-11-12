@@ -1,5 +1,6 @@
 import pytest
 
+from lambdas.common import nfl_store
 from tests.conftest import DOM, PAT, SAM, call, seed_week, table
 
 LOCK = "2027-09-10T00:20:00Z"
@@ -72,3 +73,28 @@ def test_no_picks_yet(api, gid):
     other = call(api["groups_create"], SAM, {"name": "Empty", "season": 2027})[1]["groupId"]
     status, data = read(api, other, who=SAM)
     assert (status, data["mine"], data["gow"]) == (200, None, None)
+
+
+def test_a_replay_group_reads_replay_rows_on_its_clock(api):
+    def game(gid, kickoff):
+        return {"gameId": gid, "kickoff": kickoff, "away": {"abbr": "DAL"}, "home": {"abbr": "PHI"}, "lines": None,
+                "winner": "PHI", "final": True}
+
+    weeks = {1: [game("1", "2026-09-11T00:20:00Z")], 2: [game("2", "2026-09-18T00:15:00Z")]}
+    nfl_store.save_replay(2026, weeks, "2026-11-12T00:00:00Z")
+    gid = call(api["groups_create"], DOM, {"name": "Replay", "season": 2026, "replay": True})[1]["groupId"]
+
+    data = read(api, gid, who=DOM)[1]
+    assert (data["week"]["week"], data["week"]["locked"]) == (1, False)
+    # The replay clock is before kickoff, so the result stays hidden.
+    assert data["games"][0]["winner"] is None
+
+    table().update_item(
+        Key={"PK": f"GROUP#{gid}", "SK": "META"},
+        UpdateExpression="SET clock = :c",
+        ExpressionAttributeValues={":c": "2026-09-17T23:15:00Z"},
+    )
+    assert read(api, gid, who=DOM)[1]["week"]["week"] == 2
+    week1 = read(api, gid, who=DOM, week="1")[1]
+    assert week1["week"]["locked"] is True
+    assert week1["games"][0]["winner"] == "PHI"

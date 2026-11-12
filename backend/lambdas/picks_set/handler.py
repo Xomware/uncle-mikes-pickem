@@ -10,7 +10,7 @@ from typing import Annotated
 import boto3
 from pydantic import Field, StringConstraints
 
-from lambdas.common import clock, nfl_store, picks, weeks
+from lambdas.common import nfl_store, picks, weeks
 from lambdas.common.api import ApiError, Request, api_handler, parse_body, respond, user
 
 dynamodb = boto3.resource("dynamodb")
@@ -33,17 +33,17 @@ def handler(event, context):
     me = user(event)
     body = parse_body(event, SetPicks)
     table = dynamodb.Table(os.environ["APP_TABLE"])
-    group, member, nfl_week = weeks.load(table, body.groupId, me["sub"], body.week)
+    group, member, feed, nfl_week = weeks.load(table, body.groupId, me["sub"], body.week)
     if body.week < member["joinedWeek"]:
         raise ApiError(409, f"You joined in Week {member['joinedWeek']}")
-    weeks.require_unlocked(group, nfl_week)
+    weeks.require_unlocked(feed, nfl_week)
 
     season = int(group["season"])
     pk = weeks.week_pk(body.groupId, season, body.week)
     if "Item" not in table.get_item(Key={"PK": pk, "SK": "GOW"}):
         raise ApiError(409, "Picks open once the game of the week is set")
 
-    games = nfl_store.list_games(season, body.week)
+    games = feed.games(body.week)
     chosen = {gid: p.model_dump() for gid, p in body.picks.items()}
     try:
         picks.validate(chosen, games)
@@ -57,7 +57,7 @@ def handler(event, context):
         "picks": chosen,
         "tiebreak": body.tiebreak,
         "complete": picks.complete(chosen, games, body.tiebreak),
-        "submittedAt": nfl_store.iso(clock.now(group)),
+        "submittedAt": nfl_store.iso(feed.now),
     }
     table.put_item(Item=item)
     return respond(200, {"pick": picks.public(item)})
