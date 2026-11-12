@@ -1,0 +1,235 @@
+{
+ "season": {
+  "type": 2,
+  "year": 2026
+ },
+ "week": {
+  "number": 11
+ },
+ "events": [
+  {
+   "id": "401873066",
+   "date": "2026-11-20T01:15Z",
+   "shortName": "IND @ HOU",
+   "competitions": [
+    {
+     "date": "2026-11-20T01:15Z",
+     "timeValid": true,
+     "neutralSite": false,
+     "venue": {
+      "id": "3891",
+      "fullName": "Reliant Stadium",
+      "indoor": true,
+      "address": {
+       "city": "Houston",
+       "state": "TX",
+       "country": "USA"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "id": "34",
+        "abbreviation": "HOU"
+       }
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "id": "11",
+        "abbreviation": "IND"
+       }
+      }
+     ],
+     "status": {
+      "type": {
+       "name": "STATUS_SCHEDULED",
+       "state": "pre",
+       "completed": false
+      }
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "Prime Video"
+       ]
+      }
+     ],
+     "odds": [
+      {
+       "provider": {
+        "name": "DraftKings"
+       },
+       "details": "HOU -10",
+       "spread": -10.0,
+       "overUnder": 44.5,
+       "moneyline": {
+        "home": {
+         "close": {
+          "odds": "-455"
+         }
+        },
+        "away": {
+         "close": {
+          "odds": "+350"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401873077",
+   "date": "2026-11-23T01:20Z",
+   "shortName": "MIN VS SF",
+   "competitions": [
+    {
+     "date": "2026-11-23T01:20Z",
+     "timeValid": true,
+     "neutralSite": true,
+     "venue": {
+      "id": "8219",
+      "fullName": "Estadio Banorte",
+      "indoor": false,
+      "address": {
+       "city": "Mexico City",
+       "country": "Mexico"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "id": "25",
+        "abbreviation": "SF"
+       }
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "id": "16",
+        "abbreviation": "MIN"
+       }
+      }
+     ],
+     "status": {
+      "type": {
+       "name": "STATUS_SCHEDULED",
+       "state": "pre",
+       "completed": false
+      }
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "NBC"
+       ]
+      }
+     ],
+     "odds": [
+      {
+       "provider": {
+        "name": "DraftKings"
+       },
+       "details": "SF -3.5",
+       "spread": -3.5,
+       "overUnder": 46.5,
+       "moneyline": {
+        "home": {
+         "close": {
+          "odds": "-205"
+         }
+        },
+        "away": {
+         "close": {
+          "odds": "+170"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401873078",
+   "date": "2026-11-24T01:15Z",
+   "shortName": "CIN @ WSH",
+   "competitions": [
+    {
+     "date": "2026-11-24T01:15Z",
+     "timeValid": true,
+     "neutralSite": false,
+     "venue": {
+      "id": "3719",
+      "fullName": "Northwest Stadium",
+      "indoor": false,
+      "address": {
+       "city": "Landover",
+       "state": "MD",
+       "country": "USA"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "id": "28",
+        "abbreviation": "WSH"
+       }
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "id": "4",
+        "abbreviation": "CIN"
+       }
+      }
+     ],
+     "status": {
+      "type": {
+       "name": "STATUS_SCHEDULED",
+       "state": "pre",
+       "completed": false
+      }
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN"
+       ]
+      }
+     ],
+     "odds": [
+      {
+       "provider": {
+        "name": "DraftKings"
+       },
+       "details": "CIN -3.5",
+       "spread": 3.5,
+       "overUnder": 51.5,
+       "moneyline": {
+        "home": {
+         "close": {
+          "odds": "+170"
+         }
+        },
+        "away": {
+         "close": {
+          "odds": "-205"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
