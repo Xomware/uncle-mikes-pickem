@@ -3,6 +3,7 @@
 import { CircleAlert, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { EmailPrefs } from "@/components/profile/email-prefs";
 import { Button } from "@/components/ui/button";
 import { getProfile, type Profile } from "@/lib/api/client";
 
@@ -50,6 +51,7 @@ export function ProfileView() {
         )}
         {load.status === "ready" && <ProfileDetails profile={load.profile} />}
       </section>
+      <EmailPrefs />
     </div>
   );
 }
