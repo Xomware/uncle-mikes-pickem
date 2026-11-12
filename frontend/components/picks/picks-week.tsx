@@ -17,6 +17,7 @@ import { sheetHref } from "@/lib/sheet";
 import { cn } from "@/lib/utils";
 
 const LAST_WEEK = 18;
+const SHEET_LINK = "inline-flex min-h-11 items-center gap-1 text-sm text-primary underline-offset-4 hover:underline";
 
 export function PicksWeek() {
   const params = useSearchParams();
@@ -59,13 +60,18 @@ function WeekBody({ view, reload }: { view: WeekView; reload: () => void }) {
         <WeekLink groupId={group.groupId} week={week.week + 1} label="Next week" />
       </div>
       <p className="truncate text-muted-foreground">{group.name}</p>
-      <Link
-        href={sheetHref(group.groupId, week.week)}
-        className="inline-flex min-h-11 items-center gap-1 text-sm text-primary underline-offset-4 hover:underline"
-      >
-        <Printer className="size-4" aria-hidden="true" />
-        Printable sheet
-      </Link>
+      <div className="flex flex-wrap gap-x-4">
+        <Link href={sheetHref(group.groupId, week.week)} className={SHEET_LINK}>
+          <Printer className="size-4" aria-hidden="true" />
+          Printable sheet
+        </Link>
+        {week.locked && (
+          <Link href={sheetHref(group.groupId, week.week, true)} className={SHEET_LINK}>
+            <Printer className="size-4" aria-hidden="true" />
+            Group sheet
+          </Link>
+        )}
+      </div>
 
       <p
         role="status"
