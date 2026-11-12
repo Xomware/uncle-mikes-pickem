@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings } from "lucide-react";
+import { ReceiptText, Settings, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useState } from "react";
@@ -41,13 +41,24 @@ function GroupDetails({ detail }: { detail: GroupDetail }) {
   const [tab, setTab] = useState<keyof typeof TABS>("members");
   return (
     <>
-      <div className="flex items-start gap-3">
-        <div className="min-w-0 flex-1">
-          <h1 className="text-3xl font-bold break-words uppercase sm:text-4xl">{group.name}</h1>
-          <p className="mt-1 text-muted-foreground">
-            {group.season} season · You&apos;re {ROLE_LABEL[role].toLowerCase()}
-          </p>
-        </div>
+      <h1 className="text-3xl font-bold break-words uppercase sm:text-4xl">{group.name}</h1>
+      <p className="mt-1 text-muted-foreground">
+        {group.season} season · You&apos;re {ROLE_LABEL[role].toLowerCase()}
+      </p>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Link href={`/group/pay/?id=${encodeURIComponent(group.groupId)}`} className={buttonVariants({ variant: "outline" })}>
+          <Wallet aria-hidden="true" />
+          Pay
+        </Link>
+        {isOrganizer(role) && (
+          <Link
+            href={`/group/payments/?id=${encodeURIComponent(group.groupId)}`}
+            className={buttonVariants({ variant: "outline" })}
+          >
+            <ReceiptText aria-hidden="true" />
+            Payments
+          </Link>
+        )}
         {isOrganizer(role) && (
           <Link
             href={`/group/settings/?id=${encodeURIComponent(group.groupId)}`}

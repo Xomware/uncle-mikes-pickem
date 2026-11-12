@@ -95,6 +95,46 @@ export interface GroupDetail {
   rulesVersion: number;
 }
 
+export type PaymentKind = "weekly" | "yearly" | "death";
+
+export interface LedgerLine {
+  kind: PaymentKind;
+  owed: number;
+  paid: boolean;
+  entryId?: string;
+  label?: string | null;
+  amount?: number;
+  method?: PaymentMethod;
+  paidOn?: string;
+}
+
+export interface LedgerRow {
+  sub: string;
+  name: string;
+  entryType: EntryType;
+  lines: LedgerLine[];
+  owed: number;
+  paid: number;
+  balance: number;
+}
+
+export interface Pot {
+  entries: number;
+  total: number;
+  collected: number;
+  payouts: number[];
+}
+
+/** members holds only the caller's row unless the caller is an organizer. */
+export interface Ledger {
+  group: { groupId: string; name: string; season: number };
+  role: Role;
+  fees: Pots<number>;
+  methods: Rules["payments"];
+  members: LedgerRow[];
+  pots: Pots<Pot>;
+}
+
 export const myGroups = () => request<GroupSummary[]>("/groups/mine");
 export const createGroup = (name: string, season: number) => post<GroupSummary>("/groups/create", { name, season });
 export const getGroup = (id: string) => request<GroupDetail>(`/groups/get?id=${encodeURIComponent(id)}`);
@@ -141,3 +181,18 @@ export const addDeathEntry = (groupId: string, label?: string, sub?: string) =>
   post<{ entryId: string; ownerSub: string; label: string }>("/death/entry", { groupId, label, sub });
 export const setDeathPick = (groupId: string, entryId: string, week: number, team: string) =>
   post<{ entryId: string; label: string; picks: Record<string, string> }>("/death/pick", { groupId, entryId, week, team });
+
+export const getLedger = (id: string) => request<Ledger>(`/payments/ledger?id=${encodeURIComponent(id)}`);
+
+export interface Mark {
+  groupId: string;
+  sub: string;
+  kind: PaymentKind;
+  entryId?: string;
+  paid: boolean;
+  amount?: number;
+  method?: PaymentMethod;
+  paidOn?: string;
+}
+
+export const markPayment = (mark: Mark) => post<Omit<Mark, "groupId">>("/payments/mark", mark);

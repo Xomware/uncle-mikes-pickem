@@ -26,6 +26,11 @@ locals {
     { name = "board", description = "Read a group's death pool grid and the open week (?id=)", path_part = "board", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
   ]
 
+  payments_lambdas = [
+    { name = "ledger", description = "Read what members owe and have paid, and the pots (?id=)", path_part = "ledger", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+    { name = "mark", description = "Mark a member's fee paid or unpaid", path_part = "mark", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+  ]
+
   all_api_lambdas = merge(
     { for l in local.me_lambdas : "me_${l.name}" => l },
     { for l in local.groups_lambdas : "groups_${l.name}" => l },
@@ -33,6 +38,7 @@ locals {
     { for l in local.rules_lambdas : "rules_${l.name}" => l },
     { for l in local.members_lambdas : "members_${l.name}" => l },
     { for l in local.death_lambdas : "death_${l.name}" => l },
+    { for l in local.payments_lambdas : "payments_${l.name}" => l },
   )
 
   # One role per function, granted only the table actions its handler makes.
@@ -56,6 +62,9 @@ locals {
     death_entry    = ["app:GetItem", "app:Query", "app:PutItem", "nfl:GetItem"]
     death_pick     = ["app:GetItem", "app:UpdateItem", "nfl:GetItem", "nfl:Query"]
     death_board    = ["app:Query", "nfl:GetItem", "nfl:Query"]
+
+    payments_ledger = ["app:Query", "nfl:GetItem"]
+    payments_mark   = ["app:GetItem", "app:PutItem"]
   }
 }
 
