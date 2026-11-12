@@ -1,10 +1,13 @@
 "use client";
 
+import { Settings } from "lucide-react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback } from "react";
 
 import { InviteLink } from "@/components/groups/invite-link";
 import { LoadError } from "@/components/load-error";
+import { buttonVariants } from "@/components/ui/button";
 import { type GroupDetail, getGroup } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
 import { ENTRY_LABEL, ROLE_LABEL, isOrganizer } from "@/lib/groups";
@@ -40,6 +43,15 @@ function GroupDetails({ detail }: { detail: GroupDetail }) {
             {group.season} season · You&apos;re {ROLE_LABEL[role].toLowerCase()}
           </p>
         </div>
+        {isOrganizer(role) && (
+          <Link
+            href={`/group/settings/?id=${encodeURIComponent(group.groupId)}`}
+            className={buttonVariants({ variant: "outline" })}
+          >
+            <Settings aria-hidden="true" />
+            Settings
+          </Link>
+        )}
       </div>
 
       {isOrganizer(role) && <InviteLink groupId={group.groupId} />}

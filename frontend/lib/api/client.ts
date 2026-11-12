@@ -99,5 +99,7 @@ export const myGroups = () => request<GroupSummary[]>("/groups/mine");
 export const createGroup = (name: string, season: number) => post<GroupSummary>("/groups/create", { name, season });
 export const getGroup = (id: string) => request<GroupDetail>(`/groups/get?id=${encodeURIComponent(id)}`);
 export const createInvite = (groupId: string) => post<{ code: string; expiresAt: string }>("/invites/create", { groupId });
+export const updateRules = (groupId: string, changes: Partial<Rules>) =>
+  post<{ rules: Rules; version: number; effectiveWeek: number }>("/rules/update", { groupId, changes });
 export const acceptInvite = (code: string, entryType: EntryType) =>
   post<GroupSummary & { joined: boolean }>("/invites/accept", { code, entryType });
