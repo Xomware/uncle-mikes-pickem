@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { type Game, type WeekView, cancelGame, setGow, setPicks } from "@/lib/api/client";
 import { isOrganizer } from "@/lib/groups";
 import { type Sheet, confAt, isComplete, pickedCount, sameSheet, spreadText, swap, toPayload, toSheet } from "@/lib/picks";
+import { etTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
 type SaveState = { kind: "idle" | "saving" } | { kind: "saved"; at: string } | { kind: "failed"; message: string };
@@ -70,7 +71,7 @@ export function PickSheet({ view, locked, reload }: Props) {
   const canceled = games.filter((g) => g.canceled);
 
   return (
-    <div className="mt-6 pb-28">
+    <div className="mt-6">
       {!gow && !locked && (
         <p className="panel mb-4 p-3 text-sm text-muted-foreground">
           Picks open once the organizer chooses the game of the week.
@@ -203,7 +204,7 @@ interface RowProps {
 function GameRow({ game, conf, team, isGow, isTiebreak, editable, selected, first, last, onPick, onConf, onMove, manage }: RowProps) {
   const matchup = `${game.away.abbr} at ${game.home.abbr}`;
   const details = [
-    new Date(game.kickoff).toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" }),
+    etTime(game.kickoff),
     game.broadcasts?.[0],
     spreadText(game),
     game.lines?.overUnder != null ? `O/U ${game.lines.overUnder}` : null,
@@ -312,8 +313,10 @@ function SaveBar({ sheet, dirty, save, onSave }: { sheet: Sheet; dirty: boolean;
   else if (save.kind === "saved") status = complete ? "Saved. All picks in." : `Draft saved. ${missing.join(", ")}.`;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-10 border-t-2 border-primary bg-board">
-      <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3 sm:px-6">
+    // Sticky, not fixed: it keeps its own height at the end of the sheet, so however far the
+    // status text wraps, the last row and the tiebreak always scroll clear of it.
+    <div className="sticky bottom-0 z-10 -mx-4 mt-6 border-t-2 border-primary bg-board pb-[env(safe-area-inset-bottom)] sm:-mx-6">
+      <div className="flex items-center gap-3 px-4 py-3 sm:px-6">
         <p role="status" aria-live="polite" className="flex min-w-0 flex-1 items-center gap-2 text-sm">
           {!dirty && complete && save.kind !== "failed" && <CircleCheck className="size-4 shrink-0 text-primary" aria-hidden="true" />}
           <span className="min-w-0">{status}</span>

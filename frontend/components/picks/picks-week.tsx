@@ -14,6 +14,7 @@ import { type WeekView, getWeek } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
 import { groupHref } from "@/lib/groups";
 import { countdown, picksHref } from "@/lib/picks";
+import { etTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
 const LAST_WEEK = 18;
@@ -78,7 +79,7 @@ function WeekBody({ view, reload }: { view: WeekView; reload: () => void }) {
           <>
             <span className="min-w-0 flex-1 text-muted-foreground">
               <span className="block font-display text-xs font-bold tracking-[0.2em] uppercase">Picks lock in</span>
-              {new Date(week.lockAt).toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" })}
+              {etTime(week.lockAt)}
             </span>
             <strong className="led text-3xl leading-none">{left}</strong>
           </>
