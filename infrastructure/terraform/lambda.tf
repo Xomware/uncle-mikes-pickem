@@ -20,6 +20,10 @@ locals {
   members_lambdas = [
     { name = "update", description = "Change a member's entry type or role", path_part = "update", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
   ]
+  death_lambdas = [
+    { name = "entry", description = "Add a death pool entry for the caller or a member", path_part = "entry", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+    { name = "pick", description = "Set a death pool entry's team for a week", path_part = "pick", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+  ]
 
   all_api_lambdas = merge(
     { for l in local.me_lambdas : "me_${l.name}" => l },
@@ -27,6 +31,7 @@ locals {
     { for l in local.invites_lambdas : "invites_${l.name}" => l },
     { for l in local.rules_lambdas : "rules_${l.name}" => l },
     { for l in local.members_lambdas : "members_${l.name}" => l },
+    { for l in local.death_lambdas : "death_${l.name}" => l },
   )
 
   # One role per function, granted only the table actions its handler makes.
@@ -47,6 +52,8 @@ locals {
     invites_accept = ["app:GetItem", "app:PutItem", "nfl:GetItem"]
     rules_update   = ["app:GetItem", "app:Query", "app:PutItem", "nfl:GetItem"]
     members_update = ["app:GetItem", "app:UpdateItem"]
+    death_entry    = ["app:GetItem", "app:Query", "app:PutItem", "nfl:GetItem"]
+    death_pick     = ["app:GetItem", "app:UpdateItem", "nfl:GetItem", "nfl:Query"]
   }
 }
 

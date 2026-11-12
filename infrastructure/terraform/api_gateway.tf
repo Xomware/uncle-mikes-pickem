@@ -24,6 +24,11 @@ locals {
       invoke_arn = aws_lambda_function.api["members_${l.name}"].invoke_arn
     })
   ]
+  death_endpoints = [
+    for l in local.death_lambdas : merge(l, {
+      invoke_arn = aws_lambda_function.api["death_${l.name}"].invoke_arn
+    })
+  ]
 }
 
 module "api" {
@@ -55,5 +60,6 @@ module "api" {
     invites = { path_prefix = "invites", endpoints = local.invites_endpoints }
     rules   = { path_prefix = "rules", endpoints = local.rules_endpoints }
     members = { path_prefix = "members", endpoints = local.members_endpoints }
+    death   = { path_prefix = "death", endpoints = local.death_endpoints }
   }
 }
