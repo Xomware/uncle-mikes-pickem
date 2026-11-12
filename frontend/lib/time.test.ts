@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { etTime } from "./time";
+import { etDate, etTime } from "./time";
+
+describe("etDate", () => {
+  it("dates a Thursday night game by its Eastern day, not UTC's Friday", () => {
+    expect(etDate("2026-11-13T01:15:00Z")).toBe("Thu, Nov 12 · 8:15 PM ET");
+  });
+});
 
 describe("etTime", () => {
   it("shows Week 10 kickoffs on the Eastern clock", () => {

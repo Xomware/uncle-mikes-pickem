@@ -208,6 +208,66 @@ export const setGow = (groupId: string, week: number, gameId: string) =>
   post<{ gow: Gow }>("/gow/set", { groupId, week, gameId });
 export const cancelGame = (groupId: string, week: number, gameId: string, canceled: boolean) =>
   post<{ canceled: string[] }>("/games/cancel", { groupId, week, gameId, canceled });
+export interface Injury {
+  name: string;
+  position: string | null;
+  /** Out, Doubtful, Questionable, IR, or whatever else ESPN sends. */
+  status: string;
+  detail: string | null;
+  returnDate: string | null;
+  headshot: string;
+}
+
+export interface InfoTeam extends Team {
+  name?: string | null;
+  record?: string | null;
+  /** Home record for the home team, road record for the away team. */
+  split?: string | null;
+  form: { week: number; atVs: string; opponent: string; result: "W" | "L" | "T"; score: string }[];
+  injuries: Injury[];
+}
+
+export interface GameInfo {
+  game: {
+    gameId: string;
+    week: number;
+    kickoff: string;
+    timeValid: boolean | null;
+    state: "pre" | "in" | "post" | null;
+    completed: boolean | null;
+    awayScore: number | null;
+    homeScore: number | null;
+    winner: string | null;
+    lines: {
+      provider?: string | null;
+      details?: string | null;
+      spread?: number | null;
+      overUnder?: number | null;
+      homeMoneyline?: number | null;
+      awayMoneyline?: number | null;
+    } | null;
+    broadcasts: string[];
+    venue: { name?: string | null; city?: string | null; state?: string | null; roof: string | null };
+  };
+  away: InfoTeam;
+  home: InfoTeam;
+  /** null indoors, or when ESPN has no forecast. Precipitation is probably percent chance (unverified). */
+  weather: {
+    temperature?: number | null;
+    high?: number | null;
+    low?: number | null;
+    gust?: number | null;
+    precipitation?: number | null;
+    description?: string | null;
+  } | null;
+  headToHead: { season: number; week: number; gameType: string; kickoff: string; away: string; home: string; awayScore: number; homeScore: number }[];
+  /** capture: a replay group's snapshot; none: no snapshot yet, so injuries, form and weather are empty. */
+  source: { kind: "espn" | "capture" | "none"; at: string | null; note?: string };
+}
+
+export const getGameInfo = (groupId: string, gameId: string) =>
+  request<GameInfo>(`/games/info?groupId=${encodeURIComponent(groupId)}&gameId=${encodeURIComponent(gameId)}`);
+
 export interface DeathGame {
   gameId: string;
   kickoff: string;

@@ -1,7 +1,10 @@
+import Link from "next/link";
+
 import { LightBank } from "@/components/field/icons";
 import { ResultMark } from "@/components/field/result-mark";
 import { TeamLogo } from "@/components/field/team-logo";
 import type { Team, WeekView } from "@/lib/api/client";
+import { gameHref } from "@/lib/game";
 import { gridRows, outcome } from "@/lib/picks";
 import { cn } from "@/lib/utils";
 
@@ -32,14 +35,20 @@ export function GroupGrid({ view }: { view: WeekView }) {
                       Prime<span className="sr-only">time, game of the week</span>
                     </span>
                   )}
-                  <span className="flex items-center justify-center gap-1 text-xs font-bold text-muted-foreground">
-                    <TeamLogo {...g.away} className="size-4" />
-                    {g.away.abbr}
-                  </span>
-                  <span className="mt-0.5 flex items-center justify-center gap-1 text-base font-extrabold">
-                    <TeamLogo {...g.home} className="size-5" />
-                    {g.home.abbr}
-                  </span>
+                  <Link
+                    href={gameHref(view.group.groupId, g.gameId)}
+                    aria-label={`${g.away.abbr} at ${g.home.abbr}, game info`}
+                    className="block rounded-sm outline-none hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-ring/60"
+                  >
+                    <span className="flex items-center justify-center gap-1 text-xs font-bold text-muted-foreground">
+                      <TeamLogo {...g.away} className="size-4" />
+                      {g.away.abbr}
+                    </span>
+                    <span className="mt-0.5 flex items-center justify-center gap-1 text-base font-extrabold">
+                      <TeamLogo {...g.home} className="size-5" />
+                      {g.home.abbr}
+                    </span>
+                  </Link>
                 </th>
               ))}
               <th scope="col" className="min-w-16 px-2 py-2 text-center align-bottom">
