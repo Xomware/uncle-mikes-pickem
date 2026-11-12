@@ -94,6 +94,17 @@ def test_game_fields_keep_espn_spread_sign(tick):
     assert tick.game_fields(events["401873058"])["lines"]["spread"] == 3.0
 
 
+def test_game_fields_carry_espn_logo_and_colors(tick):
+    event = copy.deepcopy(next(e for e in board(10)["events"] if e["id"] == "401873052"))
+    home = tick.game_fields(event)["home"]
+    assert home == {
+        "id": "19", "abbr": "NYG", "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/nyg.png",
+        "color": "003c7f", "alternateColor": "c9243f",
+    }
+    del event["competitions"][0]["competitors"][1]["team"]["logo"]
+    assert tick.game_fields(event)["away"]["logo"] == "https://a.espncdn.com/i/teamlogos/nfl/500/wsh.png"
+
+
 def test_force_refreshes_current_and_next_week(tick, store, monkeypatch):
     calls = serve(monkeypatch, tick, [board(10), board(11)])
     out = tick.handler({"force": True}, None)

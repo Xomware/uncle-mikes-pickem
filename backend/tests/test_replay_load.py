@@ -82,6 +82,16 @@ def test_capture_line_only_after_its_snapshot(loader):
     assert late["state"] == "pre"
 
 
+def test_teams_take_logos_and_colors_from_captures(loader):
+    # NYG and WSH are on the captured Week 10 board, so Week 5's game gets their colors too.
+    nyg_was = next(g for g in loader.games_as_of(2026, 5, utc(2026, 9, 1)) if g["gameId"] == "401872988")
+    assert nyg_was["away"]["color"] == "003c7f"
+    assert nyg_was["home"]["logo"] == "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/wsh.png"
+    # DEN never appears in a capture: the CDN logo stands in and the UI falls back to a plain badge.
+    den = next(g for g in loader.games_as_of(2026, 5, utc(2026, 9, 1)) if g["gameId"] == "401872989")["away"]
+    assert den == {"abbr": "DEN", "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/den.png"}
+
+
 def test_weeks_without_captures_keep_hype_from_closing_lines(loader):
     games = loader.games_as_of(2026, 5, utc(2026, 9, 1))
     assert all(g["hype"]["components"]["spread"] is not None for g in games)

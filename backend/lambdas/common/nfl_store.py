@@ -57,6 +57,23 @@ def parse(ts: str) -> datetime:
     return datetime.fromisoformat(ts.replace("Z", "+00:00"))
 
 
+def logo_url(abbr: str) -> str:
+    """ESPN's CDN path for a team logo. The art is NFL trademark, loaded from ESPN at runtime, never committed."""
+    return f"https://a.espncdn.com/i/teamlogos/nfl/500/{abbr.lower()}.png"
+
+
+def team(espn_team: dict) -> dict:
+    """A GAME's away/home: ESPN's id, abbr, logo and hex colors (no '#')."""
+    abbr = espn_team["abbreviation"]
+    return {
+        "id": espn_team["id"],
+        "abbr": abbr,
+        "logo": espn_team.get("logo") or logo_url(abbr),
+        "color": espn_team.get("color"),
+        "alternateColor": espn_team.get("alternateColor"),
+    }
+
+
 def week_fields(games: list[dict]) -> tuple[str, str]:
     """(lockAt, tiebreakGameId): first kickoff, and the last game with the higher event id on a tie."""
     lock_at = min(g["kickoff"] for g in games)

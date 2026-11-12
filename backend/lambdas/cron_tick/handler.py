@@ -90,9 +90,7 @@ def game_fields(event: dict) -> dict:
     c = event["competitions"][0]
     status = c["status"]["type"]
     scores = {t["homeAway"]: t.get("score") for t in c["competitors"]}
-    teams = {
-        t["homeAway"]: {"id": t["team"]["id"], "abbr": t["team"]["abbreviation"]} for t in c["competitors"]
-    }
+    teams = {t["homeAway"]: nfl_store.team(t["team"]) for t in c["competitors"]}
     venue = c["venue"]
     started = status["state"] != "pre"
     game = {
