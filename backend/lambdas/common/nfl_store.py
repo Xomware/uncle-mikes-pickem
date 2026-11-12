@@ -22,11 +22,14 @@ from __future__ import annotations
 
 import json
 import os
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from decimal import Decimal
 
 import boto3
 from boto3.dynamodb.conditions import Key
+
+from lambdas.common import clock
 
 dynamodb = boto3.resource("dynamodb")
 
@@ -178,3 +181,40 @@ def as_of(game: dict, now: datetime) -> dict:
     if not game["completed"]:
         game.update(awayScore=None, homeScore=None, winner=None, tie=False, final=False)
     return game
+
+
+@dataclass(frozen=True)
+class Feed:
+    """NFL data as one group sees it: the replay rows on its virtual clock, or the live season."""
+
+    season: int
+    replay: bool
+    now: datetime
+
+    def week(self, week: int) -> dict | None:
+        return get_replay_week(self.season, week) if self.replay else get_week(self.season, week)
+
+    def games(self, week: int) -> list[dict]:
+        return games_as_of(self.season, week, self.now) if self.replay else list_games(self.season, week)
+
+    def locked(self, week_item: dict) -> bool:
+        return week_item["lockAt"] <= iso(self.now)
+
+    def last_locked_week(self) -> int | None:
+        """Latest week whose lock has passed. None before Week 1 or while there is no data."""
+        if self.replay:
+            return max((w for w, t in replay_lock_ats(self.season).items() if t <= iso(self.now)), default=None)
+        current = current_week()
+        if current is None or current[0] < self.season:
+            return None
+        if current[0] > self.season:
+            return 18
+        stored = get_week(self.season, current[1])
+        if stored and self.locked(stored):
+            return current[1]
+        return current[1] - 1 or None
+
+
+def for_group(group: dict) -> Feed:
+    """Every handler reading games, weeks or lock times for a group goes through this."""
+    return Feed(int(group["season"]), bool(group.get("replay")), clock.now(group))

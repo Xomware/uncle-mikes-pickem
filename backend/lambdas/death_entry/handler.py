@@ -12,7 +12,7 @@ import boto3
 from boto3.dynamodb.conditions import Attr, Key
 from pydantic import StringConstraints
 
-from lambdas.common import clock, nfl_store
+from lambdas.common import nfl_store
 from lambdas.common.api import ApiError, Request, api_handler, parse_body, respond, user
 from lambdas.common.death import entries_pk
 from lambdas.common.groups import membership, require_organizer
@@ -41,8 +41,9 @@ def handler(event, context):
 
     group = table.get_item(Key={"PK": caller["PK"], "SK": "META"})["Item"]
     season = int(group["season"])
-    week1 = nfl_store.get_week(season, 1)
-    if week1 and week1["lockAt"] <= nfl_store.iso(clock.now(group)):
+    feed = nfl_store.for_group(group)
+    week1 = feed.week(1)
+    if week1 and feed.locked(week1):
         raise ApiError(409, "Death pool entries closed at the Week 1 lock")
 
     pk = entries_pk(body.groupId, season)

@@ -9,7 +9,7 @@ import os
 import boto3
 from boto3.dynamodb.conditions import Key
 
-from lambdas.common import clock, nfl_store
+from lambdas.common import nfl_store
 from lambdas.common.api import ApiError, api_handler, query_param, respond, user
 from lambdas.common.death import LAST_WEEK, entries_pk, start_lives
 from lambdas.common.groups import next_unlocked_week
@@ -65,11 +65,11 @@ def handler(event, context):
     entries = table.query(
         KeyConditionExpression=Key("PK").eq(entries_pk(gid, season)) & Key("SK").begins_with("DEATH#")
     )["Items"]
-    open_week = min(next_unlocked_week(season), LAST_WEEK)
+    open_week = min(next_unlocked_week(meta), LAST_WEEK)
     weeks = {int(w) for e in entries for w in e["picks"]} | {open_week}
-    stored = {w: nfl_store.get_week(season, w) for w in weeks}
-    now = nfl_store.iso(clock.now(meta))
-    locked = {w for w, s in stored.items() if s and s["lockAt"] <= now}
+    feed = nfl_store.for_group(meta)
+    stored = {w: feed.week(w) for w in weeks}
+    locked = {w for w, s in stored.items() if s and feed.locked(s)}
 
     lives = start_lives(versions)
     rows = [row(e, me["sub"], names, locked, lives) for e in entries]
@@ -81,6 +81,6 @@ def handler(event, context):
             "number": open_week,
             "lockAt": current["lockAt"],
             "locked": open_week in locked,
-            "games": [game(g) for g in nfl_store.list_games(season, open_week)],
+            "games": [game(g) for g in feed.games(open_week)],
         }
     return respond(200, {"season": season, "startLives": lives, "week": week, "entries": rows})

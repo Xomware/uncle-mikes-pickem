@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from lambdas.common import groups
+from lambdas.common import nfl_store
 from tests.conftest import DOM, PAT, SAM, call, table
 
 
@@ -33,7 +33,7 @@ def test_accept_joins_as_member(api, gid):
 
 
 def test_joined_week_is_the_next_unlocked_week(api, gid, monkeypatch):
-    monkeypatch.setattr(groups, "last_locked_week", lambda season: 6)
+    monkeypatch.setattr(nfl_store.Feed, "last_locked_week", lambda self: 6)
     call(api["invites_accept"], PAT, {"code": invite(api, gid)})
     assert table().get_item(Key={"PK": f"GROUP#{gid}", "SK": "MEMBER#u-pat"})["Item"]["joinedWeek"] == 7
 
