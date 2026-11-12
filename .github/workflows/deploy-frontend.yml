@@ -1,0 +1,39 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/deploy-frontend.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  wait-for-terraform:
+    permissions:
+      actions: read
+      contents: read
+    uses: ./.github/workflows/wait-for-terraform.yml
+
+  deploy:
+    needs: wait-for-terraform
+    uses: Xomware/github-actions/.github/workflows/deploy-frontend-s3.yml@v1
+    with:
+      app: pickem
+      role-key: AWS_DEPLOY_ROLE_ARN
+      node-version: '22'
+      root: frontend
+      ssm: |
+        NEXT_PUBLIC_COGNITO_USER_POOL_ID=/xomware/shared/cognito/user-pool-id
+        NEXT_PUBLIC_COGNITO_CLIENT_ID=/xomware/shared/cognito/clients/pickem-id
+        NEXT_PUBLIC_COGNITO_DOMAIN=/xomware/shared/cognito/hosted-ui-domain
+        NEXT_PUBLIC_API_URL=/pickem/api-url
+      build-command: npm run build
+      dist-dir: out
+      bucket: pickem.xomware.com
+      domain: pickem.xomware.com
+      nextjs: true
