@@ -24,6 +24,16 @@ locals {
       invoke_arn = aws_lambda_function.api["members_${l.name}"].invoke_arn
     })
   ]
+  picks_endpoints = [
+    for l in local.picks_lambdas : merge(l, {
+      invoke_arn = aws_lambda_function.api["picks_${l.name}"].invoke_arn
+    })
+  ]
+  games_endpoints = [
+    for l in local.games_lambdas : merge(l, {
+      invoke_arn = aws_lambda_function.api["games_${l.name}"].invoke_arn
+    })
+  ]
   gow_endpoints = [
     for l in local.gow_lambdas : merge(l, {
       invoke_arn = aws_lambda_function.api["gow_${l.name}"].invoke_arn
@@ -76,6 +86,8 @@ module "api" {
     rules   = { path_prefix = "rules", endpoints = local.rules_endpoints }
     members = { path_prefix = "members", endpoints = local.members_endpoints }
     gow     = { path_prefix = "gow", endpoints = local.gow_endpoints }
+    picks   = { path_prefix = "picks", endpoints = local.picks_endpoints }
+    games   = { path_prefix = "games", endpoints = local.games_endpoints }
     death   = { path_prefix = "death", endpoints = local.death_endpoints }
 
     payments = { path_prefix = "payments", endpoints = local.payments_endpoints }

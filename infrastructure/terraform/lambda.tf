@@ -20,6 +20,13 @@ locals {
   members_lambdas = [
     { name = "update", description = "Change a member's entry type or role", path_part = "update", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
   ]
+  picks_lambdas = [
+    { name = "set", description = "Save the caller's picks for a week", path_part = "set", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+    { name = "get", description = "Read a week's games, GOW and visible picks (?groupId=&week=)", path_part = "get", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+  ]
+  games_lambdas = [
+    { name = "cancel", description = "Void or restore a game for a group's week", path_part = "cancel", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+  ]
   gow_lambdas = [
     { name = "set", description = "Choose a group's game of the week", path_part = "set", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
   ]
@@ -44,6 +51,8 @@ locals {
     { for l in local.rules_lambdas : "rules_${l.name}" => l },
     { for l in local.members_lambdas : "members_${l.name}" => l },
     { for l in local.gow_lambdas : "gow_${l.name}" => l },
+    { for l in local.picks_lambdas : "picks_${l.name}" => l },
+    { for l in local.games_lambdas : "games_${l.name}" => l },
     { for l in local.death_lambdas : "death_${l.name}" => l },
     { for l in local.payments_lambdas : "payments_${l.name}" => l },
     { for l in local.replay_lambdas : "replay_${l.name}" => l },
@@ -68,6 +77,9 @@ locals {
     rules_update   = ["app:GetItem", "app:Query", "app:PutItem", "nfl:GetItem"]
     members_update = ["app:GetItem", "app:UpdateItem"]
     gow_set        = ["app:GetItem", "app:PutItem", "nfl:GetItem"]
+    picks_set      = ["app:GetItem", "app:PutItem", "nfl:GetItem", "nfl:Query"]
+    picks_get      = ["app:Query", "nfl:GetItem", "nfl:Query"]
+    games_cancel   = ["app:GetItem", "app:Query", "app:PutItem", "app:UpdateItem", "nfl:GetItem", "nfl:Query"]
     death_entry    = ["app:GetItem", "app:Query", "app:PutItem", "nfl:GetItem"]
     death_pick     = ["app:GetItem", "app:UpdateItem", "nfl:GetItem", "nfl:Query"]
     death_board    = ["app:Query", "nfl:GetItem", "nfl:Query"]
