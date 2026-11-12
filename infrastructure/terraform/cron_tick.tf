@@ -38,6 +38,13 @@ data "aws_iam_policy_document" "cron_tick" {
     resources = [aws_dynamodb_table.app.arn]
   }
 
+  # A final nflverse disagrees with, or hasn't confirmed in 6 h (common/finals.py).
+  statement {
+    sid       = "FinalsAlert"
+    actions   = ["sns:Publish"]
+    resources = [aws_sns_topic.alarms.arn]
+  }
+
   statement {
     sid       = "PollRuns"
     actions   = ["dynamodb:PutItem"]
@@ -66,9 +73,10 @@ resource "aws_lambda_function" "cron_tick" {
 
   environment {
     variables = {
-      NFL_TABLE = aws_dynamodb_table.nfl.id
-      APP_TABLE = aws_dynamodb_table.app.id
-      OPS_TABLE = aws_dynamodb_table.ops.id
+      NFL_TABLE        = aws_dynamodb_table.nfl.id
+      APP_TABLE        = aws_dynamodb_table.app.id
+      OPS_TABLE        = aws_dynamodb_table.ops.id
+      ALARMS_TOPIC_ARN = aws_sns_topic.alarms.arn
     }
   }
 
