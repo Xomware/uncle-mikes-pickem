@@ -30,6 +30,9 @@ locals {
     { name = "ledger", description = "Read what members owe and have paid, and the pots (?id=)", path_part = "ledger", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
     { name = "mark", description = "Mark a member's fee paid or unpaid", path_part = "mark", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
   ]
+  replay_lambdas = [
+    { name = "advance", description = "Move a replay group's virtual clock", path_part = "advance", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+  ]
 
   all_api_lambdas = merge(
     { for l in local.me_lambdas : "me_${l.name}" => l },
@@ -39,6 +42,7 @@ locals {
     { for l in local.members_lambdas : "members_${l.name}" => l },
     { for l in local.death_lambdas : "death_${l.name}" => l },
     { for l in local.payments_lambdas : "payments_${l.name}" => l },
+    { for l in local.replay_lambdas : "replay_${l.name}" => l },
   )
 
   # One role per function, granted only the table actions its handler makes.
@@ -65,6 +69,7 @@ locals {
 
     payments_ledger = ["app:Query", "nfl:GetItem"]
     payments_mark   = ["app:GetItem", "app:PutItem"]
+    replay_advance  = ["app:GetItem", "app:UpdateItem"]
   }
 }
 

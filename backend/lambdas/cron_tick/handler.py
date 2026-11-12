@@ -104,13 +104,6 @@ def game_fields(event: dict) -> dict:
     return game
 
 
-def week_fields(games: list[dict]) -> tuple[str, str]:
-    """(lockAt, tiebreakGameId): first kickoff, and the last game with the higher event id on a tie."""
-    lock_at = min(g["kickoff"] for g in games)
-    last = max(games, key=lambda g: (g["kickoff"], int(g["gameId"])))
-    return lock_at, last["gameId"]
-
-
 def scoreboard(season: int | None = None, week: int | None = None) -> dict:
     url = f"{espn.SITE}/scoreboard"
     if week is not None:
@@ -150,7 +143,7 @@ def refresh_week(season: int, week: int, board: dict, now: datetime, predictors:
         g["hype"] = hype.hype({**stored.get(g["gameId"], {}), **g}, g["gameId"] in standalone)
         nfl_store.save_game(season, week, g)
     if games:
-        lock_at, tiebreak = week_fields(games)
+        lock_at, tiebreak = nfl_store.week_fields(games)
         nfl_store.save_week(season, week, lock_at, tiebreak, [g["gameId"] for g in games], nfl_store.iso(now))
     return len(games), missed
 
