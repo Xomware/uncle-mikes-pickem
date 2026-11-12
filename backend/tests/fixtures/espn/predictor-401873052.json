@@ -1,0 +1,16 @@
+{
+ "lastModified": "2026-11-12T10:00Z",
+ "homeTeam": {
+  "statistics": [
+   {
+    "name": "matchupQuality",
+    "displayName": "Matchup Quality",
+    "shortDisplayName": "MQ",
+    "description": "A measure of projected competitiveness and excitement in the game, using a 0 to 100 scale, with 100 as the most exciting",
+    "abbreviation": "MQ",
+    "value": 38.687,
+    "displayValue": "38.7"
+   }
+  ]
+ }
+}
