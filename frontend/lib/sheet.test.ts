@@ -105,7 +105,7 @@ describe("groupGridCsv", () => {
   });
 
   it("adds weekly points and places once graded", () => {
-    const result = { rows: [{ sub: "a", weekly: 0, place: "2" }, { sub: "b", weekly: 3, place: "1" }] } as WeekResult;
+    const result = { members: [{ sub: "a", weekly: 0, place: "2" }, { sub: "b", weekly: 3, place: "1" }] } as WeekResult;
     expect(groupGridCsv(view, result).map((r) => r.slice(-2))).toEqual([
       ["Points", "Place"],
       [0, "2"],
