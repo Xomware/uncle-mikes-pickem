@@ -8,6 +8,10 @@ import functools
 import json
 import logging
 import os
+from decimal import Decimal
+from typing import TypeVar
+
+from pydantic import BaseModel, ConfigDict, ValidationError
 
 log = logging.getLogger()
 log.setLevel(logging.INFO)
@@ -28,8 +32,15 @@ def respond(status: int, data=None, error: dict | None = None, meta: dict | None
             "Access-Control-Allow-Headers": "Authorization,Content-Type",
             "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
         },
-        "body": json.dumps({"data": data, "error": error, "meta": meta or {}}),
+        "body": json.dumps({"data": data, "error": error, "meta": meta or {}}, default=_number),
     }
+
+
+def _number(value):
+    # boto3 reads every DynamoDB number back as a Decimal, which json can't encode.
+    if isinstance(value, Decimal):
+        return int(value) if value == value.to_integral_value() else float(value)
+    raise TypeError(f"{type(value).__name__} is not JSON serializable")
 
 
 def allow_origin(event: dict) -> str:
@@ -65,3 +76,37 @@ def api_handler(name: str):
 
 def claims(event: dict) -> dict:
     return ((event.get("requestContext") or {}).get("authorizer") or {}).get("claims") or {}
+
+
+def user(event: dict) -> dict:
+    """sub and display name from the ID token. An access token has no email and is refused."""
+    token = claims(event)
+    sub = token.get("sub")
+    email = (token.get("email") or "").strip().lower()
+    if not sub or not email:
+        raise ApiError(401, "Send the ID token, not the access token")
+    return {"sub": sub, "name": (token.get("name") or "").strip() or email.split("@")[0]}
+
+
+class Request(BaseModel):
+    """Request bodies: unknown keys are an error and "20" is not 20."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+
+Body = TypeVar("Body", bound=BaseModel)
+
+
+def parse_body(event: dict, model: type[Body]) -> Body:
+    try:
+        return model.model_validate_json(event.get("body") or "{}")
+    except ValidationError as e:
+        problems = "; ".join(f"{'.'.join(map(str, err['loc'])) or 'body'}: {err['msg']}" for err in e.errors())
+        raise ApiError(400, problems)
+
+
+def query_param(event: dict, name: str) -> str:
+    value = ((event.get("queryStringParameters") or {}).get(name) or "").strip()
+    if not value:
+        raise ApiError(400, f"Missing ?{name}=")
+    return value

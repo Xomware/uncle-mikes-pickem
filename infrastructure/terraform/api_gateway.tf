@@ -4,6 +4,11 @@ locals {
       invoke_arn = aws_lambda_function.api["me_${l.name}"].invoke_arn
     })
   ]
+  groups_endpoints = [
+    for l in local.groups_lambdas : merge(l, {
+      invoke_arn = aws_lambda_function.api["groups_${l.name}"].invoke_arn
+    })
+  ]
 }
 
 module "api" {
@@ -30,6 +35,7 @@ module "api" {
   data_trace_enabled = false
 
   services = {
-    me = { path_prefix = "me", endpoints = local.me_endpoints }
+    me     = { path_prefix = "me", endpoints = local.me_endpoints }
+    groups = { path_prefix = "groups", endpoints = local.groups_endpoints }
   }
 }

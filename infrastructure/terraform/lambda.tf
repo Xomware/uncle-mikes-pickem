@@ -5,9 +5,15 @@ locals {
   me_lambdas = [
     { name = "profile", description = "Upsert and return the caller's profile from the ID token", path_part = "profile", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
   ]
+  groups_lambdas = [
+    { name = "create", description = "Create a group with the caller as owner", path_part = "create", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+    { name = "mine", description = "List the caller's groups", path_part = "mine", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+    { name = "get", description = "Read one group and its members (?id=)", path_part = "get", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+  ]
 
   all_api_lambdas = merge(
     { for l in local.me_lambdas : "me_${l.name}" => l },
+    { for l in local.groups_lambdas : "groups_${l.name}" => l },
   )
 
   # One role per function, granted only the table actions its handler makes.
@@ -20,7 +26,10 @@ locals {
   }
   # One line per key: merge conflicts here are resolved by keeping both lines.
   api_grants = {
-    me_profile = ["app:UpdateItem"]
+    me_profile    = ["app:UpdateItem"]
+    groups_create = ["app:PutItem"]
+    groups_mine   = ["app_index:Query"]
+    groups_get    = ["app:Query"]
   }
 }
 
