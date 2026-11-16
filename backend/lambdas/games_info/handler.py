@@ -1,13 +1,15 @@
 """GET /games/info?groupId=g&gameId=e: one game's line, records, form, injuries, weather and head-to-head.
 
-Members only. The build and its cache are in common/game_view.py.
+Members only. The build and its cache are in common/game_view.py. `writeup` is the
+Film Room preview (common/writeup.py) when one was written. Replay groups get the
+real season's, every one of which was written before its kickoff.
 """
 
 import os
 
 import boto3
 
-from lambdas.common import nfl_store
+from lambdas.common import nfl_store, writeup
 from lambdas.common.api import ApiError, api_handler, query_param, respond, user
 from lambdas.common.game_view import cached, payload
 from lambdas.common.groups import membership
@@ -33,4 +35,6 @@ def handler(event, context):
     if not game:
         raise ApiError(404, "That game isn't on this season's schedule")
     info, source = cached(game, feed)
-    return respond(200, payload(game, info, source, feed.now))
+    stored = writeup.get(game_id)
+    film_room = stored and {k: stored[k] for k in ("text", "model", "generatedAt")}
+    return respond(200, {**payload(game, info, source, feed.now), "writeup": film_room})

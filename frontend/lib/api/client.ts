@@ -277,6 +277,8 @@ export interface GameInfo {
   headToHead: { season: number; week: number; gameType: string; kickoff: string; away: string; home: string; awayScore: number; homeScore: number }[];
   /** capture: a replay group's snapshot; none: no snapshot yet, so injuries, form and weather are empty. */
   source: { kind: "espn" | "capture" | "none"; at: string | null; note?: string };
+  /** The Film Room preview, written by Claude before kickoff. null until the Wednesday run. */
+  writeup: { text: string; model: string; generatedAt: string } | null;
 }
 
 export const getGameInfo = (groupId: string, gameId: string) =>
