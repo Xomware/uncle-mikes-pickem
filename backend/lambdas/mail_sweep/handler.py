@@ -21,7 +21,8 @@ from datetime import datetime, timedelta, timezone
 import boto3
 from boto3.dynamodb.conditions import Attr, Key
 
-from lambdas.common import death, mailer, nfl_store, notices
+from lambdas.common import death, gow, gow_link, mailer, nfl_store, notices
+from lambdas.common.groups import ORGANIZERS
 from lambdas.common.weeks import week_pk
 
 log = logging.getLogger()
@@ -32,6 +33,8 @@ CURSOR = {"PK": "CURSOR", "SK": "mail_sweep"}
 # already read. Re-reading a window behind the cursor costs only dup claims.
 OVERLAP = timedelta(minutes=30)
 REMIND_EARLY, REMIND_LATE = timedelta(hours=24), timedelta(hours=2)
+# Opens Monday 9:00 ET for the Tuesday-noon deadline: after the weekend, before the auto-pick.
+GOW_LEAD = timedelta(hours=27)
 
 dynamodb = boto3.resource("dynamodb")
 
@@ -89,9 +92,17 @@ def week_results(group: dict, event: dict):
     games = nfl_store.for_group(group).games(week)
     roster = members(gid)
     names = {m["sub"]: m["name"] for m in roster}
+    # result#W05#v2 and later follow a regrade that changed the winners. It's a correction only
+    # to a member who got an earlier announcement; one skipped as superseded never went out.
+    base, _, version = event["eventId"].partition("#v")
+    earlier = [base] + [f"{base}#v{v}" for v in range(2, int(version or 1))]
+    previous = event["payload"].get("previous", [])
     for m in roster:
         if m["sub"] in result["members"]:
-            yield m, "results", "week_result", notices.week_ctx(result, games, sheets, standings, names, m["sub"])
+            ctx = notices.week_ctx(result, games, sheets, standings, names, m["sub"])
+            correction = bool(version) and any(mailer.was_sent(m["sub"], gid, e) for e in earlier)
+            was = ["You" if s == m["sub"] else names.get(s, "a former member") for s in previous]
+            yield m, "results", "week_result", {**ctx, "correction": correction, "previous": was}
 
 
 def death_entries(gid: str, season: int) -> list[dict]:
@@ -177,15 +188,16 @@ def reminder_due(now: datetime, lock: datetime) -> int | None:
     return None
 
 
-def reminders(group: dict, feed: nfl_store.Feed, n: int, nfl_week: dict, hours: int):
+def reminders(group: dict, feed: nfl_store.Feed, n: int, nfl_week: dict, items: list[dict], hours: int):
     """Members whose week-n sheet isn't complete, or who own a live death entry with no week-n pick."""
     gid, season = group["groupId"], feed.season
     roster = query(app(), Key("PK").eq(f"GROUP#{gid}"))
     lives = death.start_lives([i for i in roster if i["SK"].startswith(f"RULES#S{season}#")])
-    sheets = {i["sub"]: i for i in query(app(), Key("PK").eq(week_pk(gid, season, n))) if i["SK"].startswith("PICK#")}
+    sheets = {i["sub"]: i for i in items if i["SK"].startswith("PICK#")}
     entries = death_entries(gid, season)
     # Once one entry is left the pool is over and nobody owes a pick.
-    open_entries = [e for e in entries if not e.get("eliminatedWeek") and str(n) not in e["picks"]] if notices.alive(entries) > 1 else []
+    live = notices.alive(entries) > 1
+    open_entries = [e for e in entries if live and not e.get("eliminatedWeek") and str(n) not in e["picks"]]
     for m in (i for i in roster if i["SK"].startswith("MEMBER#")):
         sheet = sheets.get(m["sub"])
         mine = [e for e in open_entries if e["ownerSub"] == m["sub"]]
@@ -203,11 +215,49 @@ def scheduled(now: datetime) -> Counter:
         nfl_week = feed.week(n)
         if not nfl_week:
             continue
+        items = query(app(), Key("PK").eq(week_pk(group["groupId"], feed.season, n)))
         hours = reminder_due(feed.now, nfl_store.parse(nfl_week["lockAt"]))
         if hours:
-            outs = list(reminders(group, feed, n, nfl_week, hours))
+            outs = list(reminders(group, feed, n, nfl_week, items, hours))
             counts += deliver_all(group, f"remind{hours}#W{n:02d}", outs, now)
+        chosen = next((i for i in items if i["SK"] == "GOW"), None)
+        if chosen:
+            # Keyed on the game too, so an organizer changing the GOW announces the new one.
+            outs = list(announce_gow(group, feed, n, nfl_week, items, chosen))
+            counts += deliver_all(group, f"gowset#W{n:02d}#{chosen['gameId']}", outs, now)
+        deadline = gow.deadline(nfl_week["lockAt"])
+        if not chosen and deadline - GOW_LEAD <= feed.now < deadline:
+            outs = list(gow_admin(group, feed, n, nfl_week, items, deadline))
+            counts += deliver_all(group, f"gowpick#W{n:02d}", outs, now)
     return counts
+
+
+def announce_gow(group: dict, feed: nfl_store.Feed, n: int, nfl_week: dict, items: list[dict], chosen: dict):
+    """"GOW is set, picks are open" to every member whose week-n sheet isn't complete yet."""
+    game = next((g for g in feed.games(n) if g["gameId"] == chosen["gameId"]), None)
+    if not game:
+        return
+    done = {i["sub"] for i in items if i["SK"].startswith("PICK#") and i["complete"]}
+    roster = members(group["groupId"])
+    names = {m["sub"]: m["name"] for m in roster}
+    ctx = notices.gow_set_ctx(n, game, names.get(chosen["chosenBy"]), nfl_week["lockAt"])
+    for m in roster:
+        if m["sub"] not in done:
+            yield m, "reminders", "gow_set", ctx
+
+
+def gow_admin(group: dict, feed: nfl_store.Feed, n: int, nfl_week: dict, items: list[dict], deadline: datetime):
+    """Organizers get the top-3 hype games as signed links. `items` is the week-n partition, which has no GOW."""
+    gid, season = group["groupId"], feed.season
+    canceled = next((set(i["gameIds"]) for i in items if i["SK"] == "CANCELED"), set())
+    games = [g for g in feed.games(n) if g["gameId"] not in canceled]
+    # sorted is stable over kickoff order, so the earlier game wins a hype tie, as in gow.top_game.
+    top = sorted(games, key=lambda g: -(g.get("hype") or {}).get("score", 0))[:3]
+    lock = nfl_store.parse(nfl_week["lockAt"])
+    for m in members(gid):
+        if m["role"] in ORGANIZERS:
+            tokens = [gow_link.make_token(gid, season, n, g["gameId"], m["sub"], lock) for g in top]
+            yield m, "gowAdmin", "gow_admin", notices.gow_admin_ctx(n, top, tokens, deadline, len(games))
 
 
 def drain(now: datetime) -> Counter:

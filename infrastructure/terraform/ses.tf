@@ -11,6 +11,7 @@ locals {
     EMAIL_SENDER      = "noreply@${local.email_domain}"
     EMAIL_CONFIG_SET  = aws_sesv2_configuration_set.mail.configuration_set_name
     UNSUBSCRIBE_PARAM = aws_ssm_parameter.email_unsubscribe_secret.name
+    GOW_LINK_PARAM    = aws_ssm_parameter.gow_link_secret.name
     API_URL           = "https://${local.api_domain_name}"
     SITE_URL          = "https://${var.domain_name}"
   }
@@ -118,6 +119,24 @@ data "aws_iam_policy_document" "unsubscribe_key" {
     sid       = "UnsubscribeKey"
     actions   = ["ssm:GetParameter"]
     resources = [aws_ssm_parameter.email_unsubscribe_secret.arn]
+  }
+}
+
+# HMAC key for the GOW admin email's links (common/gow_link.py). Rotating it
+# only kills links already sent, which die at the week's lock anyway.
+resource "aws_ssm_parameter" "gow_link_secret" {
+  name   = "/${var.app_name}/gow-link-secret"
+  type   = "SecureString"
+  key_id = "alias/aws/ssm"
+  value  = var.gow_link_secret
+}
+
+# Signing GOW links (mail_sweep) and checking them (gow_peek, gow_confirm).
+data "aws_iam_policy_document" "gow_link_key" {
+  statement {
+    sid       = "GowLinkKey"
+    actions   = ["ssm:GetParameter"]
+    resources = [aws_ssm_parameter.gow_link_secret.arn]
   }
 }
 

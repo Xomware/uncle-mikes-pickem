@@ -20,6 +20,7 @@ data "aws_iam_policy_document" "mail_sweep" {
   source_policy_documents = [
     data.aws_iam_policy_document.unsubscribe_key.json,
     data.aws_iam_policy_document.send_email.json,
+    data.aws_iam_policy_document.gow_link_key.json,
   ]
 
   statement {
