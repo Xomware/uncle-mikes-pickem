@@ -1,4 +1,5 @@
 import importlib
+from datetime import datetime, timedelta, timezone
 from email import message_from_bytes, policy
 
 import boto3
@@ -165,3 +166,51 @@ def test_an_elimination_undone_before_the_sweep_is_not_sent(sweep, db):
     results.regrade(db, group(db))
     module.handler({}, None)
     assert death_mail(sent) == []
+
+
+def set_clock(db, at):
+    db.update_item(Key={"PK": "GROUP#g", "SK": "META"}, UpdateExpression="SET clock = :c",
+                   ExpressionAttributeValues={":c": at})
+
+
+@pytest.mark.parametrize("left,due", [
+    (timedelta(hours=25), None), (timedelta(hours=24), 24), (timedelta(hours=3), 24),
+    (timedelta(hours=2), 2), (timedelta(minutes=1), 2), (timedelta(0), None),
+])
+def test_reminder_windows(sweep, left, due):
+    module, _ = sweep
+    lock = datetime(2027, 9, 10, 0, 20, tzinfo=timezone.utc)
+    assert module.reminder_due(lock - left, lock) == due
+
+
+def test_reminders_go_to_incomplete_sheets_and_unpicked_death_entries(sweep, db):
+    module, sent = sweep
+    # Lock is Thu 2027-09-10 00:20Z; a's sheet is complete, b's is a draft.
+    db.update_item(Key={"PK": "GROUP#g#S2027#W01", "SK": "PICK#b"}, UpdateExpression="SET complete = :f",
+                   ExpressionAttributeValues={":f": False})
+    entry(db, "x", "a", {})
+    entry(db, "y", "b", {"1": "KC"})
+    set_clock(db, "2027-09-09T12:00:00Z")
+    assert module.handler({}, None) == {"sent": 2}
+    mail = by_to(sent)
+    assert mail["a@example.com"]["Subject"] == "Week 1 locks Thu 8:20 PM ET"
+    a = mail["a@example.com"].get_body(("plain",)).get_content()
+    assert "A x has no Week 1 pick. A missed pick eliminates it." in a and "PICK EM:" not in a
+    assert "your sheet is saved but not complete" in mail["b@example.com"].get_body(("plain",)).get_content()
+    assert module.handler({}, None) == {"dup": 2}
+
+    set_clock(db, "2027-09-09T23:00:00Z")
+    assert module.handler({}, None) == {"sent": 2}
+    assert sent[-1]["Subject"].startswith("Last call: Week 1 locks")
+
+
+def test_no_reminder_outside_the_window_or_when_turned_off(sweep, db):
+    module, sent = sweep
+    db.delete_item(Key={"PK": "GROUP#g#S2027#W01", "SK": "PICK#b"})
+    set_clock(db, "2027-09-08T00:00:00Z")
+    assert module.handler({}, None) == {}
+    db.update_item(Key={"PK": "GROUP#g", "SK": "MEMBER#b"}, UpdateExpression="SET emailPrefs = :p",
+                   ExpressionAttributeValues={":p": {"reminders": False}})
+    set_clock(db, "2027-09-09T12:00:00Z")
+    assert module.handler({}, None) == {"off": 1}
+    assert sent == []

@@ -46,5 +46,12 @@ SAMPLES: dict[str, tuple[str, dict]] = {
     "death_out": ("death_out", {**DEATH, "lives_left": 0}),
     "death_out_missed": ("death_out", {**DEATH, "team": None, "outcome": "", "lives_left": 0}),
     "death_life": ("death_life", DEATH),
+    "reminder_24": ("reminder", {
+        "group_id": "g-sample", "week": 5, "hours": 24, "lock": "Thu 8:15 PM ET", "picks": "none", "entries": [],
+    }),
+    "reminder_2": ("reminder", {
+        "group_id": "g-sample", "week": 5, "hours": 2, "lock": "Thu 8:15 PM ET", "picks": "draft",
+        "entries": [{"label": "Pat 1", "last_life": False}, {"label": "Pat 2", "last_life": True}],
+    }),
     "death_revived": ("death_revived", {"group_id": "g-sample", "week": 7, "labels": ["Pat 1", "Pat 2"], "alive": 5}),
 }

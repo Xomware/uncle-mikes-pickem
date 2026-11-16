@@ -1,8 +1,9 @@
 """pickem-mail-sweep: sends every email that is due (BRAINSTORM.md 3A). Scheduled every 10 minutes.
 
 Reads the EVENTS rows grading wrote to pickem-ops since its cursor and turns each
-into one email per recipient. Every send goes through mailer.deliver, whose claim
-on the event id makes a rerun, an overlap or a re-read event a no-op.
+into one email per recipient, then sends what the clock makes due (reminders),
+keyed by group and week (`remind24#W05`). Every send goes through mailer.deliver,
+whose claim on the event id makes a rerun, an overlap or a re-read event a no-op.
 
 A Lambda of its own rather than a cron_tick hook: cron_tick raises on an ESPN
 outage and skips most minutes outside game windows, and mail shouldn't wait on
@@ -18,7 +19,7 @@ from collections import Counter
 from datetime import datetime, timedelta, timezone
 
 import boto3
-from boto3.dynamodb.conditions import Key
+from boto3.dynamodb.conditions import Attr, Key
 
 from lambdas.common import death, mailer, nfl_store, notices
 from lambdas.common.weeks import week_pk
@@ -30,6 +31,7 @@ CURSOR = {"PK": "CURSOR", "SK": "mail_sweep"}
 # emit() stamps the time before its put lands, so a row can appear behind one
 # already read. Re-reading a window behind the cursor costs only dup claims.
 OVERLAP = timedelta(minutes=30)
+REMIND_EARLY, REMIND_LATE = timedelta(hours=24), timedelta(hours=2)
 
 dynamodb = boto3.resource("dynamodb")
 
@@ -137,7 +139,11 @@ def send_event(event: dict, now: datetime) -> Counter:
     group = app().get_item(Key={"PK": f"GROUP#{event['groupId']}", "SK": "META"}).get("Item")
     if not group:
         return Counter(skipped=1)
-    outs = list(build(group, event))
+    return deliver_all(group, event["eventId"], list(build(group, event)), now)
+
+
+def deliver_all(group: dict, event_id: str, outs: list[tuple], now: datetime) -> Counter:
+    """Send each (member, kind, template, context) under one event id."""
     to = addresses([m["sub"] for m, *_ in outs])
     counts = Counter()
     for member, kind, template, ctx in outs:
@@ -145,7 +151,62 @@ def send_event(event: dict, now: datetime) -> Counter:
             counts["noaddress"] += 1
             continue
         ctx = {**ctx, "name": member["name"], "group_name": member["groupName"], "group_id": group["groupId"]}
-        counts[mailer.deliver(member, to[member["sub"]], kind, template, event["eventId"], ctx, now)] += 1
+        counts[mailer.deliver(member, to[member["sub"]], kind, template, event_id, ctx, now)] += 1
+    return counts
+
+
+def all_groups():
+    # INVITE#code items also use SK META.
+    kwargs = {"FilterExpression": Attr("SK").eq("META") & Attr("PK").begins_with("GROUP#")}
+    while True:
+        page = app().scan(**kwargs)
+        yield from page["Items"]
+        if "LastEvaluatedKey" not in page:
+            return
+        kwargs["ExclusiveStartKey"] = page["LastEvaluatedKey"]
+
+
+def reminder_due(now: datetime, lock: datetime) -> int | None:
+    """24 or 2: which reminder the time to lock falls in, if any. A sweep that misses
+    the 24 h mark still sends it until the 2 h one takes over."""
+    left = lock - now
+    if timedelta(0) < left <= REMIND_LATE:
+        return 2
+    if REMIND_LATE < left <= REMIND_EARLY:
+        return 24
+    return None
+
+
+def reminders(group: dict, feed: nfl_store.Feed, n: int, nfl_week: dict, hours: int):
+    """Members whose week-n sheet isn't complete, or who own a live death entry with no week-n pick."""
+    gid, season = group["groupId"], feed.season
+    roster = query(app(), Key("PK").eq(f"GROUP#{gid}"))
+    lives = death.start_lives([i for i in roster if i["SK"].startswith(f"RULES#S{season}#")])
+    sheets = {i["sub"]: i for i in query(app(), Key("PK").eq(week_pk(gid, season, n))) if i["SK"].startswith("PICK#")}
+    entries = death_entries(gid, season)
+    # Once one entry is left the pool is over and nobody owes a pick.
+    open_entries = [e for e in entries if not e.get("eliminatedWeek") and str(n) not in e["picks"]] if notices.alive(entries) > 1 else []
+    for m in (i for i in roster if i["SK"].startswith("MEMBER#")):
+        sheet = sheets.get(m["sub"])
+        mine = [e for e in open_entries if e["ownerSub"] == m["sub"]]
+        if (sheet and sheet["complete"]) and not mine:
+            continue
+        yield m, "reminders", "reminder", notices.reminder_ctx(n, hours, nfl_week["lockAt"], sheet, mine, lives)
+
+
+def scheduled(now: datetime) -> Counter:
+    """Time-based mail, judged per group on its own feed, so a replay group runs on its virtual clock."""
+    counts = Counter()
+    for group in all_groups():
+        feed = nfl_store.for_group(group)
+        n = (feed.last_locked_week() or 0) + 1
+        nfl_week = feed.week(n)
+        if not nfl_week:
+            continue
+        hours = reminder_due(feed.now, nfl_store.parse(nfl_week["lockAt"]))
+        if hours:
+            outs = list(reminders(group, feed, n, nfl_week, hours))
+            counts += deliver_all(group, f"remind{hours}#W{n:02d}", outs, now)
     return counts
 
 
@@ -169,6 +230,7 @@ def drain(now: datetime) -> Counter:
 
 
 def handler(event, context):
-    counts = drain(datetime.now(timezone.utc))
+    now = datetime.now(timezone.utc)
+    counts = drain(now) + scheduled(now)
     log.info("mail sweep %s", dict(counts))
     return dict(counts)

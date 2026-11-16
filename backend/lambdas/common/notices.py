@@ -6,6 +6,10 @@ Pure functions, so each is tested without a table. The sweep adds `name` and
 
 from __future__ import annotations
 
+from datetime import datetime
+
+from lambdas.common.gow import ET
+
 
 def place_label(place: str) -> str:
     """Standings places to words: "3" is "3rd", "1*" is "tied 1st"."""
@@ -76,6 +80,23 @@ def death_ctx(entry: dict, week: int, teams: dict[str, str], entries: list[dict]
         "outcome": {"L": "lost", "T": "tied", "W": "won"}.get(teams.get(team), "") if team else "",
         "lives_left": entry.get("livesLeft", 0),
         "alive": alive(entries),
+    }
+
+
+def lock_label(lock_at: str) -> str:
+    """"Thu 8:15 PM ET"."""
+    lock = datetime.fromisoformat(lock_at.replace("Z", "+00:00")).astimezone(ET)
+    return f"{lock:%a} {lock.hour % 12 or 12}:{lock:%M} {lock:%p} ET"
+
+
+def reminder_ctx(week: int, hours: int, lock_at: str, sheet: dict | None, entries: list[dict], start_lives: int) -> dict:
+    """reminder.html. `entries` are the member's live death entries with no pick this week."""
+    return {
+        "week": week,
+        "hours": hours,
+        "lock": lock_label(lock_at),
+        "picks": "done" if sheet and sheet["complete"] else "draft" if sheet else "none",
+        "entries": [{"label": e["label"], "last_life": e.get("livesLeft", start_lives) <= 1} for e in entries],
     }
 
 
