@@ -149,6 +149,10 @@ export const acceptInvite = (code: string, entryType: EntryType) =>
 
 export interface Team {
   abbr: string;
+  // ESPN's logo URL and hex colors (no '#'). Missing on rows written before F14.3.
+  logo?: string | null;
+  color?: string | null;
+  alternateColor?: string | null;
 }
 
 export interface Game {
@@ -204,6 +208,80 @@ export const setGow = (groupId: string, week: number, gameId: string) =>
   post<{ gow: Gow }>("/gow/set", { groupId, week, gameId });
 export const cancelGame = (groupId: string, week: number, gameId: string, canceled: boolean) =>
   post<{ canceled: string[] }>("/games/cancel", { groupId, week, gameId, canceled });
+
+/** What a regrade rewrote: the weeks whose RESULT changed, the season table, newly eliminated death entries. */
+export interface Regraded {
+  weeks: number[];
+  standings: boolean;
+  eliminated: string[];
+}
+
+/** Regrades one week, or every locked week when week is left out. Organizer. */
+export const regrade = (groupId: string, week?: number) => post<Regraded>("/results/regrade", { groupId, week });
+/** Null scores clear the override. Organizer. */
+export const overrideScore = (groupId: string, week: number, gameId: string, awayScore: number | null, homeScore: number | null) =>
+  post<Regraded>("/results/override", { groupId, week, gameId, awayScore, homeScore });
+
+export interface Injury {
+  name: string;
+  position: string | null;
+  /** Out, Doubtful, Questionable, IR, or whatever else ESPN sends. */
+  status: string;
+  detail: string | null;
+  returnDate: string | null;
+  headshot: string;
+}
+
+export interface InfoTeam extends Team {
+  name?: string | null;
+  record?: string | null;
+  /** Home record for the home team, road record for the away team. */
+  split?: string | null;
+  form: { week: number; atVs: string; opponent: string; result: "W" | "L" | "T"; score: string }[];
+  injuries: Injury[];
+}
+
+export interface GameInfo {
+  game: {
+    gameId: string;
+    week: number;
+    kickoff: string;
+    timeValid: boolean | null;
+    state: "pre" | "in" | "post" | null;
+    completed: boolean | null;
+    awayScore: number | null;
+    homeScore: number | null;
+    winner: string | null;
+    lines: {
+      provider?: string | null;
+      details?: string | null;
+      spread?: number | null;
+      overUnder?: number | null;
+      homeMoneyline?: number | null;
+      awayMoneyline?: number | null;
+    } | null;
+    broadcasts: string[];
+    venue: { name?: string | null; city?: string | null; state?: string | null; roof: string | null };
+  };
+  away: InfoTeam;
+  home: InfoTeam;
+  /** null indoors, or when ESPN has no forecast. Precipitation is probably percent chance (unverified). */
+  weather: {
+    temperature?: number | null;
+    high?: number | null;
+    low?: number | null;
+    gust?: number | null;
+    precipitation?: number | null;
+    description?: string | null;
+  } | null;
+  headToHead: { season: number; week: number; gameType: string; kickoff: string; away: string; home: string; awayScore: number; homeScore: number }[];
+  /** capture: a replay group's snapshot; none: no snapshot yet, so injuries, form and weather are empty. */
+  source: { kind: "espn" | "capture" | "none"; at: string | null; note?: string };
+}
+
+export const getGameInfo = (groupId: string, gameId: string) =>
+  request<GameInfo>(`/games/info?groupId=${encodeURIComponent(groupId)}&gameId=${encodeURIComponent(gameId)}`);
+
 export interface DeathGame {
   gameId: string;
   kickoff: string;
@@ -241,6 +319,82 @@ export const addDeathEntry = (groupId: string, label?: string, sub?: string) =>
   post<{ entryId: string; ownerSub: string; label: string }>("/death/entry", { groupId, label, sub });
 export const setDeathPick = (groupId: string, entryId: string, week: number, team: string) =>
   post<{ entryId: string; label: string; picks: Record<string, string> }>("/death/pick", { groupId, entryId, week, team });
+
+/** A member's grade on one game: tie is a tie under the zero rule, void a game canceled after lock. */
+export type GameGrade = "right" | "wrong" | "void" | "tie" | "pending";
+
+export interface ResultMember {
+  sub: string;
+  name: string;
+  entryType: EntryType;
+  weekly: number;
+  yearly: number;
+  gow: number;
+  /** No complete sheet at lock: scored as the lowest submitter minus 1. */
+  missed: boolean;
+  /** "1", or "1*" for a shared place. */
+  place: string;
+  games: Record<string, GameGrade>;
+}
+
+export interface GameFinal {
+  awayScore: number;
+  homeScore: number;
+  /** The winning team's abbr, or "tie". */
+  result: string;
+  confirmed: boolean;
+}
+
+export interface WeekResult {
+  groupId: string;
+  season: number;
+  week: number;
+  /** open while a game is unfinished, provisional until nflverse confirms every final. */
+  status: "open" | "provisional" | "final";
+  gradedAt: string;
+  rulesVersion: number;
+  gowGameId: string | null;
+  tiebreakGameId: string;
+  tiebreakTotal: number | null;
+  canceled: string[];
+  /** null while the game is unfinished; canceled games are left out. */
+  games: Record<string, GameFinal | null>;
+  /** Weekly payout winners' subs: top score, then the MNF tiebreak. Several on an exact tie. */
+  winners: string[];
+  /** Highest weekly score first. Weekly-only members included. */
+  members: ResultMember[];
+}
+
+export interface SeasonRow {
+  member: string;
+  name: string;
+  total: number;
+  gow: number;
+  place: string;
+  /** Week number to that week's yearly score. */
+  weeks: Record<string, number | null>;
+}
+
+/** Season members only; rows is empty until a week is graded. */
+export interface SeasonStandings {
+  groupId: string;
+  season: number;
+  throughWeek: number;
+  final: boolean;
+  rows: SeasonRow[];
+}
+
+export const getWeekResult = (groupId: string, week: number) =>
+  request<WeekResult>(`/results/week?groupId=${encodeURIComponent(groupId)}&week=${week}`);
+export const getSeasonStandings = (groupId: string) =>
+  request<SeasonStandings>(`/standings/season?id=${encodeURIComponent(groupId)}`);
+
+/** null for a 404: the week isn't graded yet. */
+export const unlessMissing = <T>(pending: Promise<T>): Promise<T | null> =>
+  pending.catch((err: unknown) => {
+    if (err instanceof ApiError && err.status === 404) return null;
+    throw err;
+  });
 
 export const advanceReplay = (groupId: string, to: string) =>
   post<{ groupId: string; clock: string }>("/replay/advance", { groupId, to });

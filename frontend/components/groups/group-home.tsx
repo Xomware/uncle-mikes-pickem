@@ -1,6 +1,6 @@
 "use client";
 
-import { ListOrdered, ReceiptText, Settings, Wallet } from "lucide-react";
+import { ListOrdered, Printer, ReceiptText, Settings, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useState } from "react";
@@ -10,6 +10,7 @@ import { FieldTitle } from "@/components/field/field-title";
 import { InviteLink } from "@/components/groups/invite-link";
 import { ReplayBar } from "@/components/groups/replay-bar";
 import { LoadError } from "@/components/load-error";
+import { StandingsLink } from "@/components/results/season-standings";
 import { buttonVariants } from "@/components/ui/button";
 import { type GroupDetail, getGroup } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
@@ -50,9 +51,17 @@ function GroupDetails({ detail, onChange }: { detail: GroupDetail; onChange: (de
         Make your picks
       </Link>
       <div className="mt-3 flex flex-wrap gap-2">
+        <StandingsLink groupId={group.groupId} />
         <Link href={`/group/pay/?id=${encodeURIComponent(group.groupId)}`} className={buttonVariants({ variant: "outline" })}>
           <Wallet aria-hidden="true" />
           Pay
+        </Link>
+        <Link
+          href={`/group/standings-sheet/?id=${encodeURIComponent(group.groupId)}`}
+          className={buttonVariants({ variant: "outline" })}
+        >
+          <Printer aria-hidden="true" />
+          Standings sheet
         </Link>
         {isOrganizer(role) && (
           <Link

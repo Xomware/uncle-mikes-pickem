@@ -52,6 +52,27 @@ data "aws_iam_policy_document" "capture" {
   }
 }
 
+# games_info reads one game's summary from a capture. ListBucket under raw/ makes a
+# missing key a 404 (NoSuchKey) rather than a 403, so a failed capture isn't a 500.
+data "aws_iam_policy_document" "capture_read" {
+  statement {
+    sid       = "ReadRaw"
+    actions   = ["s3:GetObject"]
+    resources = ["${aws_s3_bucket.capture.arn}/raw/*"]
+  }
+
+  statement {
+    sid       = "ListRaw"
+    actions   = ["s3:ListBucket"]
+    resources = [aws_s3_bucket.capture.arn]
+    condition {
+      test     = "StringLike"
+      variable = "s3:prefix"
+      values   = ["raw/*"]
+    }
+  }
+}
+
 resource "aws_iam_role_policy" "capture" {
   name   = "capture"
   role   = aws_iam_role.capture.id
