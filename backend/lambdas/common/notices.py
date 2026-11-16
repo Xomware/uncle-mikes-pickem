@@ -60,3 +60,24 @@ def week_ctx(result: dict, games: list[dict], sheets: dict[str, dict], standings
         "gow": gow,
         "season": season and {"place": season["place"], "total": season["total"], "gow": season["gow"], "of": len(rows)},
     }
+
+
+def alive(entries: list[dict]) -> int:
+    return sum(1 for e in entries if not e.get("eliminatedWeek"))
+
+
+def death_ctx(entry: dict, week: int, teams: dict[str, str], entries: list[dict]) -> dict:
+    """death_out.html and death_life.html. `teams` is the week RESULT's {team: W | L | T}; no team is a missed pick."""
+    team = entry["picks"].get(str(week))
+    return {
+        "week": week,
+        "label": entry["label"],
+        "team": team,
+        "outcome": {"L": "lost", "T": "tied", "W": "won"}.get(teams.get(team), "") if team else "",
+        "lives_left": entry.get("livesLeft", 0),
+        "alive": alive(entries),
+    }
+
+
+def revived_ctx(week: int, labels: list[str], entries: list[dict]) -> dict:
+    return {"week": week, "labels": labels, "alive": alive(entries)}

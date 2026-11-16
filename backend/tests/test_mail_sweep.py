@@ -108,3 +108,60 @@ def test_superseded_announcement_is_skipped(sweep, db):
     results.regrade(db, group(db))
     assert module.handler({}, None) == {"sent": 2}
     assert by_to(sent)["b@example.com"]["Subject"] == "You won Week 1"
+
+
+def entry(db, entry_id, owner, picks):
+    db.put_item(Item={"PK": "GROUP#g#S2027", "SK": f"DEATH#{entry_id}", "entryId": entry_id, "ownerSub": owner,
+                      "label": f"{owner.upper()} {entry_id}", "picks": picks})
+
+
+def death_mail(sent):
+    return [(m["To"], m["Subject"]) for m in sent if not m["Subject"].startswith(("You won Week", "Week 1 results"))]
+
+
+def test_elimination_mails_the_owner_in_sudden_death(sweep, db):
+    module, sent = sweep
+    entry(db, "x", "b", {"1": "A0"})
+    entry(db, "y", "b", {})
+    entry(db, "z", "a", {"1": "H1"})
+    confirm_week(db)
+    module.handler({}, None)
+    assert sorted(death_mail(sent)) == [("b@example.com", "B x is eliminated"), ("b@example.com", "B y is eliminated")]
+    out = {m["Subject"]: m.get_body(("plain",)).get_content() for m in sent}
+    assert out["B x is eliminated"].startswith("OVERTIME / SUDDEN DEATH")
+    assert "Week 1: A0 lost" in out["B x is eliminated"]
+    assert "no pick. A missed pick ends the run." in out["B y is eliminated"]
+    assert "1 entry is still alive." in out["B y is eliminated"]
+
+
+def test_life_lost_mails_the_owner(sweep, db):
+    module, sent = sweep
+    db.put_item(Item={"PK": "GROUP#g", "SK": "RULES#S2027#v1", "version": 1, "effectiveWeek": 1, "deathSecondLife": True})
+    entry(db, "x", "b", {"1": "A0"})
+    entry(db, "z", "a", {"1": "H1"})
+    confirm_week(db)
+    module.handler({}, None)
+    assert death_mail(sent) == [("b@example.com", "B x lost a life")]
+
+
+def test_revive_mails_each_owner_once(sweep, db):
+    module, sent = sweep
+    entry(db, "x", "a", {"1": "A0"})
+    entry(db, "y", "b", {"1": "A1"})
+    entry(db, "w", "b", {"1": "A0"})
+    confirm_week(db)
+    module.handler({}, None)
+    subject = "Replay the down: everyone's back in Week 1"
+    assert sorted(death_mail(sent)) == [("a@example.com", subject), ("b@example.com", subject)]
+    assert "B w, B y" in by_to([m for m in sent if m["Subject"] == subject])["b@example.com"].get_body(("plain",)).get_content()
+
+
+def test_an_elimination_undone_before_the_sweep_is_not_sent(sweep, db):
+    module, sent = sweep
+    entry(db, "x", "b", {"1": "A0"})
+    entry(db, "z", "a", {"1": "H1"})
+    confirm_week(db)
+    db.put_item(Item={"PK": "GROUP#g#S2027#W01", "SK": "OVERRIDE#100", "awayScore": 30, "homeScore": 0})
+    results.regrade(db, group(db))
+    module.handler({}, None)
+    assert death_mail(sent) == []

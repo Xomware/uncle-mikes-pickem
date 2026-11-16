@@ -92,7 +92,42 @@ def week_results(group: dict, event: dict):
             yield m, "results", "week_result", notices.week_ctx(result, games, sheets, standings, names, m["sub"])
 
 
-EVENTS = {"week_confirmed": week_results}
+def death_entries(gid: str, season: int) -> list[dict]:
+    return query(app(), Key("PK").eq(death.entries_pk(gid, season)) & Key("SK").begins_with("DEATH#"))
+
+
+def death_entry(group: dict, event: dict):
+    """entry_eliminated and life_lost: the entry's owner hears about it, unless a regrade has since undone it."""
+    gid, season, week = group["groupId"], int(event["season"]), int(event["week"])
+    entries = death_entries(gid, season)
+    entry = next((e for e in entries if e["entryId"] == event["payload"]["entryId"]), None)
+    out = event["type"] == "entry_eliminated"
+    if not entry or (entry.get("eliminatedWeek") != week if out else entry.get("livesLeft", 0) > 1):
+        return
+    result = app().get_item(Key={"PK": week_pk(gid, season, week), "SK": "RESULT"}).get("Item") or {}
+    owner = next((m for m in members(gid) if m["sub"] == entry["ownerSub"]), None)
+    if owner:
+        ctx = notices.death_ctx(entry, week, result.get("teams", {}), entries)
+        yield owner, "death", "death_out" if out else "death_life", ctx
+
+
+def death_revived(group: dict, event: dict):
+    """death_revived: each owner of a revived entry gets one email naming theirs."""
+    gid, season, week = group["groupId"], int(event["season"]), int(event["week"])
+    entries = death_entries(gid, season)
+    revived = [e for e in entries if e["entryId"] in event["payload"]["entryIds"]]
+    for m in members(gid):
+        mine = [e["label"] for e in revived if e["ownerSub"] == m["sub"]]
+        if mine:
+            yield m, "death", "death_revived", notices.revived_ctx(week, mine, entries)
+
+
+EVENTS = {
+    "week_confirmed": week_results,
+    "entry_eliminated": death_entry,
+    "life_lost": death_entry,
+    "death_revived": death_revived,
+}
 
 
 def send_event(event: dict, now: datetime) -> Counter:

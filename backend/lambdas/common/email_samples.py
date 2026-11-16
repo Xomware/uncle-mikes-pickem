@@ -34,6 +34,8 @@ WEEK = {
     "season": {"place": "5th", "total": 412, "gow": 22, "of": 12},
 }
 
+DEATH = {"group_id": "g-sample", "week": 7, "label": "Pat 2", "team": "DAL", "outcome": "lost", "lives_left": 1, "alive": 9}
+
 SAMPLES: dict[str, tuple[str, dict]] = {
     "test": ("test", {}),
     "week_result": ("week_result", WEEK),
@@ -41,4 +43,8 @@ SAMPLES: dict[str, tuple[str, dict]] = {
         **WEEK, "won": True, "score": 81, "place": "1st", "winners": [{"name": "You", "tiebreak": 44}],
         "season": None,
     }),
+    "death_out": ("death_out", {**DEATH, "lives_left": 0}),
+    "death_out_missed": ("death_out", {**DEATH, "team": None, "outcome": "", "lives_left": 0}),
+    "death_life": ("death_life", DEATH),
+    "death_revived": ("death_revived", {"group_id": "g-sample", "week": 7, "labels": ["Pat 1", "Pat 2"], "alive": 5}),
 }

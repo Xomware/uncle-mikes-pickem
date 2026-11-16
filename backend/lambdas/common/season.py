@@ -67,18 +67,32 @@ def fold_death(table, group_id: str, season: int, found: list[dict], versions: l
         out_week = state["eliminatedWeek"]
         if e.get("livesLeft") == state["lives"] and e.get("eliminatedWeek") == out_week:
             continue
+        about = {"entryId": e["entryId"], "ownerSub": e["ownerSub"], "label": e["label"]}
         if out_week and out_week != e.get("eliminatedWeek"):
-            events.emit("entry_eliminated", group_id, season, out_week, f"death#W{out_week:02d}#{e['entryId']}", {
-                "entryId": e["entryId"], "ownerSub": e["ownerSub"], "label": e["label"],
-            })
+            events.emit("entry_eliminated", group_id, season, out_week, f"death#W{out_week:02d}#{e['entryId']}", about)
             eliminated.append(e["entryId"])
+        lost = out["lifeLost"].get(e["entryId"])
+        if lost and not out_week:
+            events.emit("life_lost", group_id, season, lost[-1], f"life#W{lost[-1]:02d}#{e['entryId']}", about)
         # A regrade can bring an entry back (an override), so eliminatedWeek is removed as well as set.
         table.update_item(
             Key={"PK": pk, "SK": e["SK"]},
             UpdateExpression="SET livesLeft = :l" + (", eliminatedWeek = :w" if out_week else " REMOVE eliminatedWeek"),
             ExpressionAttributeValues={":l": state["lives"], **({":w": out_week} if out_week else {})},
         )
+    announce_revives(table, group_id, season, out["revived"])
     return eliminated
+
+
+def announce_revives(table, group_id: str, season: int, revived: dict[int, list[str]]) -> None:
+    """Emit death_revived once per week everyone left came back. No entry changes that week, so
+    DEATHPOOL remembers which weeks were announced; a regrade that undoes one drops it from the list."""
+    key = {"PK": death.entries_pk(group_id, season), "SK": "DEATHPOOL"}
+    old = [int(w) for w in (table.get_item(Key=key).get("Item") or {}).get("revivedWeeks", [])]
+    for week in sorted(set(revived) - set(old)):
+        events.emit("death_revived", group_id, season, week, f"revive#W{week:02d}", {"entryIds": revived[week]})
+    if sorted(revived) != sorted(old):
+        table.put_item(Item={**key, "revivedWeeks": sorted(revived)})
 
 
 def fold(table, group_id: str, season: int, last: int, members: list[dict], versions: list[dict]) -> dict:
