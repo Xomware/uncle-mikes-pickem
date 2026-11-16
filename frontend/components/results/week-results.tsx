@@ -5,6 +5,7 @@ import { useCallback } from "react";
 
 import { LoadError } from "@/components/load-error";
 import { GroupGrid } from "@/components/picks/group-grid";
+import { PickBreakdown } from "@/components/picks/pick-breakdown";
 import { OrganizerTools } from "@/components/results/organizer-tools";
 import { type WeekResult, type WeekView, getWeekResult, unlessMissing } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
@@ -39,6 +40,7 @@ export function LockedWeek({ view }: { view: WeekView }) {
         <OrganizerTools view={view} result={load.data} onChange={refresh} />
       )}
       <GroupGrid view={view} result={load.status === "ready" ? load.data : null} />
+      <PickBreakdown view={view} />
     </>
   );
 }
