@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% set subject = "Week %d picks are open: %s is the Game of the Week" % (week, matchup) %}
+{% block preheader %}Picks lock {{ lock }}. The GOW counts double on your yearly score, or negative if you miss it.{% endblock %}
+{% block body %}
+{{ m.h1("Picks are open") }}
+<p style="margin:0 0 16px;">Hi {{ name }}, the Week {{ week }} Game of the Week is set{% if chosen_by %} by {{ chosen_by }}{% else %}, picked automatically as the most-hyped game{% endif %}.</p>
+{{ m.scoreboard("GOW", matchup, when) }}
+<p style="margin:0 0 20px;">A right GOW pick counts double on your yearly score and a wrong one counts negative, so weigh its confidence. Everything locks <strong>{{ lock }}</strong>.</p>
+{{ m.button(site ~ "/picks/?id=" ~ group_id|urlencode ~ "&week=" ~ week, "Make your picks") }}
+{% endblock %}

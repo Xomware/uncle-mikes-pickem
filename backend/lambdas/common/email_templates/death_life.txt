@@ -1,0 +1,13 @@
+{% extends "base.txt" %}
+{% set sudden_death = true %}
+{% block body %}
+TIMEOUT USED
+
+Hi {{ name }}, {{ label }} lost a life in Week {{ week }} but is still in the {{ group_name }} death pool.
+
+Week {{ week }}: {{ (team ~ " " ~ outcome) if team else "no pick" }}. {{ lives_left }} {{ "life" if lives_left == 1 else "lives" }} left.
+
+That was the spare. The next loss or missed pick eliminates {{ label }}.
+
+Next week's pick: {{ site }}/group/?id={{ group_id|urlencode }}
+{% endblock %}

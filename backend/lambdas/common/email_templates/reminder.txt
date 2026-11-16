@@ -1,0 +1,22 @@
+{% extends "base.txt" %}
+{% block body %}
+{{ "TWO-MINUTE WARNING" if hours == 2 else "WEEK %d LOCKS SOON" % week }}
+
+Hi {{ name }}, every pick in {{ group_name }} locks at the first kickoff: {{ lock }}. Nothing can change after that, Sunday games included.
+{% if picks != "done" %}
+
+PICK EM: {% if picks == "draft" %}your sheet is saved but not complete. Every game needs a team, and the Monday night total needs a guess.{% else %}no picks yet. A missed week scores the lowest sheet minus 1.{% endif %}
+
+{% endif %}
+{% if entries %}
+
+DEATH POOL
+{% for e in entries %}
+{{ e.label }} has no Week {{ week }} pick. {% if e.last_life %}A missed pick eliminates it.{% else %}A missed pick costs it a life.{% endif %}
+
+{% endfor %}
+Death board: {{ site }}/group/?id={{ group_id|urlencode }}
+{% endif %}
+
+Make your picks: {{ site }}/picks/?id={{ group_id|urlencode }}&week={{ week }}
+{% endblock %}

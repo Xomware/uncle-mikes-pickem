@@ -115,7 +115,8 @@ def save(table, pk: str, group_id: str, season: int, result: dict, old: dict) ->
         count += 1
         event_id = f"result#W{week:02d}" + (f"#v{count}" if count > 1 else "")
         # Emitted before the write: a crash between them re-emits the same eventId, which the mailer dedupes.
-        events.emit("week_confirmed", group_id, season, week, event_id, {"winners": result["winners"]})
+        payload = {"winners": result["winners"], "previous": announced or []}
+        events.emit("week_confirmed", group_id, season, week, event_id, payload)
         announced = result["winners"]
     item = {
         "PK": pk, "SK": "RESULT", "groupId": group_id, "season": season, **result,

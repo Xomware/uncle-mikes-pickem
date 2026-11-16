@@ -40,6 +40,7 @@ def test_all_eliminated_same_week_revive():
     assert out["entries"]["b"]["eliminatedWeek"] is None
     assert out["entries"]["c"]["eliminatedWeek"] == 1
     assert out["winners"] == []
+    assert out["revived"] == {2: ["a", "b"]}
 
 
 def test_all_lose_with_spare_lives_spend_them_instead_of_reviving():
@@ -59,6 +60,8 @@ def test_all_lose_mixed_lives_last_life_goes_out():
     assert out["entries"]["a"] == {"lives": 0, "eliminatedWeek": 2}
     assert out["entries"]["b"] == {"lives": 1, "eliminatedWeek": None}
     assert out["winners"] == ["b"]
+    # a's second loss eliminates it, so only its first counts as a life lost.
+    assert out["lifeLost"] == {"a": [1], "b": [2]} and out["revived"] == {}
 
 
 def test_all_lose_on_last_life_with_second_life_on_revives():

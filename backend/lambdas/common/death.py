@@ -37,6 +37,8 @@ def _hit(team: str | None, outcomes: dict[str, str], tie_loses: bool) -> bool:
 def fold(entries: dict[str, dict[int, str]], results: dict[int, dict[str, str]], versions: list[dict]) -> dict:
     lives = start_lives(versions)
     state = {e: {"lives": lives, "eliminatedWeek": None} for e in entries}
+    life_lost: dict[str, list[int]] = {}
+    revived: dict[int, list[str]] = {}
     last = 0
     for week in sorted(results):
         alive = [e for e in state if state[e]["eliminatedWeek"] is None]
@@ -48,11 +50,15 @@ def fold(entries: dict[str, dict[int, str]], results: dict[int, dict[str, str]],
         # Everyone left went down together while on their last life: they all come back.
         # If anyone still had a spare life, spares are spent and last lives are lost as usual.
         if len(hit) == len(alive) and all(state[e]["lives"] == 1 for e in alive):
+            revived[week] = sorted(alive)
             continue
         for e in hit:
             state[e]["lives"] -= 1
             if state[e]["lives"] == 0:
                 state[e]["eliminatedWeek"] = week
+            else:
+                life_lost.setdefault(e, []).append(week)
     alive = [e for e in state if state[e]["eliminatedWeek"] is None]
     done = len(alive) == 1 or last >= LAST_WEEK
-    return {"entries": state, "winners": sorted(alive) if done else []}
+    # lifeLost: {entry: weeks a life went without eliminating it}; revived: {week: entries brought back}.
+    return {"entries": state, "winners": sorted(alive) if done else [], "lifeLost": life_lost, "revived": revived}

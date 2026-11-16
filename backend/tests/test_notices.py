@@ -59,3 +59,19 @@ def test_missed_week_and_weekly_only_member():
     assert ctx["missed"] and ctx["season"] is None
     assert [g["status"] for g in ctx["grid"]] == ["missed", "missed", "void"]
     assert ctx["gow"]["team"] is None
+
+
+@pytest.mark.parametrize("lock_at,label", [
+    ("2027-09-10T00:20:00Z", "Thu 8:20 PM ET"),
+    ("2027-12-25T18:00:00Z", "Sat 1:00 PM ET"),
+    ("2027-11-08T14:30:00Z", "Mon 9:30 AM ET"),
+])
+def test_lock_label_in_eastern(lock_at, label):
+    assert notices.lock_label(lock_at) == label
+
+
+def test_reminder_ctx_marks_last_lives():
+    entries = [{"label": "P1", "livesLeft": 2}, {"label": "P2", "livesLeft": 1}, {"label": "P3"}]
+    ctx = notices.reminder_ctx(5, 2, "2027-10-08T00:15:00Z", None, entries, 2)
+    assert ctx["picks"] == "none"
+    assert [e["last_life"] for e in ctx["entries"]] == [False, True, False]

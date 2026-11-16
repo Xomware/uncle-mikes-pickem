@@ -69,6 +69,21 @@ def test_second_life_spends_a_life_without_eliminating(db):
     results.regrade(db, group(db))
     x = entries(db)["x"]
     assert x["livesLeft"] == 1 and "eliminatedWeek" not in x
+    assert [(e["type"], e["eventId"]) for e in emitted() if e["type"] == "life_lost"] == [("life_lost", "life#W01#x")]
+    results.regrade(db, group(db), [1])
+    assert len([e for e in emitted() if e["type"] == "life_lost"]) == 1
+
+
+def test_everyone_down_on_last_life_announces_one_revive(db):
+    add_entry(db, "x", {"1": "A0"})
+    add_entry(db, "y", {"1": "A1"})
+    finish("100", 10, 20)
+    finish("101", 14, 21)
+    assert results.regrade(db, group(db))["eliminated"] == []
+    results.regrade(db, group(db))
+    revives = [e for e in emitted() if e["type"] == "death_revived"]
+    assert [(e["eventId"], e["payload"]) for e in revives] == [("revive#W01", {"entryIds": ["x", "y"]})]
+    assert db.get_item(Key={"PK": SEASON_PK, "SK": "DEATHPOOL"})["Item"]["revivedWeeks"] == [1]
 
 
 def test_death_grid_golden_through_the_table(db):

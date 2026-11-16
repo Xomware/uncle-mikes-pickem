@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% set sudden_death = true %}
+{% set subject = "Replay the down: everyone's back in Week %d" % week %}
+{% block preheader %}Every entry left went down in Week {{ week }}, so every one of them comes back.{% endblock %}
+{% block body %}
+{{ m.h1("Replay the down") }}
+<p style="margin:0 0 16px;">Hi {{ name }}, every entry left in the {{ group_name }} death pool lost in Week {{ week }}. Under the revive rule they all come back, yours included:</p>
+<p style="margin:0 0 16px;font:700 18px/1.4 Arial,Helvetica,sans-serif;color:#123f20;">{{ labels|join(", ") }}</p>
+<p style="margin:0 0 20px;">{{ alive }} {{ "entry is" if alive == 1 else "entries are" }} alive. The teams used in Week {{ week }} stay used.</p>
+{{ m.button(site ~ "/group/?id=" ~ group_id|urlencode, "Make next week's pick", "#e8433a", "#8f1f19", "#ffffff") }}
+{% endblock %}

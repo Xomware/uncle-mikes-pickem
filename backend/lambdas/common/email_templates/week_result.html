@@ -1,8 +1,17 @@
 {% extends "base.html" %}
 {% import "_macros.html" as m %}
-{% set subject = ("You won Week %d" % week) if won else ("Week %d results: %d points, %s" % (week, score, place)) %}
-{% block preheader %}{% if won %}{{ score }} points took Week {{ week }} in {{ group_name }}.{% else %}You scored {{ score }} and finished {{ place }} of {{ entrants }}.{% endif %}{% endblock %}
+{% set subject = ("Correction: " if correction else "") ~ (("You won Week %d" % week) if won else ("Week %d results: %d points, %s" % (week, score, place))) %}
+{% block preheader %}{% if correction %}A score correction changed the Week {{ week }} winners. {% endif %}{% if won %}{{ score }} points took Week {{ week }} in {{ group_name }}.{% else %}You scored {{ score }} and finished {{ place }} of {{ entrants }}.{% endif %}{% endblock %}
 {% block body %}
+{% if correction %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;">
+  <tr>
+    <td bgcolor="#fff4c2" style="background-color:#fff4c2;border-left:4px solid #f5cf2a;padding:12px 14px;font:15px/1.5 Arial,Helvetica,sans-serif;color:#17231b;">
+      <strong>Correction.</strong> A score was corrected after Week {{ week }} was announced, and the winners changed.{% if previous %} Before: {{ previous|join(", ") }}. Now: {{ winners|map(attribute="name")|join(", ") or "nobody" }}.{% endif %} These are the final numbers.
+    </td>
+  </tr>
+</table>
+{% endif %}
 {{ m.h1("You won Week %d" % week if won else "Week %d is final" % week) }}
 <p style="margin:0 0 16px;">Hi {{ name }}, {% if won %}nobody in {{ group_name }} beat you this week.{% elif missed %}no picks were in at lock, so you get the missed-week score.{% else %}here's how your week went.{% endif %}</p>
 {{ m.scoreboard(score, place ~ " of " ~ entrants, "points this week" ~ (" (missed week)" if missed else "")) }}

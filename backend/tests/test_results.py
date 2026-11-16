@@ -223,7 +223,7 @@ def test_regrade_writes_once_and_announces_when_final(db):
     assert {m: r["weekly"] for m, r in result["members"].items()} == {"a": 3, "b": 2}
     assert result["winners"] == ["a"] and result["tiebreakTotal"] == 35
     [event] = emitted()
-    assert (event["type"], event["eventId"], event["payload"]) == ("week_confirmed", "result#W01", {"winners": ["a"]})
+    assert (event["type"], event["eventId"], event["payload"]) == ("week_confirmed", "result#W01", {"winners": ["a"], "previous": []})
 
 
 def test_correction_that_flips_the_winner_announces_v2(db):
@@ -234,6 +234,7 @@ def test_correction_that_flips_the_winner_announces_v2(db):
     assert results.regrade(db, group(db), [1])["weeks"] == [1]
     assert stored(db)["winners"] == ["b"]
     assert [e["eventId"] for e in emitted()] == ["result#W01", "result#W01#v2"]
+    assert emitted()[1]["payload"] == {"winners": ["b"], "previous": ["a"]}
 
 
 def test_unlocked_weeks_are_skipped(db):

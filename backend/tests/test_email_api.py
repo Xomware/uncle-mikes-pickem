@@ -139,7 +139,7 @@ def test_preview_renders_for_organizers_only(api, gid):
 
     assert call(api["email_preview"], PAT, query={"id": gid, "template": "test"})[0] == 403
     status, message = call(api["email_preview"], DOM, query={"id": gid, "template": "nope"})
-    assert status == 400 and message.startswith("template must be one of test, ")
+    assert status == 400 and message.startswith("template must be one of ") and "test" in message
 
 
 def test_test_email_goes_to_the_caller(api, gid, monkeypatch):
