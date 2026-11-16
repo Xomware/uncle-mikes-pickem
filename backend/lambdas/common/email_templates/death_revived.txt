@@ -1,0 +1,13 @@
+{% extends "base.txt" %}
+{% set sudden_death = true %}
+{% block body %}
+REPLAY THE DOWN
+
+Hi {{ name }}, every entry left in the {{ group_name }} death pool lost in Week {{ week }}. Under the revive rule they all come back, yours included:
+
+{{ labels|join(", ") }}
+
+{{ alive }} {{ "entry is" if alive == 1 else "entries are" }} alive. The teams used in Week {{ week }} stay used.
+
+Next week's pick: {{ site }}/group/?id={{ group_id|urlencode }}
+{% endblock %}

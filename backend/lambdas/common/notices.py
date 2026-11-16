@@ -1,0 +1,147 @@
+"""What each email says: template contexts built from items the mail sweep has read.
+
+Pure functions, so each is tested without a table. The sweep adds `name` and
+`group_name` (and the mailer `brand`, `site`, `unsubscribe_url`) on top.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+
+from lambdas.common.gow import ET
+
+
+def place_label(place: str) -> str:
+    """Standings places to words: "3" is "3rd", "1*" is "tied 1st"."""
+    n = int(place.rstrip("*"))
+    suffix = "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return ("tied " if place.endswith("*") else "") + f"{n}{suffix}"
+
+
+def matchup(game: dict) -> str:
+    return f"{game['away']['abbr']} @ {game['home']['abbr']}"
+
+
+def score(outcome: dict | None) -> str:
+    return f"{outcome['awayScore']}-{outcome['homeScore']}" if outcome else ""
+
+
+def week_ctx(result: dict, games: list[dict], sheets: dict[str, dict], standings: dict | None, names: dict, sub: str) -> dict:
+    """week_result.html for one member. `sheets` is the week's PICK items by sub, `games` the week in kickoff order."""
+    row = result["members"][sub]
+    mine = {} if row["missed"] else sheets[sub]["picks"]
+    canceled = set(result["canceled"])
+    gow_id = result["gowGameId"]
+    grid, gow = [], None
+    for g in games:
+        gid, outcome, pick = g["gameId"], result["games"].get(g["gameId"]), mine.get(g["gameId"], {})
+        cell = {
+            "matchup": matchup(g),
+            "score": score(outcome),
+            "team": pick.get("team"),
+            "conf": pick.get("conf"),
+            "status": "void" if gid in canceled else row["games"].get(gid, "missed"),
+            "gow": gid == gow_id,
+        }
+        grid.append(cell)
+        if cell["gow"]:
+            gow = {**cell, "winner": outcome and outcome["result"], "points": row["gow"]}
+
+    rows = (standings or {}).get("rows", [])
+    season = next(({**r, "place": place_label(r["place"])} for r in rows if r["member"] == sub), None)
+    winners = result["winners"]
+    return {
+        "week": result["week"],
+        "won": sub in winners,
+        "missed": row["missed"],
+        "score": row["weekly"],
+        "place": place_label(row["place"]),
+        "entrants": len(result["members"]),
+        "winners": [{"name": "You" if s == sub else names[s], "tiebreak": sheets[s]["tiebreak"]} for s in winners],
+        "winning_score": result["members"][winners[0]]["weekly"] if winners else None,
+        "tiebreak_total": result["tiebreakTotal"],
+        "grid": grid,
+        "gow": gow,
+        "season": season and {"place": season["place"], "total": season["total"], "gow": season["gow"], "of": len(rows)},
+    }
+
+
+def alive(entries: list[dict]) -> int:
+    return sum(1 for e in entries if not e.get("eliminatedWeek"))
+
+
+def death_ctx(entry: dict, week: int, teams: dict[str, str], entries: list[dict]) -> dict:
+    """death_out.html and death_life.html. `teams` is the week RESULT's {team: W | L | T}; no team is a missed pick."""
+    team = entry["picks"].get(str(week))
+    return {
+        "week": week,
+        "label": entry["label"],
+        "team": team,
+        "outcome": {"L": "lost", "T": "tied", "W": "won"}.get(teams.get(team), "") if team else "",
+        "lives_left": entry.get("livesLeft", 0),
+        "alive": alive(entries),
+    }
+
+
+def lock_label(lock_at: str) -> str:
+    """"Thu 8:15 PM ET"."""
+    lock = datetime.fromisoformat(lock_at.replace("Z", "+00:00")).astimezone(ET)
+    return f"{lock:%a} {lock.hour % 12 or 12}:{lock:%M} {lock:%p} ET"
+
+
+def reminder_ctx(week: int, hours: int, lock_at: str, sheet: dict | None, entries: list[dict], start_lives: int) -> dict:
+    """reminder.html. `entries` are the member's live death entries with no pick this week."""
+    return {
+        "week": week,
+        "hours": hours,
+        "lock": lock_label(lock_at),
+        "picks": "done" if sheet and sheet["complete"] else "draft" if sheet else "none",
+        "entries": [{"label": e["label"], "last_life": e.get("livesLeft", start_lives) <= 1} for e in entries],
+    }
+
+
+def hype_reasons(hype: dict) -> list[str]:
+    """The hype components worth a line in the admin email, strongest signal first."""
+    c = hype.get("components") or {}
+    out = ["Standalone slot"] if c.get("standalone") else []
+    if c.get("divGame"):
+        out.append("Division game")
+    if c.get("spread") is not None:
+        out.append("Pick'em" if c["spread"] == 0 else f"Spread {abs(c['spread']):g}")
+    if c.get("total") is not None:
+        out.append(f"O/U {c['total']:g}")
+    return out
+
+
+def gow_admin_ctx(week: int, games: list[dict], tokens: list[str], deadline: datetime, count: int) -> dict:
+    """gow_admin.html. `games` are the top hype games, `tokens` their signed links for this admin."""
+    return {
+        "week": week,
+        "deadline": lock_label(deadline.isoformat()),
+        "count": count,
+        "games": [
+            {
+                "matchup": matchup(g),
+                "when": lock_label(g["kickoff"]),
+                "hype": (g.get("hype") or {}).get("score", 0),
+                "why": hype_reasons(g.get("hype") or {}),
+                "token": t,
+            }
+            for g, t in zip(games, tokens)
+        ],
+    }
+
+
+def gow_set_ctx(week: int, game: dict, chosen_by: str | None, lock_at: str) -> dict:
+    """gow_set.html. chosen_by is the organizer's name, or None when the hype auto-pick set it."""
+    return {
+        "week": week,
+        "matchup": matchup(game),
+        "when": lock_label(game["kickoff"]),
+        "chosen_by": chosen_by,
+        "lock": lock_label(lock_at),
+    }
+
+
+def revived_ctx(week: int, labels: list[str], entries: list[dict]) -> dict:
+    return {"week": week, "labels": labels, "alive": alive(entries)}

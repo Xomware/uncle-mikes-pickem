@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% set sudden_death = true %}
+{% set subject = "%s is eliminated" % label %}
+{% block preheader %}{{ label }} went down in Week {{ week }}. {{ alive }} {{ "entry is" if alive == 1 else "entries are" }} still alive.{% endblock %}
+{% block body %}
+{{ m.h1("Eliminated") }}
+<p style="margin:0 0 16px;">Hi {{ name }}, <strong>{{ label }}</strong> is out of the {{ group_name }} death pool.</p>
+{{ m.scoreboard("W" ~ week, (team ~ " " ~ outcome) if team else "No pick", "the week " ~ label ~ " went down" if team else "a missed pick ends the run") }}
+<p style="margin:0 0 20px;">{{ alive }} {{ "entry is" if alive == 1 else "entries are" }} still alive. You can follow the rest of the pool on the death board.</p>
+{{ m.button(site ~ "/group/?id=" ~ group_id|urlencode, "See the death board", "#e8433a", "#8f1f19", "#ffffff") }}
+{% endblock %}

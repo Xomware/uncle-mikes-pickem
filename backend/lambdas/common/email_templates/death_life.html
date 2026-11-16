@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% set sudden_death = true %}
+{% set subject = "%s lost a life" % label %}
+{% block preheader %}Timeout used in Week {{ week }}. {{ label }} is still alive on its last life.{% endblock %}
+{% block body %}
+{{ m.h1("Timeout used") }}
+<p style="margin:0 0 16px;">Hi {{ name }}, <strong>{{ label }}</strong> lost a life in Week {{ week }} but is still in the {{ group_name }} death pool.</p>
+{{ m.scoreboard(lives_left, "Life left" if lives_left == 1 else "Lives left", ((team ~ " " ~ outcome) if team else "No pick") ~ " in Week " ~ week) }}
+<p style="margin:0 0 20px;">That was the spare. The next loss or missed pick eliminates {{ label }}.</p>
+{{ m.button(site ~ "/group/?id=" ~ group_id|urlencode, "Make next week's pick", "#e8433a", "#8f1f19", "#ffffff") }}
+{% endblock %}

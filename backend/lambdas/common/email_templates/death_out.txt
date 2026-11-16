@@ -1,0 +1,13 @@
+{% extends "base.txt" %}
+{% set sudden_death = true %}
+{% block body %}
+ELIMINATED
+
+Hi {{ name }}, {{ label }} is out of the {{ group_name }} death pool.
+
+Week {{ week }}: {{ (team ~ " " ~ outcome) if team else "no pick. A missed pick ends the run." }}
+
+{{ alive }} {{ "entry is" if alive == 1 else "entries are" }} still alive.
+
+Death board: {{ site }}/group/?id={{ group_id|urlencode }}
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.txt" %}
+{% block body %}
+PICKS ARE OPEN
+
+Hi {{ name }}, the Week {{ week }} Game of the Week is set{% if chosen_by %} by {{ chosen_by }}{% else %}, picked automatically as the most-hyped game{% endif %}.
+
+GOW: {{ matchup }}, {{ when }}
+
+A right GOW pick counts double on your yearly score and a wrong one counts negative, so weigh its confidence. Everything locks {{ lock }}.
+
+Make your picks: {{ site }}/picks/?id={{ group_id|urlencode }}&week={{ week }}
+{% endblock %}
