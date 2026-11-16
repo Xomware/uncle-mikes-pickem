@@ -5,8 +5,10 @@ import { useCallback } from "react";
 
 import { LoadError } from "@/components/load-error";
 import { GroupGrid } from "@/components/picks/group-grid";
+import { OrganizerTools } from "@/components/results/organizer-tools";
 import { type WeekResult, type WeekView, getWeekResult, unlessMissing } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
+import { isOrganizer } from "@/lib/groups";
 import { cn } from "@/lib/utils";
 
 /** A locked week: the graded scoreboard, then everyone's picks marked from it. */
@@ -14,7 +16,9 @@ export function LockedWeek({ view }: { view: WeekView }) {
   const { groupId } = view.group;
   const week = view.week.week;
   const fetcher = useCallback(() => unlessMissing(getWeekResult(groupId, week)), [groupId, week]);
-  const { load, retry } = useLoad(fetcher);
+  const { load, retry, setData } = useLoad(fetcher);
+  // Refetch in place after an organizer change, so the board doesn't drop to a skeleton.
+  const refresh = async () => setData(await fetcher());
 
   return (
     <>
@@ -31,6 +35,9 @@ export function LockedWeek({ view }: { view: WeekView }) {
         </div>
       )}
       {load.status === "ready" && <WeekResults view={view} result={load.data} />}
+      {load.status === "ready" && isOrganizer(view.role) && (
+        <OrganizerTools view={view} result={load.data} onChange={refresh} />
+      )}
       <GroupGrid view={view} result={load.status === "ready" ? load.data : null} />
     </>
   );
