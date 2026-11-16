@@ -6,6 +6,8 @@ else gets a 404, never a 403, so probing the portal says nothing about it.
 """
 
 import os
+import uuid
+from datetime import datetime, timezone
 
 import boto3
 from boto3.dynamodb.conditions import Attr
@@ -49,3 +51,21 @@ def scan(table_env: str, **kwargs) -> list[dict]:
             return items
         kwargs["ExclusiveStartKey"] = page["LastEvaluatedKey"]
 
+
+
+def audit(who: dict, action: str, target: str, before, after) -> None:
+    """One `AUDIT` row in pickem-ops per super admin write. No ttl: kept for good."""
+    now = datetime.now(timezone.utc).isoformat(timespec="microseconds")
+    boto3.resource("dynamodb").Table(os.environ["OPS_TABLE"]).put_item(
+        Item={
+            "PK": "AUDIT",
+            "SK": f"{now}#{uuid.uuid4().hex[:8]}",
+            "at": now,
+            "sub": who["sub"],
+            "email": who["email"],
+            "action": action,
+            "target": target,
+            "before": before,
+            "after": after,
+        }
+    )

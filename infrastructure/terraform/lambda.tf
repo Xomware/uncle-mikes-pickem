@@ -78,6 +78,9 @@ locals {
     { name = "users", description = "Super admin: everyone who has signed in", path_part = "users", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
     { name = "flags", description = "Super admin: flag defaults and stored overrides", path_part = "flags", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
     { name = "emails", description = "Super admin: recent mail claims and events (?groupId=)", path_part = "emails", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+    { name = "flags_set", description = "Super admin: change global or group flags", path_part = "flags-set", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+    { name = "regrade", description = "Super admin: regrade any group", path_part = "regrade", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+    { name = "cron", description = "Super admin: start a scheduled job now", path_part = "cron", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
   ]
 
   all_api_lambdas = merge(
@@ -145,12 +148,15 @@ locals {
 
     config_flags = ["app:GetItem"]
 
-    super_overview = ["app:Scan", "app:Query", "nfl:GetItem", "nfl:Query", "ops:Query", "ops:Scan"]
-    super_groups   = ["app:Scan"]
-    super_group    = ["app:GetItem", "app:Query", "nfl:GetItem"]
-    super_users    = ["app:Scan"]
-    super_flags    = ["app:Scan"]
-    super_emails   = ["ops:Query", "ops:Scan"]
+    super_overview  = ["app:Scan", "app:Query", "nfl:GetItem", "nfl:Query", "ops:Query", "ops:Scan"]
+    super_groups    = ["app:Scan"]
+    super_group     = ["app:GetItem", "app:Query", "nfl:GetItem"]
+    super_users     = ["app:Scan"]
+    super_flags     = ["app:Scan"]
+    super_emails    = ["ops:Query", "ops:Scan"]
+    super_flags_set = ["app:GetItem", "app:PutItem", "ops:PutItem"]
+    super_regrade   = ["app:GetItem", "app:Query", "app:PutItem", "app:UpdateItem", "nfl:GetItem", "nfl:Query", "ops:PutItem"]
+    super_cron      = ["ops:PutItem"]
   }
 
   # Beyond table actions: policy documents from ses.tf and capture.tf. One line per key.
@@ -168,6 +174,9 @@ locals {
     super_users       = [data.aws_iam_policy_document.super_admin_read.json]
     super_flags       = [data.aws_iam_policy_document.super_admin_read.json]
     super_emails      = [data.aws_iam_policy_document.super_admin_read.json]
+    super_flags_set   = [data.aws_iam_policy_document.super_admin_read.json]
+    super_regrade     = [data.aws_iam_policy_document.super_admin_read.json]
+    super_cron        = [data.aws_iam_policy_document.super_admin_read.json, data.aws_iam_policy_document.super_cron_invoke.json]
   }
 
   # Environment beyond lambda_variables. One line per key.
