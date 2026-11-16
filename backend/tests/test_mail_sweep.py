@@ -1,4 +1,5 @@
 import importlib
+from datetime import datetime, timedelta, timezone
 from email import message_from_bytes, policy
 
 import boto3
@@ -15,6 +16,7 @@ def sweep(db, monkeypatch):
     """The mail_sweep module over test_results' week-1 group, with SES and SSM mocked. Yields (module, sent)."""
     for name, value in {
         "UNSUBSCRIBE_PARAM": "/pickem/email-unsubscribe-secret",
+        "GOW_LINK_PARAM": "/pickem/gow-link-secret",
         "API_URL": "https://api.pickem.xomware.com",
         "SITE_URL": "https://pickem.xomware.com",
         "EMAIL_SENDER": "noreply@pickem.xomware.com",
@@ -22,12 +24,14 @@ def sweep(db, monkeypatch):
     }.items():
         monkeypatch.setenv(name, value)
     boto3.client("ssm").put_parameter(Name="/pickem/email-unsubscribe-secret", Value="k" * 64, Type="SecureString")
+    boto3.client("ssm").put_parameter(Name="/pickem/gow-link-secret", Value="g" * 64, Type="SecureString")
     ses = boto3.client("sesv2")
     ses.create_email_identity(EmailIdentity="pickem.xomware.com")
     ses.create_configuration_set(ConfigurationSetName="pickem-mail")
-    from lambdas.common import mailer, suppression, unsubscribe
+    from lambdas.common import gow_link, mailer, suppression, unsubscribe
 
     unsubscribe._secret.cache_clear()
+    gow_link._secret.cache_clear()
     for module in (mailer, suppression):
         monkeypatch.setattr(module, "dynamodb", boto3.resource("dynamodb"))
     sent = []
@@ -39,8 +43,9 @@ def sweep(db, monkeypatch):
 
     monkeypatch.setattr(mailer, "_ses", lambda: Spy())
     for sub in ("a", "b"):
-        db.update_item(Key={"PK": "GROUP#g", "SK": f"MEMBER#{sub}"}, UpdateExpression="SET groupName = :n",
-                       ExpressionAttributeValues={":n": "Sunday Crew"})
+        db.update_item(Key={"PK": "GROUP#g", "SK": f"MEMBER#{sub}"}, UpdateExpression="SET groupName = :n, #r = :r",
+                       ExpressionAttributeNames={"#r": "role"},
+                       ExpressionAttributeValues={":n": "Sunday Crew", ":r": "owner" if sub == "a" else "member"})
         db.put_item(Item={"PK": f"USER#{sub}", "SK": "PROFILE", "email": f"{sub}@example.com"})
     module = importlib.import_module("lambdas.mail_sweep.handler")
     monkeypatch.setattr(module, "dynamodb", boto3.resource("dynamodb"))
@@ -116,7 +121,7 @@ def entry(db, entry_id, owner, picks):
 
 
 def death_mail(sent):
-    return [(m["To"], m["Subject"]) for m in sent if not m["Subject"].startswith(("You won Week", "Week 1 results"))]
+    return [(m["To"], m["Subject"]) for m in sent if not m["Subject"].startswith(("You won Week", "Week 1 results", "Correction:"))]
 
 
 def test_elimination_mails_the_owner_in_sudden_death(sweep, db):
@@ -165,3 +170,109 @@ def test_an_elimination_undone_before_the_sweep_is_not_sent(sweep, db):
     results.regrade(db, group(db))
     module.handler({}, None)
     assert death_mail(sent) == []
+
+
+def set_clock(db, at):
+    db.update_item(Key={"PK": "GROUP#g", "SK": "META"}, UpdateExpression="SET clock = :c",
+                   ExpressionAttributeValues={":c": at})
+
+
+@pytest.mark.parametrize("left,due", [
+    (timedelta(hours=25), None), (timedelta(hours=24), 24), (timedelta(hours=3), 24),
+    (timedelta(hours=2), 2), (timedelta(minutes=1), 2), (timedelta(0), None),
+])
+def test_reminder_windows(sweep, left, due):
+    module, _ = sweep
+    lock = datetime(2027, 9, 10, 0, 20, tzinfo=timezone.utc)
+    assert module.reminder_due(lock - left, lock) == due
+
+
+def test_reminders_go_to_incomplete_sheets_and_unpicked_death_entries(sweep, db):
+    module, sent = sweep
+    # Lock is Thu 2027-09-10 00:20Z; a's sheet is complete, b's is a draft. No GOW, so no announcement either.
+    db.delete_item(Key={"PK": "GROUP#g#S2027#W01", "SK": "GOW"})
+    db.update_item(Key={"PK": "GROUP#g#S2027#W01", "SK": "PICK#b"}, UpdateExpression="SET complete = :f",
+                   ExpressionAttributeValues={":f": False})
+    entry(db, "x", "a", {})
+    entry(db, "y", "b", {"1": "KC"})
+    set_clock(db, "2027-09-09T12:00:00Z")
+    assert module.handler({}, None) == {"sent": 2}
+    mail = by_to(sent)
+    assert mail["a@example.com"]["Subject"] == "Week 1 locks Thu 8:20 PM ET"
+    a = mail["a@example.com"].get_body(("plain",)).get_content()
+    assert "A x has no Week 1 pick. A missed pick eliminates it." in a and "PICK EM:" not in a
+    assert "your sheet is saved but not complete" in mail["b@example.com"].get_body(("plain",)).get_content()
+    assert module.handler({}, None) == {"dup": 2}
+
+    set_clock(db, "2027-09-09T23:00:00Z")
+    assert module.handler({}, None) == {"sent": 2}
+    assert sent[-1]["Subject"].startswith("Last call: Week 1 locks")
+
+
+def test_no_reminder_outside_the_window_or_when_turned_off(sweep, db):
+    module, sent = sweep
+    db.delete_item(Key={"PK": "GROUP#g#S2027#W01", "SK": "PICK#b"})
+    db.delete_item(Key={"PK": "GROUP#g#S2027#W01", "SK": "GOW"})
+    set_clock(db, "2027-09-08T00:00:00Z")
+    assert module.handler({}, None) == {}
+    db.update_item(Key={"PK": "GROUP#g", "SK": "MEMBER#b"}, UpdateExpression="SET emailPrefs = :p",
+                   ExpressionAttributeValues={":p": {"reminders": False}})
+    set_clock(db, "2027-09-09T12:00:00Z")
+    assert module.handler({}, None) == {"off": 1}
+    assert sent == []
+
+
+def test_gow_admin_email_goes_to_organizers_until_the_deadline(sweep, db):
+    module, sent = sweep
+    from lambdas.common import gow_link
+
+    db.delete_item(Key={"PK": "GROUP#g#S2027#W01", "SK": "GOW"})
+    # Lock Thu 2027-09-10 00:20Z; the deadline is Tue 2027-09-07 12:00 ET (16:00Z); the email opens 27 h before.
+    set_clock(db, "2027-09-06T12:59:00Z")
+    assert module.handler({}, None) == {}
+    set_clock(db, "2027-09-06T13:00:00Z")
+    assert module.handler({}, None) == {"sent": 1}
+    mail = sent[0]
+    assert (mail["To"], mail["Subject"]) == ("a@example.com", "Pick the Week 1 Game of the Week by Tue 12:00 PM ET")
+    text = mail.get_body(("plain",)).get_content()
+    # Hype 2 beats 1, so A1 @ H1 is listed first.
+    assert text.index("A1 @ H1") < text.index("A0 @ H0")
+    links = [line.split("?t=")[1] for line in text.splitlines() if "/gow/?t=" in line]
+    assert [gow_link.verify(t).game_id for t in links] == ["101", "100"]
+    assert {gow_link.verify(t).admin_sub for t in links} == {"a"}
+    assert "See all 2 games: https://pickem.xomware.com/picks/?id=g&week=1" in text
+
+    db.put_item(Item={"PK": "GROUP#g#S2027#W01", "SK": "GOW", "gameId": "100", "chosenBy": "a"})
+    assert module.handler({}, None) == {}
+    set_clock(db, "2027-09-07T16:00:00Z")
+    db.delete_item(Key={"PK": "GROUP#g#S2027#W01", "SK": "GOW"})
+    assert module.handler({}, None) == {}
+
+
+def test_gow_set_announces_picks_open_once_per_game(sweep, db):
+    module, sent = sweep
+    db.delete_item(Key={"PK": "GROUP#g#S2027#W01", "SK": "PICK#b"})
+    db.put_item(Item={"PK": "GROUP#g#S2027#W01", "SK": "GOW", "gameId": "101", "chosenBy": "auto"})
+    set_clock(db, "2027-09-07T17:00:00Z")
+    # a's sheet is already complete, so only b hears.
+    assert module.handler({}, None) == {"sent": 1}
+    assert (sent[0]["To"], sent[0]["Subject"]) == ("b@example.com", "Week 1 picks are open: A1 @ H1 is the Game of the Week")
+    assert "picked automatically" in sent[0].get_body(("plain",)).get_content()
+    assert module.handler({}, None) == {"dup": 1}
+
+    db.put_item(Item={"PK": "GROUP#g#S2027#W01", "SK": "GOW", "gameId": "100", "chosenBy": "a"})
+    assert module.handler({}, None) == {"sent": 1}
+    assert "set by A." in sent[1].get_body(("plain",)).get_content()
+
+
+def test_flipped_winners_send_a_correction(sweep, db):
+    module, sent = sweep
+    confirm_week(db)
+    module.handler({}, None)
+    db.put_item(Item={"PK": "GROUP#g#S2027#W01", "SK": "OVERRIDE#100", "awayScore": 30, "homeScore": 0})
+    results.regrade(db, group(db))
+    module.handler({}, None)
+    fixed = by_to(sent[2:])
+    assert fixed["b@example.com"]["Subject"] == "Correction: You won Week 1"
+    assert fixed["a@example.com"]["Subject"].startswith("Correction: Week 1 results")
+    assert "Before: You. Now: B." in fixed["a@example.com"].get_body(("plain",)).get_content()

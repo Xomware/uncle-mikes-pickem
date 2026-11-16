@@ -27,8 +27,11 @@ locals {
   games_lambdas = [
     { name = "cancel", description = "Void or restore a game for a group's week", path_part = "cancel", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
   ]
+  # peek and confirm are public: the signed token in the admin email is their only credential.
   gow_lambdas = [
     { name = "set", description = "Choose a group's game of the week", path_part = "set", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+    { name = "peek", description = "Show the game a signed GOW email link names (?t=)", path_part = "peek", http_method = "GET", authorization = "NONE" },
+    { name = "confirm", description = "Choose the game a signed GOW email link names", path_part = "confirm", http_method = "POST", authorization = "NONE" },
   ]
   death_lambdas = [
     { name = "entry", description = "Add a death pool entry for the caller or a member", path_part = "entry", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
@@ -98,6 +101,8 @@ locals {
     rules_update   = ["app:GetItem", "app:Query", "app:PutItem", "nfl:GetItem"]
     members_update = ["app:GetItem", "app:UpdateItem"]
     gow_set        = ["app:GetItem", "app:PutItem", "nfl:GetItem"]
+    gow_peek       = ["app:GetItem", "nfl:GetItem", "nfl:Query", "ops:GetItem"]
+    gow_confirm    = ["app:GetItem", "app:PutItem", "nfl:GetItem", "ops:PutItem"]
     picks_set      = ["app:GetItem", "app:PutItem", "nfl:GetItem", "nfl:Query"]
     picks_get      = ["app:Query", "nfl:GetItem", "nfl:Query"]
     games_cancel   = ["app:GetItem", "app:Query", "app:PutItem", "app:UpdateItem", "nfl:GetItem", "nfl:Query", "ops:PutItem"]
@@ -126,6 +131,8 @@ locals {
     email_unsubscribe = [data.aws_iam_policy_document.unsubscribe_key.json]
     email_preview     = [data.aws_iam_policy_document.unsubscribe_key.json]
     email_test        = [data.aws_iam_policy_document.unsubscribe_key.json, data.aws_iam_policy_document.send_email.json]
+    gow_peek          = [data.aws_iam_policy_document.gow_link_key.json]
+    gow_confirm       = [data.aws_iam_policy_document.gow_link_key.json]
   }
 
   # Environment beyond lambda_variables. One line per key.
@@ -133,6 +140,8 @@ locals {
     email_unsubscribe = local.email_env
     email_preview     = local.email_env
     email_test        = local.email_env
+    gow_peek          = { GOW_LINK_PARAM = aws_ssm_parameter.gow_link_secret.name }
+    gow_confirm       = { GOW_LINK_PARAM = aws_ssm_parameter.gow_link_secret.name }
   }
 }
 

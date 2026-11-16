@@ -38,6 +38,12 @@ variable "email_unsubscribe_secret" {
   sensitive   = true
 }
 
+variable "gow_link_secret" {
+  description = "HMAC key for the GOW admin email's links, from Infisical /pickem GOW_LINK_SECRET."
+  type        = string
+  sensitive   = true
+}
+
 variable "alarm_email" {
   description = "Where capture alarms go, from Infisical /pickem ALARM_EMAIL."
   type        = string

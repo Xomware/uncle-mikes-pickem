@@ -20,6 +20,7 @@ data "aws_iam_policy_document" "mail_sweep" {
   source_policy_documents = [
     data.aws_iam_policy_document.unsubscribe_key.json,
     data.aws_iam_policy_document.send_email.json,
+    data.aws_iam_policy_document.gow_link_key.json,
   ]
 
   statement {
@@ -28,10 +29,10 @@ data "aws_iam_policy_document" "mail_sweep" {
     resources = ["${aws_cloudwatch_log_group.mail_sweep.arn}:*"]
   }
 
-  # Members, profiles (addresses), RESULT, PICK and STANDINGS items.
+  # Members, profiles (addresses), RESULT, PICK and STANDINGS items; Scan finds groups for reminders.
   statement {
     sid       = "App"
-    actions   = ["dynamodb:GetItem", "dynamodb:Query", "dynamodb:BatchGetItem"]
+    actions   = ["dynamodb:GetItem", "dynamodb:Query", "dynamodb:BatchGetItem", "dynamodb:Scan"]
     resources = [aws_dynamodb_table.app.arn]
   }
 

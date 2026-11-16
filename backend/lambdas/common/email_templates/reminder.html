@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% set subject = ("Last call: " if hours == 2 else "") ~ "Week %d locks %s" % (week, lock) %}
+{% block preheader %}{% if picks != "done" %}Your Week {{ week }} picks aren't in yet.{% else %}Your death pool pick for Week {{ week }} isn't in yet.{% endif %} Everything locks at the first kickoff.{% endblock %}
+{% block body %}
+{{ m.h1("Two-minute warning" if hours == 2 else "Week %d locks soon" % week) }}
+<p style="margin:0 0 16px;">Hi {{ name }}, every pick in {{ group_name }} locks at the first kickoff: <strong>{{ lock }}</strong>. Nothing can change after that, Sunday games included.</p>
+{% if picks != "done" %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 16px;">
+  <tr>
+    <td bgcolor="#fff4c2" style="background-color:#fff4c2;border-left:4px solid #f5cf2a;padding:12px 14px;font:15px/1.5 Arial,Helvetica,sans-serif;color:#17231b;">
+      <strong>Pick em:</strong> {% if picks == "draft" %}your sheet is saved but not complete. Every game needs a team, and the Monday night total needs a guess.{% else %}no picks yet. A missed week scores the lowest sheet minus 1.{% endif %}
+    </td>
+  </tr>
+</table>
+{% endif %}
+{% if entries %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 16px;">
+  <tr>
+    <td bgcolor="#16120d" style="background-color:#16120d;border-left:4px solid #e8433a;padding:12px 14px;font:15px/1.5 Arial,Helvetica,sans-serif;color:#f6f5ea;">
+      <strong style="color:#e8433a;text-transform:uppercase;letter-spacing:1px;">Death pool</strong><br>
+      {% for e in entries %}
+      <strong>{{ e.label }}</strong> has no Week {{ week }} pick. {% if e.last_life %}A missed pick eliminates it.{% else %}A missed pick costs it a life.{% endif %}<br>
+      {% endfor %}
+      <a href="{{ site }}/group/?id={{ group_id|urlencode }}" style="color:#f5cf2a;text-decoration:underline;">Pick on the death board</a>
+    </td>
+  </tr>
+</table>
+{% endif %}
+<div style="margin-top:8px;">{{ m.button(site ~ "/picks/?id=" ~ group_id|urlencode ~ "&week=" ~ week, "Make your picks") }}</div>
+{% endblock %}
