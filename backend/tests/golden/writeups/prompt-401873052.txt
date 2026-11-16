@@ -1,0 +1,96 @@
+Fact pack:
+{
+  "week": 10,
+  "kickoff": "Thu Nov 12, 8:15 PM ET",
+  "away": {
+    "team": "Washington Commanders",
+    "abbr": "WSH",
+    "record": "2-5-1",
+    "homeOrRoadRecord": "0-3",
+    "lastFive": [
+      "L 30-13 vs IND",
+      "T 27-27 OT vs NYG",
+      "L 23-17 @ SF",
+      "W 27-10 vs PHI",
+      "L 20-13 vs LAR"
+    ],
+    "injuries": [
+      {
+        "player": "Lucas Patrick",
+        "position": "G",
+        "status": "Out",
+        "injury": "Concussion"
+      },
+      {
+        "player": "Treylon Burks",
+        "position": "WR",
+        "status": "Out",
+        "injury": null
+      },
+      {
+        "player": "Colson Yankoff",
+        "position": "TE",
+        "status": "Out",
+        "injury": "Knee"
+      }
+    ]
+  },
+  "home": {
+    "team": "New York Giants",
+    "abbr": "NYG",
+    "record": "5-2-1",
+    "homeOrRoadRecord": "3-1",
+    "lastFive": [
+      "W 36-24 vs ARI",
+      "T 27-27 OT @ WSH",
+      "L 34-27 vs NO",
+      "W 27-21 OT @ HOU",
+      "W 19-11 @ PHI"
+    ],
+    "injuries": [
+      {
+        "player": "Colton Hood",
+        "position": "CB",
+        "status": "Out",
+        "injury": null
+      },
+      {
+        "player": "Cam Skattebo",
+        "position": "RB",
+        "status": "Out",
+        "injury": null
+      },
+      {
+        "player": "J.J. McCarthy",
+        "position": "QB",
+        "status": "Questionable",
+        "injury": null
+      },
+      {
+        "player": "Malik Harrison",
+        "position": "LB",
+        "status": "Questionable",
+        "injury": "Groin"
+      }
+    ]
+  },
+  "venue": {
+    "name": "MetLife Stadium",
+    "city": "East Rutherford",
+    "roof": "outdoors"
+  },
+  "line": {
+    "favorite": "NYG -2.5",
+    "overUnder": 40.5,
+    "awayMoneyline": 114,
+    "homeMoneyline": -135
+  },
+  "weather": {
+    "temperatureF": 52,
+    "windGustMph": 14,
+    "conditions": "Showers"
+  },
+  "headToHead": [
+    "2026 week 5: NYG 27 @ WSH 27"
+  ]
+}
