@@ -32,6 +32,8 @@ WEEK = {
     ],
     "gow": {"matchup": "KC @ BAL", "score": "20-17", "team": "BAL", "conf": 15, "winner": "KC", "points": -15},
     "season": {"place": "5th", "total": 412, "gow": 22, "of": 12},
+    "correction": False,
+    "previous": [],
 }
 
 DEATH = {"group_id": "g-sample", "week": 7, "label": "Pat 2", "team": "DAL", "outcome": "lost", "lives_left": 1, "alive": 9}
@@ -42,6 +44,18 @@ SAMPLES: dict[str, tuple[str, dict]] = {
     "week_won": ("week_result", {
         **WEEK, "won": True, "score": 81, "place": "1st", "winners": [{"name": "You", "tiebreak": 44}],
         "season": None,
+    }),
+    "week_correction": ("week_result", {
+        **WEEK, "won": True, "score": 81, "place": "1st", "winners": [{"name": "You", "tiebreak": 44}],
+        "correction": True, "previous": ["Sam"],
+    }),
+    "gow_set": ("gow_set", {
+        "group_id": "g-sample", "week": 6, "matchup": "KC @ BUF", "when": "Sun 8:20 PM ET", "chosen_by": "Dom",
+        "lock": "Thu 8:15 PM ET",
+    }),
+    "gow_set_auto": ("gow_set", {
+        "group_id": "g-sample", "week": 6, "matchup": "KC @ BUF", "when": "Sun 8:20 PM ET", "chosen_by": None,
+        "lock": "Thu 8:15 PM ET",
     }),
     "death_out": ("death_out", {**DEATH, "lives_left": 0}),
     "death_out_missed": ("death_out", {**DEATH, "team": None, "outcome": "", "lives_left": 0}),
