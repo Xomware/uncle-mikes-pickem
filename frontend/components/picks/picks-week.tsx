@@ -7,8 +7,8 @@ import { useCallback, useEffect, useState } from "react";
 
 import { FieldTitle } from "@/components/field/field-title";
 import { LoadError } from "@/components/load-error";
-import { GroupGrid } from "@/components/picks/group-grid";
 import { PickSheet } from "@/components/picks/pick-sheet";
+import { LockedWeek } from "@/components/results/week-results";
 import { buttonVariants } from "@/components/ui/button";
 import { type WeekView, getWeek } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
@@ -90,7 +90,7 @@ function WeekBody({ view, reload }: { view: WeekView; reload: () => void }) {
         </button>
       )}
 
-      {week.locked ? <GroupGrid view={view} /> : <PickSheet view={view} locked={locked} reload={reload} />}
+      {week.locked ? <LockedWeek view={view} /> : <PickSheet view={view} locked={locked} reload={reload} />}
     </>
   );
 }
