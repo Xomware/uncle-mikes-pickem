@@ -1,7 +1,6 @@
 "use client";
 
 import { Check, Info, Lock, Plus } from "lucide-react";
-import Link from "next/link";
 import { type FormEvent, useCallback, useState } from "react";
 
 import { DeathGrid } from "@/components/death/death-grid";
@@ -11,6 +10,7 @@ import { SuddenDeathLockup } from "@/components/death/sudden-death-lockup";
 import { Helmet } from "@/components/field/helmet";
 import { Coin } from "@/components/field/icons";
 import { TeamLogo } from "@/components/field/team-logo";
+import { GameInfoLink } from "@/components/game/game-info-link";
 import { LoadError } from "@/components/load-error";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
@@ -24,7 +24,6 @@ import {
   setDeathPick,
 } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
-import { gameHref } from "@/lib/game";
 import { formatLine, takenTeams, teamLine, withPick } from "@/lib/death";
 import { etTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
@@ -201,14 +200,15 @@ function TeamPicker({ groupId, games, taken, current, pending, onChoose }: Picke
     <ul className="mt-3 space-y-3">
       {games.map((g) => (
         <li key={g.gameId}>
-          <Link
-            href={gameHref(groupId, g.gameId)}
+          <GameInfoLink
+            groupId={groupId}
+            gameId={g.gameId}
             aria-label={`${g.away} at ${g.home}, ${etTime(g.kickoff)}, game info`}
             className="mb-1 inline-flex min-h-8 items-center gap-1 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
           >
             {etTime(g.kickoff)}
             <Info className="size-3.5" aria-hidden="true" />
-          </Link>
+          </GameInfoLink>
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
             {[g.away, g.home].map((team, i) => (
               <TeamButton

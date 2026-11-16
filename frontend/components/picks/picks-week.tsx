@@ -14,6 +14,7 @@ import { type WeekView, getWeek } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
 import { groupHref } from "@/lib/groups";
 import { countdown, picksHref } from "@/lib/picks";
+import { useFlags } from "@/lib/flags";
 import { sheetHref } from "@/lib/sheet";
 import { etTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
@@ -54,6 +55,7 @@ function WeekBody({ view, reload }: { view: WeekView; reload: () => void }) {
   const { group, week } = view;
   const left = useCountdown(week.lockAt, week.now);
   const locked = week.locked || left === null;
+  const flags = useFlags(group.groupId);
 
   return (
     <>
@@ -64,7 +66,7 @@ function WeekBody({ view, reload }: { view: WeekView; reload: () => void }) {
         <WeekLink groupId={group.groupId} week={week.week - 1} label="Previous week" />
         <WeekLink groupId={group.groupId} week={week.week + 1} label="Next week" />
       </div>
-      <div className="mt-2 flex flex-wrap gap-x-5">
+      <div className="mt-2 flex flex-wrap gap-x-5" hidden={!flags.printableSheets}>
         <Link href={sheetHref(group.groupId, week.week)} className={SHEET_LINK}>
           <Printer className="size-4" aria-hidden="true" />
           Printable sheet

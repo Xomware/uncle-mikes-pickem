@@ -14,6 +14,7 @@ import { StandingsLink } from "@/components/results/season-standings";
 import { buttonVariants } from "@/components/ui/button";
 import { type GroupDetail, getGroup } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
+import { useFlags } from "@/lib/flags";
 import { ENTRY_LABEL, ROLE_LABEL, isOrganizer } from "@/lib/groups";
 import { picksHref } from "@/lib/picks";
 import { cn } from "@/lib/utils";
@@ -42,7 +43,9 @@ export function GroupHome() {
 
 function GroupDetails({ detail, onChange }: { detail: GroupDetail; onChange: (detail: GroupDetail) => void }) {
   const { group, role, members, replay } = detail;
-  const [tab, setTab] = useState<keyof typeof TABS>("members");
+  const [chosen, setTab] = useState<keyof typeof TABS>("members");
+  const flags = useFlags(group.groupId);
+  const tab = flags.deathPool ? chosen : "members";
   return (
     <>
       <FieldTitle sub={`${group.season} season · You're ${ROLE_LABEL[role].toLowerCase()}`}>{group.name}</FieldTitle>
@@ -52,18 +55,22 @@ function GroupDetails({ detail, onChange }: { detail: GroupDetail; onChange: (de
       </Link>
       <div className="mt-3 flex flex-wrap gap-2">
         <StandingsLink groupId={group.groupId} />
-        <Link href={`/group/pay/?id=${encodeURIComponent(group.groupId)}`} className={buttonVariants({ variant: "outline" })}>
-          <Wallet aria-hidden="true" />
-          Pay
-        </Link>
-        <Link
-          href={`/group/standings-sheet/?id=${encodeURIComponent(group.groupId)}`}
-          className={buttonVariants({ variant: "outline" })}
-        >
-          <Printer aria-hidden="true" />
-          Standings sheet
-        </Link>
-        {isOrganizer(role) && (
+        {flags.payments && (
+          <Link href={`/group/pay/?id=${encodeURIComponent(group.groupId)}`} className={buttonVariants({ variant: "outline" })}>
+            <Wallet aria-hidden="true" />
+            Pay
+          </Link>
+        )}
+        {flags.printableSheets && (
+          <Link
+            href={`/group/standings-sheet/?id=${encodeURIComponent(group.groupId)}`}
+            className={buttonVariants({ variant: "outline" })}
+          >
+            <Printer aria-hidden="true" />
+            Standings sheet
+          </Link>
+        )}
+        {isOrganizer(role) && flags.payments && (
           <Link
             href={`/group/payments/?id=${encodeURIComponent(group.groupId)}`}
             className={buttonVariants({ variant: "outline" })}
@@ -92,7 +99,7 @@ function GroupDetails({ detail, onChange }: { detail: GroupDetail; onChange: (de
         />
       )}
 
-      <div role="tablist" aria-label="Group sections" className="panel mt-6 grid grid-cols-2 gap-1 p-1">
+      <div role="tablist" aria-label="Group sections" className="panel mt-6 grid grid-cols-2 gap-1 p-1" hidden={!flags.deathPool}>
         {(Object.keys(TABS) as (keyof typeof TABS)[]).map((key) => (
           <button
             key={key}

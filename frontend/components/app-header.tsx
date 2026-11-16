@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut } from "lucide-react";
+import { LogOut, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -9,6 +9,7 @@ import { Brand } from "@/components/brand";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/use-auth";
 import { DEFAULT_NEXT } from "@/lib/auth/next-path";
+import { useFlags } from "@/lib/flags";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -20,6 +21,7 @@ export function AppHeader() {
   const pathname = usePathname();
   const auth = useAuth();
   const [signingOut, setSigningOut] = useState(false);
+  const { maintenanceBanner } = useFlags();
 
   async function signOut() {
     setSigningOut(true);
@@ -57,6 +59,12 @@ export function AppHeader() {
           </Button>
         )}
       </div>
+      {maintenanceBanner && (
+        <p role="status" className="flex items-center justify-center gap-2 bg-primary px-4 py-2 text-center text-sm font-semibold text-primary-foreground">
+          <TriangleAlert className="size-4 shrink-0" aria-hidden="true" />
+          {maintenanceBanner}
+        </p>
+      )}
     </header>
   );
 }

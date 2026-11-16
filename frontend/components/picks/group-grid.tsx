@@ -1,10 +1,8 @@
-import Link from "next/link";
-
 import { LightBank } from "@/components/field/icons";
 import { ResultMark } from "@/components/field/result-mark";
 import { TeamLogo } from "@/components/field/team-logo";
+import { GameInfoLink } from "@/components/game/game-info-link";
 import type { Team, WeekResult, WeekView } from "@/lib/api/client";
-import { gameHref } from "@/lib/game";
 import { gridRows, outcome } from "@/lib/picks";
 import { gradeMark } from "@/lib/results";
 import { cn } from "@/lib/utils";
@@ -37,8 +35,9 @@ export function GroupGrid({ view, result = null }: { view: WeekView; result?: We
                       Prime<span className="sr-only">time, game of the week</span>
                     </span>
                   )}
-                  <Link
-                    href={gameHref(view.group.groupId, g.gameId)}
+                  <GameInfoLink
+                    groupId={view.group.groupId}
+                    gameId={g.gameId}
                     aria-label={`${g.away.abbr} at ${g.home.abbr}, game info`}
                     className="block rounded-sm outline-none hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-ring/60"
                   >
@@ -50,7 +49,7 @@ export function GroupGrid({ view, result = null }: { view: WeekView; result?: We
                       <TeamLogo {...g.home} className="size-5" />
                       {g.home.abbr}
                     </span>
-                  </Link>
+                  </GameInfoLink>
                 </th>
               ))}
               <th scope="col" className="min-w-16 px-2 py-2 text-center align-bottom">
