@@ -1,4 +1,4 @@
-import type { Game, PickEntry, WeekPicks, WeekView } from "@/lib/api/client";
+import type { Game, PickEntry, Team, WeekPicks, WeekView } from "@/lib/api/client";
 
 export type Outcome = "correct" | "wrong" | null;
 
@@ -78,7 +78,11 @@ export function countdown(ms: number): string | null {
 }
 
 /** The line as ESPN words it ("KC -3.5"), else built from the home spread. */
-export function spreadText(game: Game): string | null {
+export function spreadText(game: {
+  away: Team;
+  home: Team;
+  lines: { details?: string | null; spread?: number | null } | null;
+}): string | null {
   const lines = game.lines;
   if (!lines) return null;
   if (lines.details) return lines.details;

@@ -1,14 +1,18 @@
 "use client";
 
-import { ChevronDown, ChevronUp, CircleAlert, CircleCheck, LoaderCircle, Star, Undo2 } from "lucide-react";
+import { ChevronDown, ChevronUp, CircleAlert, CircleCheck, Info, LoaderCircle, Star, Undo2 } from "lucide-react";
+import Link from "next/link";
 import { type ReactNode, useState } from "react";
 
 import { LightBank } from "@/components/field/icons";
+import { TeamLogo } from "@/components/field/team-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { type Game, type WeekView, cancelGame, setGow, setPicks } from "@/lib/api/client";
+import { type Game, type Team, type WeekView, cancelGame, setGow, setPicks } from "@/lib/api/client";
+import { gameHref } from "@/lib/game";
 import { isOrganizer } from "@/lib/groups";
 import { type Sheet, confAt, isComplete, pickedCount, sameSheet, spreadText, swap, toPayload, toSheet } from "@/lib/picks";
+import { etTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
 type SaveState = { kind: "idle" | "saving" } | { kind: "saved"; at: string } | { kind: "failed"; message: string };
@@ -70,7 +74,7 @@ export function PickSheet({ view, locked, reload }: Props) {
   const canceled = games.filter((g) => g.canceled);
 
   return (
-    <div className="mt-6 pb-28">
+    <div className="mt-6">
       {!gow && !locked && (
         <p className="panel mb-4 p-3 text-sm text-muted-foreground">
           Picks open once the organizer chooses the game of the week.
@@ -110,6 +114,8 @@ export function PickSheet({ view, locked, reload }: Props) {
         {sheet.order.map((id, index) => (
           <GameRow
             key={id}
+            groupId={group.groupId}
+            dirty={dirty}
             game={byId[id]}
             conf={confAt(sheet, index)}
             team={sheet.teams[id]}
@@ -185,6 +191,8 @@ export function PickSheet({ view, locked, reload }: Props) {
 }
 
 interface RowProps {
+  groupId: string;
+  dirty: boolean;
   game: Game;
   conf: number;
   team: string | null;
@@ -200,10 +208,10 @@ interface RowProps {
   manage: ReactNode;
 }
 
-function GameRow({ game, conf, team, isGow, isTiebreak, editable, selected, first, last, onPick, onConf, onMove, manage }: RowProps) {
+function GameRow({ groupId, dirty, game, conf, team, isGow, isTiebreak, editable, selected, first, last, onPick, onConf, onMove, manage }: RowProps) {
   const matchup = `${game.away.abbr} at ${game.home.abbr}`;
   const details = [
-    new Date(game.kickoff).toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" }),
+    etTime(game.kickoff),
     game.broadcasts?.[0],
     spreadText(game),
     game.lines?.overUnder != null ? `O/U ${game.lines.overUnder}` : null,
@@ -248,13 +256,22 @@ function GameRow({ game, conf, team, isGow, isTiebreak, editable, selected, firs
             </div>
           )}
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1" role="group" aria-label={`Pick ${matchup}`}>
-            <TeamButton abbr={game.away.abbr} picked={team} editable={editable} onPick={onPick} />
+            <TeamButton team={game.away} picked={team} editable={editable} onPick={onPick} />
             <span aria-hidden="true" className="px-0.5 text-xs text-muted-foreground">
               @
             </span>
-            <TeamButton abbr={game.home.abbr} picked={team} editable={editable} onPick={onPick} />
+            <TeamButton team={game.home} picked={team} editable={editable} onPick={onPick} />
           </div>
-          <p className="mt-1 truncate text-xs text-muted-foreground">{details.join(" · ")}</p>
+          <Link
+            href={gameHref(groupId, game.gameId)}
+            // The sheet lives in this page's state; leaving it unsaved would drop the draft.
+            onClick={(e) => dirty && !window.confirm("Leave without saving your picks?") && e.preventDefault()}
+            aria-label={`Game info for ${matchup}: ${details.join(", ")}`}
+            className="-mb-2 flex min-h-11 items-center gap-1 text-xs text-muted-foreground underline-offset-4 outline-none hover:text-foreground hover:underline focus-visible:text-foreground focus-visible:underline"
+          >
+            <span className="truncate">{details.join(" · ")}</span>
+            <Info className="size-3.5 shrink-0" aria-hidden="true" />
+          </Link>
         </div>
 
         {editable && (
@@ -274,27 +291,28 @@ function GameRow({ game, conf, team, isGow, isTiebreak, editable, selected, firs
 }
 
 interface TeamProps {
-  abbr: string;
+  team: Team;
   picked: string | null;
   editable: boolean;
   onPick: (team: string) => void;
 }
 
-function TeamButton({ abbr, picked, editable, onPick }: TeamProps) {
-  const on = picked === abbr;
+function TeamButton({ team, picked, editable, onPick }: TeamProps) {
+  const on = picked === team.abbr;
   return (
     <button
       type="button"
       disabled={!editable}
       aria-pressed={on}
-      onClick={() => onPick(abbr)}
+      onClick={() => onPick(team.abbr)}
       className={cn(
-        "h-11 rounded-md border font-display text-xl font-extrabold tracking-wide outline-none focus-visible:ring-3 focus-visible:ring-ring/60 disabled:opacity-100",
+        "flex h-11 items-center justify-center gap-1.5 rounded-md border font-display text-xl font-extrabold tracking-wide outline-none focus-visible:ring-3 focus-visible:ring-ring/60 disabled:opacity-100",
         on ? "border-primary bg-primary text-primary-foreground" : "bg-input/30 enabled:hover:bg-input/60",
         !editable && !on && "text-muted-foreground",
       )}
     >
-      {abbr}
+      <TeamLogo {...team} className="size-7" />
+      {team.abbr}
     </button>
   );
 }
@@ -312,8 +330,10 @@ function SaveBar({ sheet, dirty, save, onSave }: { sheet: Sheet; dirty: boolean;
   else if (save.kind === "saved") status = complete ? "Saved. All picks in." : `Draft saved. ${missing.join(", ")}.`;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-10 border-t-2 border-primary bg-board">
-      <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3 sm:px-6">
+    // Sticky, not fixed: it keeps its own height at the end of the sheet, so however far the
+    // status text wraps, the last row and the tiebreak always scroll clear of it.
+    <div className="sticky bottom-0 z-10 -mx-4 mt-6 border-t-2 border-primary bg-board pb-[env(safe-area-inset-bottom)] sm:-mx-6">
+      <div className="flex items-center gap-3 px-4 py-3 sm:px-6">
         <p role="status" aria-live="polite" className="flex min-w-0 flex-1 items-center gap-2 text-sm">
           {!dirty && complete && save.kind !== "failed" && <CircleCheck className="size-4 shrink-0 text-primary" aria-hidden="true" />}
           <span className="min-w-0">{status}</span>
