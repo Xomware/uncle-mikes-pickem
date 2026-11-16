@@ -1,5 +1,9 @@
 {% extends "base.txt" %}
 {% block body %}
+{% if correction %}
+CORRECTION: a score was corrected after Week {{ week }} was announced, and the winners changed.{% if previous %} Before: {{ previous|join(", ") }}. Now: {{ winners|map(attribute="name")|join(", ") or "nobody" }}.{% endif %} These are the final numbers.
+
+{% endif %}
 {{ ("YOU WON WEEK %d" % week) if won else ("WEEK %d IS FINAL" % week) }}
 
 Hi {{ name }}, {% if won %}nobody in {{ group_name }} beat you this week.{% elif missed %}no picks were in at lock, so you get the missed-week score.{% else %}here's how your week went.{% endif %}
