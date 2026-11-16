@@ -119,6 +119,17 @@ def test_espn_failure_is_a_502(info, monkeypatch):
     assert get(info, "live")[0] == 502
 
 
+def test_writeup_rides_along_when_one_exists(info):
+    from lambdas.common import writeup
+
+    seed_live()
+    group("live", "2026-11-12T18:00:00Z")
+    assert get(info, "live")[1]["writeup"] is None
+    writeup.save(TNF, "Upset watch: Washington.", "abc", "2026-11-11T15:00:00Z")
+    film_room = {"text": "Upset watch: Washington.", "model": "claude-haiku-5-5", "generatedAt": "2026-11-11T15:00:00Z"}
+    assert get(info, "live")[1]["writeup"] == film_room
+
+
 @pytest.fixture
 def replay(info, monkeypatch):
     s3 = boto3.client("s3")
