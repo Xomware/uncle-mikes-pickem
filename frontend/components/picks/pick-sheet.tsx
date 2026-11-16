@@ -1,12 +1,15 @@
 "use client";
 
-import { ChevronDown, ChevronUp, CircleAlert, CircleCheck, LoaderCircle, Star, Undo2 } from "lucide-react";
+import { ChevronDown, ChevronUp, CircleAlert, CircleCheck, Info, LoaderCircle, Star, Undo2 } from "lucide-react";
+import Link from "next/link";
 import { type ReactNode, useState } from "react";
 
 import { LightBank } from "@/components/field/icons";
+import { TeamLogo } from "@/components/field/team-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { type Game, type WeekView, cancelGame, setGow, setPicks } from "@/lib/api/client";
+import { type Game, type Team, type WeekView, cancelGame, setGow, setPicks } from "@/lib/api/client";
+import { gameHref } from "@/lib/game";
 import { isOrganizer } from "@/lib/groups";
 import { type Sheet, confAt, isComplete, pickedCount, sameSheet, spreadText, swap, toPayload, toSheet } from "@/lib/picks";
 import { etTime } from "@/lib/time";
@@ -111,6 +114,8 @@ export function PickSheet({ view, locked, reload }: Props) {
         {sheet.order.map((id, index) => (
           <GameRow
             key={id}
+            groupId={group.groupId}
+            dirty={dirty}
             game={byId[id]}
             conf={confAt(sheet, index)}
             team={sheet.teams[id]}
@@ -186,6 +191,8 @@ export function PickSheet({ view, locked, reload }: Props) {
 }
 
 interface RowProps {
+  groupId: string;
+  dirty: boolean;
   game: Game;
   conf: number;
   team: string | null;
@@ -201,7 +208,7 @@ interface RowProps {
   manage: ReactNode;
 }
 
-function GameRow({ game, conf, team, isGow, isTiebreak, editable, selected, first, last, onPick, onConf, onMove, manage }: RowProps) {
+function GameRow({ groupId, dirty, game, conf, team, isGow, isTiebreak, editable, selected, first, last, onPick, onConf, onMove, manage }: RowProps) {
   const matchup = `${game.away.abbr} at ${game.home.abbr}`;
   const details = [
     etTime(game.kickoff),
@@ -249,13 +256,22 @@ function GameRow({ game, conf, team, isGow, isTiebreak, editable, selected, firs
             </div>
           )}
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1" role="group" aria-label={`Pick ${matchup}`}>
-            <TeamButton abbr={game.away.abbr} picked={team} editable={editable} onPick={onPick} />
+            <TeamButton team={game.away} picked={team} editable={editable} onPick={onPick} />
             <span aria-hidden="true" className="px-0.5 text-xs text-muted-foreground">
               @
             </span>
-            <TeamButton abbr={game.home.abbr} picked={team} editable={editable} onPick={onPick} />
+            <TeamButton team={game.home} picked={team} editable={editable} onPick={onPick} />
           </div>
-          <p className="mt-1 truncate text-xs text-muted-foreground">{details.join(" · ")}</p>
+          <Link
+            href={gameHref(groupId, game.gameId)}
+            // The sheet lives in this page's state; leaving it unsaved would drop the draft.
+            onClick={(e) => dirty && !window.confirm("Leave without saving your picks?") && e.preventDefault()}
+            aria-label={`Game info for ${matchup}: ${details.join(", ")}`}
+            className="-mb-2 flex min-h-11 items-center gap-1 text-xs text-muted-foreground underline-offset-4 outline-none hover:text-foreground hover:underline focus-visible:text-foreground focus-visible:underline"
+          >
+            <span className="truncate">{details.join(" · ")}</span>
+            <Info className="size-3.5 shrink-0" aria-hidden="true" />
+          </Link>
         </div>
 
         {editable && (
@@ -275,27 +291,28 @@ function GameRow({ game, conf, team, isGow, isTiebreak, editable, selected, firs
 }
 
 interface TeamProps {
-  abbr: string;
+  team: Team;
   picked: string | null;
   editable: boolean;
   onPick: (team: string) => void;
 }
 
-function TeamButton({ abbr, picked, editable, onPick }: TeamProps) {
-  const on = picked === abbr;
+function TeamButton({ team, picked, editable, onPick }: TeamProps) {
+  const on = picked === team.abbr;
   return (
     <button
       type="button"
       disabled={!editable}
       aria-pressed={on}
-      onClick={() => onPick(abbr)}
+      onClick={() => onPick(team.abbr)}
       className={cn(
-        "h-11 rounded-md border font-display text-xl font-extrabold tracking-wide outline-none focus-visible:ring-3 focus-visible:ring-ring/60 disabled:opacity-100",
+        "flex h-11 items-center justify-center gap-1.5 rounded-md border font-display text-xl font-extrabold tracking-wide outline-none focus-visible:ring-3 focus-visible:ring-ring/60 disabled:opacity-100",
         on ? "border-primary bg-primary text-primary-foreground" : "bg-input/30 enabled:hover:bg-input/60",
         !editable && !on && "text-muted-foreground",
       )}
     >
-      {abbr}
+      <TeamLogo {...team} className="size-7" />
+      {team.abbr}
     </button>
   );
 }

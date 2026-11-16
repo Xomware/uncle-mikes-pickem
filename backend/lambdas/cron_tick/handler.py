@@ -90,9 +90,7 @@ def game_fields(event: dict) -> dict:
     c = event["competitions"][0]
     status = c["status"]["type"]
     scores = {t["homeAway"]: t.get("score") for t in c["competitors"]}
-    teams = {
-        t["homeAway"]: {"id": t["team"]["id"], "abbr": t["team"]["abbreviation"]} for t in c["competitors"]
-    }
+    teams = {t["homeAway"]: nfl_store.team(t["team"]) for t in c["competitors"]}
     venue = c["venue"]
     started = status["state"] != "pre"
     game = {
@@ -119,6 +117,9 @@ def game_fields(event: dict) -> dict:
     # Only before kickoff, so the stored line is the closing line.
     if status["state"] == "pre" and c.get("odds"):
         game["lines"] = lines(c["odds"][0])
+    # The forecast as of kickoff; the summary's gameInfo.weather has numbers but no description.
+    if status["state"] == "pre" and event.get("weather"):
+        game["weather"] = {k: event["weather"].get(k) for k in ("displayValue", "temperature", "conditionId")}
     return game
 
 
