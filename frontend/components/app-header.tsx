@@ -9,7 +9,7 @@ import { Brand } from "@/components/brand";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/use-auth";
 import { DEFAULT_NEXT } from "@/lib/auth/next-path";
-import { useFlags } from "@/lib/flags";
+import { useFlags, useSuperAdmin } from "@/lib/flags";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -22,6 +22,8 @@ export function AppHeader() {
   const auth = useAuth();
   const [signingOut, setSigningOut] = useState(false);
   const { maintenanceBanner } = useFlags();
+  // Only the super admin gets a 200 from /super/overview, so only they see the link.
+  const nav = useSuperAdmin() ? [...NAV, { href: "/super/", label: "Press Box" }] : NAV;
 
   async function signOut() {
     setSigningOut(true);
@@ -34,7 +36,7 @@ export function AppHeader() {
       <div className="mx-auto flex max-w-5xl items-center gap-1 px-3 py-2 sm:px-6">
         <Brand href={DEFAULT_NEXT} className="mr-auto" />
         <nav aria-label="Main" className="flex items-center">
-          {NAV.map(({ href, label }) => {
+          {nav.map(({ href, label }) => {
             const active = pathname === href || pathname === href.slice(0, -1);
             return (
               <Link
