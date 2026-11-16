@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ChevronLeft, ChevronRight, Lock, Timer } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Lock, Printer, Timer } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -14,10 +14,12 @@ import { type WeekView, getWeek } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
 import { groupHref } from "@/lib/groups";
 import { countdown, picksHref } from "@/lib/picks";
+import { sheetHref } from "@/lib/sheet";
 import { etTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
 const LAST_WEEK = 18;
+const SHEET_LINK = "chalk inline-flex min-h-11 items-center gap-1.5 text-xs tracking-[0.14em] hover:text-primary";
 
 export function PicksWeek() {
   const params = useSearchParams();
@@ -61,6 +63,18 @@ function WeekBody({ view, reload }: { view: WeekView; reload: () => void }) {
         </FieldTitle>
         <WeekLink groupId={group.groupId} week={week.week - 1} label="Previous week" />
         <WeekLink groupId={group.groupId} week={week.week + 1} label="Next week" />
+      </div>
+      <div className="mt-2 flex flex-wrap gap-x-5">
+        <Link href={sheetHref(group.groupId, week.week)} className={SHEET_LINK}>
+          <Printer className="size-4" aria-hidden="true" />
+          Printable sheet
+        </Link>
+        {week.locked && (
+          <Link href={sheetHref(group.groupId, week.week, true)} className={SHEET_LINK}>
+            <Printer className="size-4" aria-hidden="true" />
+            Group sheet
+          </Link>
+        )}
       </div>
 
       {/* The game clock: time to lock on the scoreboard. */}
