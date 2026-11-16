@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { type FormEvent, useCallback, useState } from "react";
 
 import { LoadError } from "@/components/load-error";
+import { PayoutsBoard } from "@/components/payments/payouts-board";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
 import { type Ledger, type LedgerLine, type PaymentMethod, getLedger, markPayment } from "@/lib/api/client";
@@ -13,8 +14,6 @@ import { useLoad } from "@/lib/api/use-load";
 import { groupHref, isOrganizer } from "@/lib/groups";
 import { KIND_LABEL, dollars, lineLabel, owedThrough } from "@/lib/payments";
 import { METHOD_LABEL, POTS } from "@/lib/settings";
-
-const PLACE = ["1st", "2nd", "3rd"];
 
 type Paid = Required<Pick<LedgerLine, "amount" | "method" | "paidOn">>;
 
@@ -36,9 +35,7 @@ export function LedgerView() {
           <LoadError title="Couldn't load payments" message={load.message} onRetry={retry} />
         </div>
       )}
-      {load.status === "ready" && !isOrganizer(load.data.role) && (
-        <p className="panel mt-6 p-4 text-muted-foreground">Only the group&apos;s owner or an admin can see everyone&apos;s payments.</p>
-      )}
+      {load.status === "ready" && <PayoutsBoard groupId={id} method={load.data.methods[0]?.method ?? "other"} />}
       {load.status === "ready" && isOrganizer(load.data.role) && (
         <Book ledger={load.data} onChange={() => getLedger(id).then(setData)} />
       )}
@@ -87,9 +84,7 @@ function Book({ ledger, onChange }: { ledger: Ledger; onChange: () => Promise<vo
             <div key={pot} className="rounded-md border border-white/10 bg-white/[0.03] p-3">
               <dt className="text-sm text-muted-foreground">{KIND_LABEL[pot]}</dt>
               <dd className="led text-2xl">{dollars(ledger.pots[pot].total)}</dd>
-              <dd className="text-sm text-muted-foreground">
-                {ledger.pots[pot].payouts.map((p, i) => `${PLACE[i] ?? `${i + 1}th`} ${dollars(p)}`).join(" · ")}
-              </dd>
+              <dd className="text-sm text-muted-foreground">{dollars(ledger.pots[pot].collected)} collected</dd>
             </div>
           ))}
         </dl>

@@ -63,15 +63,10 @@ function GroupDetails({ detail, onChange }: { detail: GroupDetail; onChange: (de
           <Printer aria-hidden="true" />
           Standings sheet
         </Link>
-        {isOrganizer(role) && (
-          <Link
-            href={`/group/payments/?id=${encodeURIComponent(group.groupId)}`}
-            className={buttonVariants({ variant: "outline" })}
-          >
-            <ReceiptText aria-hidden="true" />
-            Payments
-          </Link>
-        )}
+        <Link href={`/group/payments/?id=${encodeURIComponent(group.groupId)}`} className={buttonVariants({ variant: "outline" })}>
+          <ReceiptText aria-hidden="true" />
+          {isOrganizer(role) ? "Payments" : "Payouts"}
+        </Link>
         {isOrganizer(role) && (
           <Link
             href={`/group/settings/?id=${encodeURIComponent(group.groupId)}`}
