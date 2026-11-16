@@ -64,6 +64,11 @@ locals {
       invoke_arn = aws_lambda_function.api["standings_${l.name}"].invoke_arn
     })
   ]
+  analytics_endpoints = [
+    for l in local.analytics_lambdas : merge(l, {
+      invoke_arn = aws_lambda_function.api["analytics_${l.name}"].invoke_arn
+    })
+  ]
   email_endpoints = [
     for l in local.email_lambdas : merge(l, {
       invoke_arn = aws_lambda_function.api["email_${l.name}"].invoke_arn
@@ -110,6 +115,7 @@ module "api" {
 
     results   = { path_prefix = "results", endpoints = local.results_endpoints }
     standings = { path_prefix = "standings", endpoints = local.standings_endpoints }
+    analytics = { path_prefix = "analytics", endpoints = local.analytics_endpoints }
     email     = { path_prefix = "email", endpoints = local.email_endpoints }
   }
 }

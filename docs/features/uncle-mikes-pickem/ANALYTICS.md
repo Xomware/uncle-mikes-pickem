@@ -33,3 +33,11 @@ at halftime still counts at its pregame odds. NFL ties (~0.3%) aren't drawn.
 From the same sims: for each member and undecided game, P(win the week | away wins) and
 P(win | home wins). Root for the side with the higher one; the gap is the swing. A side that never
 won in the sims (a certain game) has no conditional, and is shown as no swing.
+
+## When it runs
+
+`results.regrade` writes `GROUP#g#S<yr>#W<nn> / ANALYTICS` with each RESULT it rewrites, so every final,
+override, cancel or new sheet refreshes the odds. It also writes the item when it's missing or older than
+`analytics.MODEL`, which backfills existing weeks on the first hourly sweep. Lines aren't RESULT inputs,
+so a line that moves between lock and a later kickoff is picked up at the next final.
+`GET /analytics/week` reads it. The regrade never touches an unlocked week, so nothing exists before lock.

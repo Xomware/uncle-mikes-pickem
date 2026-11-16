@@ -18,7 +18,7 @@ from decimal import Decimal
 
 from boto3.dynamodb.conditions import Key
 
-from lambdas.common import clock, events, finals, grade, nfl_store, season as season_fold, standings
+from lambdas.common import analytics, clock, events, finals, grade, nfl_store, season as season_fold, standings
 from lambdas.common.rules import rules_for
 from lambdas.common.weeks import week_pk
 
@@ -149,10 +149,14 @@ def regrade(table, group: dict, weeks: Iterable[int] | None = None) -> dict:
         pk = week_pk(gid, season, week)
         week_items = nfl_store.plain(table.query(KeyConditionExpression=Key("PK").eq(pk))["Items"])
         tiebreak_id = nfl_week["tiebreakGameId"]
-        result = week_result(week, feed.games(week), week_items, members, versions, tiebreak_id, feed.replay)
+        games = feed.games(week)
+        result = week_result(week, games, week_items, members, versions, tiebreak_id, feed.replay)
         old = next((i for i in week_items if i["SK"] == "RESULT"), {})
-        if old.get("inputHash") == result["inputHash"]:
-            continue
-        save(table, pk, gid, season, result, old)
-        changed.append(week)
+        fresh = old.get("inputHash") != result["inputHash"]
+        if fresh:
+            save(table, pk, gid, season, result, old)
+            changed.append(week)
+        if fresh or analytics.stale(week_items):
+            body, _ = analytics.week_odds(result, games, week_items, rules_for(versions, week))
+            analytics.save_week(table, pk, body, group)
     return {"weeks": changed, **season_fold.fold(table, gid, season, last, members, versions)}
