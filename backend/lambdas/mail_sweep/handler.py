@@ -21,7 +21,8 @@ from datetime import datetime, timedelta, timezone
 import boto3
 from boto3.dynamodb.conditions import Attr, Key
 
-from lambdas.common import death, mailer, nfl_store, notices
+from lambdas.common import death, gow, gow_link, mailer, nfl_store, notices
+from lambdas.common.groups import ORGANIZERS
 from lambdas.common.weeks import week_pk
 
 log = logging.getLogger()
@@ -32,6 +33,8 @@ CURSOR = {"PK": "CURSOR", "SK": "mail_sweep"}
 # already read. Re-reading a window behind the cursor costs only dup claims.
 OVERLAP = timedelta(minutes=30)
 REMIND_EARLY, REMIND_LATE = timedelta(hours=24), timedelta(hours=2)
+# Opens Monday 9:00 ET for the Tuesday-noon deadline: after the weekend, before the auto-pick.
+GOW_LEAD = timedelta(hours=27)
 
 dynamodb = boto3.resource("dynamodb")
 
@@ -207,7 +210,27 @@ def scheduled(now: datetime) -> Counter:
         if hours:
             outs = list(reminders(group, feed, n, nfl_week, hours))
             counts += deliver_all(group, f"remind{hours}#W{n:02d}", outs, now)
+        deadline = gow.deadline(nfl_week["lockAt"])
+        if deadline - GOW_LEAD <= feed.now < deadline:
+            counts += deliver_all(group, f"gowpick#W{n:02d}", list(gow_admin(group, feed, n, nfl_week, deadline)), now)
     return counts
+
+
+def gow_admin(group: dict, feed: nfl_store.Feed, n: int, nfl_week: dict, deadline: datetime):
+    """Organizers get the top-3 hype games as signed links, while week n has no GOW."""
+    gid, season = group["groupId"], feed.season
+    items = query(app(), Key("PK").eq(week_pk(gid, season, n)))
+    if any(i["SK"] == "GOW" for i in items):
+        return
+    canceled = next((set(i["gameIds"]) for i in items if i["SK"] == "CANCELED"), set())
+    games = [g for g in feed.games(n) if g["gameId"] not in canceled]
+    # sorted is stable over kickoff order, so the earlier game wins a hype tie, as in gow.top_game.
+    top = sorted(games, key=lambda g: -(g.get("hype") or {}).get("score", 0))[:3]
+    lock = nfl_store.parse(nfl_week["lockAt"])
+    for m in members(gid):
+        if m["role"] in ORGANIZERS:
+            tokens = [gow_link.make_token(gid, season, n, g["gameId"], m["sub"], lock) for g in top]
+            yield m, "gowAdmin", "gow_admin", notices.gow_admin_ctx(n, top, tokens, deadline, len(games))
 
 
 def drain(now: datetime) -> Counter:

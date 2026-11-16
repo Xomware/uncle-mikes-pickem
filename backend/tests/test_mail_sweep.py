@@ -16,6 +16,7 @@ def sweep(db, monkeypatch):
     """The mail_sweep module over test_results' week-1 group, with SES and SSM mocked. Yields (module, sent)."""
     for name, value in {
         "UNSUBSCRIBE_PARAM": "/pickem/email-unsubscribe-secret",
+        "GOW_LINK_PARAM": "/pickem/gow-link-secret",
         "API_URL": "https://api.pickem.xomware.com",
         "SITE_URL": "https://pickem.xomware.com",
         "EMAIL_SENDER": "noreply@pickem.xomware.com",
@@ -23,12 +24,14 @@ def sweep(db, monkeypatch):
     }.items():
         monkeypatch.setenv(name, value)
     boto3.client("ssm").put_parameter(Name="/pickem/email-unsubscribe-secret", Value="k" * 64, Type="SecureString")
+    boto3.client("ssm").put_parameter(Name="/pickem/gow-link-secret", Value="g" * 64, Type="SecureString")
     ses = boto3.client("sesv2")
     ses.create_email_identity(EmailIdentity="pickem.xomware.com")
     ses.create_configuration_set(ConfigurationSetName="pickem-mail")
-    from lambdas.common import mailer, suppression, unsubscribe
+    from lambdas.common import gow_link, mailer, suppression, unsubscribe
 
     unsubscribe._secret.cache_clear()
+    gow_link._secret.cache_clear()
     for module in (mailer, suppression):
         monkeypatch.setattr(module, "dynamodb", boto3.resource("dynamodb"))
     sent = []
@@ -40,8 +43,9 @@ def sweep(db, monkeypatch):
 
     monkeypatch.setattr(mailer, "_ses", lambda: Spy())
     for sub in ("a", "b"):
-        db.update_item(Key={"PK": "GROUP#g", "SK": f"MEMBER#{sub}"}, UpdateExpression="SET groupName = :n",
-                       ExpressionAttributeValues={":n": "Sunday Crew"})
+        db.update_item(Key={"PK": "GROUP#g", "SK": f"MEMBER#{sub}"}, UpdateExpression="SET groupName = :n, #r = :r",
+                       ExpressionAttributeNames={"#r": "role"},
+                       ExpressionAttributeValues={":n": "Sunday Crew", ":r": "owner" if sub == "a" else "member"})
         db.put_item(Item={"PK": f"USER#{sub}", "SK": "PROFILE", "email": f"{sub}@example.com"})
     module = importlib.import_module("lambdas.mail_sweep.handler")
     monkeypatch.setattr(module, "dynamodb", boto3.resource("dynamodb"))
@@ -214,3 +218,30 @@ def test_no_reminder_outside_the_window_or_when_turned_off(sweep, db):
     set_clock(db, "2027-09-09T12:00:00Z")
     assert module.handler({}, None) == {"off": 1}
     assert sent == []
+
+
+def test_gow_admin_email_goes_to_organizers_until_the_deadline(sweep, db):
+    module, sent = sweep
+    from lambdas.common import gow_link
+
+    db.delete_item(Key={"PK": "GROUP#g#S2027#W01", "SK": "GOW"})
+    # Lock Thu 2027-09-10 00:20Z; the deadline is Tue 2027-09-07 12:00 ET (16:00Z); the email opens 27 h before.
+    set_clock(db, "2027-09-06T12:59:00Z")
+    assert module.handler({}, None) == {}
+    set_clock(db, "2027-09-06T13:00:00Z")
+    assert module.handler({}, None) == {"sent": 1}
+    mail = sent[0]
+    assert (mail["To"], mail["Subject"]) == ("a@example.com", "Pick the Week 1 Game of the Week by Tue 12:00 PM ET")
+    text = mail.get_body(("plain",)).get_content()
+    # Hype 2 beats 1, so A1 @ H1 is listed first.
+    assert text.index("A1 @ H1") < text.index("A0 @ H0")
+    links = [line.split("?t=")[1] for line in text.splitlines() if "/gow/?t=" in line]
+    assert [gow_link.verify(t).game_id for t in links] == ["101", "100"]
+    assert {gow_link.verify(t).admin_sub for t in links} == {"a"}
+    assert "See all 2 games: https://pickem.xomware.com/picks/?id=g&week=1" in text
+
+    db.put_item(Item={"PK": "GROUP#g#S2027#W01", "SK": "GOW", "gameId": "100"})
+    assert module.handler({}, None) == {}
+    set_clock(db, "2027-09-07T16:00:00Z")
+    db.delete_item(Key={"PK": "GROUP#g#S2027#W01", "SK": "GOW"})
+    assert module.handler({}, None) == {}

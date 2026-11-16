@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% set subject = "Pick the Week %d Game of the Week by %s" % (week, deadline) %}
+{% block preheader %}Top pick: {{ games[0].matchup if games else "any game" }}. If nobody chooses by {{ deadline }}, the most-hyped game is set for you.{% endblock %}
+{% block body %}
+{{ m.h1("Week %d Game of the Week" % week) }}
+<p style="margin:0 0 16px;">Hi {{ name }}, {{ group_name }} needs a Game of the Week before picks open. Choose by <strong>{{ deadline }}</strong>, or the most-hyped game is set automatically.</p>
+{% for g in games %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 12px;border:1px solid #dcd9c8;border-radius:4px;">
+  <tr>
+    <td style="padding:12px 14px;font:14px/1.4 Arial,Helvetica,sans-serif;color:#17231b;">
+      <span style="font:700 18px/1.3 Arial,Helvetica,sans-serif;color:#123f20;">{{ g.matchup }}</span>
+      <span style="color:#4d5a50;">&nbsp;{{ g.when }}</span><br>
+      <span style="color:#4d5a50;">Hype {{ g.hype }}{% if g.why %} &middot; {{ g.why|join(" &middot; "|safe) }}{% endif %}</span>
+      <div style="margin-top:10px;">{{ m.button(site ~ "/gow/?t=" ~ g.token, "Choose " ~ g.matchup if loop.first else "Choose this game", "#f5cf2a" if loop.first else "#ffffff", "#8a7414" if loop.first else "#bdb8a0") }}</div>
+    </td>
+  </tr>
+</table>
+{% endfor %}
+<p style="margin:16px 0 0;">Want a different game? <a href="{{ site }}/picks/?id={{ group_id|urlencode }}&amp;week={{ week }}" style="color:#123f20;font-weight:700;">See all {{ count }} games</a></p>
+<p style="margin:12px 0 0;color:#4d5a50;font-size:13px;">Each button opens a page where you confirm the choice, so nothing changes until you press Confirm.</p>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "base.txt" %}
+{% block body %}
+WEEK {{ week }} GAME OF THE WEEK
+
+Hi {{ name }}, {{ group_name }} needs a Game of the Week before picks open. Choose by {{ deadline }}, or the most-hyped game is set automatically.
+
+{% for g in games %}
+{{ g.matchup }}, {{ g.when }}. Hype {{ g.hype }}{% if g.why %}: {{ g.why|join(", ") }}{% endif %}.
+Choose it: {{ site }}/gow/?t={{ g.token }}
+
+{% endfor %}
+See all {{ count }} games: {{ site }}/picks/?id={{ group_id|urlencode }}&week={{ week }}
+
+Each link opens a page where you confirm the choice, so nothing changes until you press Confirm.
+{% endblock %}

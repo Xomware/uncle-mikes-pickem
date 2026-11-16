@@ -53,5 +53,15 @@ SAMPLES: dict[str, tuple[str, dict]] = {
         "group_id": "g-sample", "week": 5, "hours": 2, "lock": "Thu 8:15 PM ET", "picks": "draft",
         "entries": [{"label": "Pat 1", "last_life": False}, {"label": "Pat 2", "last_life": True}],
     }),
+    "gow_admin": ("gow_admin", {
+        "group_id": "g-sample", "week": 6, "deadline": "Tue 12:00 PM ET", "count": 15,
+        "games": [
+            {"matchup": "KC @ BUF", "when": "Sun 8:20 PM ET", "hype": 71.5,
+             "why": ["Standalone slot", "Spread 1.5", "O/U 51.5"], "token": "sample-token-1"},
+            {"matchup": "DAL @ PHI", "when": "Sun 4:25 PM ET", "hype": 58, "why": ["Division game", "Spread 3"], "token": "sample-token-2"},
+            {"matchup": "DET @ GB", "when": "Thu 8:15 PM ET", "hype": 55.2,
+             "why": ["Standalone slot", "Division game", "Spread 6.5"], "token": "sample-token-3"},
+        ],
+    }),
     "death_revived": ("death_revived", {"group_id": "g-sample", "week": 7, "labels": ["Pat 1", "Pat 2"], "alive": 5}),
 }

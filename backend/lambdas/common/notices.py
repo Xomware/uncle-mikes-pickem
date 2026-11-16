@@ -100,5 +100,37 @@ def reminder_ctx(week: int, hours: int, lock_at: str, sheet: dict | None, entrie
     }
 
 
+def hype_reasons(hype: dict) -> list[str]:
+    """The hype components worth a line in the admin email, strongest signal first."""
+    c = hype.get("components") or {}
+    out = ["Standalone slot"] if c.get("standalone") else []
+    if c.get("divGame"):
+        out.append("Division game")
+    if c.get("spread") is not None:
+        out.append("Pick'em" if c["spread"] == 0 else f"Spread {abs(c['spread']):g}")
+    if c.get("total") is not None:
+        out.append(f"O/U {c['total']:g}")
+    return out
+
+
+def gow_admin_ctx(week: int, games: list[dict], tokens: list[str], deadline: datetime, count: int) -> dict:
+    """gow_admin.html. `games` are the top hype games, `tokens` their signed links for this admin."""
+    return {
+        "week": week,
+        "deadline": lock_label(deadline.isoformat()),
+        "count": count,
+        "games": [
+            {
+                "matchup": matchup(g),
+                "when": lock_label(g["kickoff"]),
+                "hype": (g.get("hype") or {}).get("score", 0),
+                "why": hype_reasons(g.get("hype") or {}),
+                "token": t,
+            }
+            for g, t in zip(games, tokens)
+        ],
+    }
+
+
 def revived_ctx(week: int, labels: list[str], entries: list[dict]) -> dict:
     return {"week": week, "labels": labels, "alive": alive(entries)}
