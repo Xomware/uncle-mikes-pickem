@@ -1,12 +1,21 @@
 import type { Metadata, Viewport } from "next";
-import { Barlow, Big_Shoulders, Big_Shoulders_Stencil, Doto } from "next/font/google";
+import localFont from "next/font/local";
 
 import "./globals.css";
 
-const body = Barlow({ variable: "--font-body", subsets: ["latin"], weight: ["400", "500", "600"] });
-const heading = Big_Shoulders({ variable: "--font-heading", subsets: ["latin"], weight: ["600", "700", "800"] });
-const stencil = Big_Shoulders_Stencil({ variable: "--font-stencil", subsets: ["latin"], weight: ["800", "900"] });
-const led = Doto({ variable: "--font-led", subsets: ["latin"], weight: ["800", "900"] });
+// Self-hosted (SIL OFL, latin subset from Google Fonts): fetching them at build
+// time failed intermittently in CI and took the frontend deploy down with it.
+const body = localFont({
+  variable: "--font-body",
+  src: [
+    { path: "./fonts/barlow-400.woff2", weight: "400" },
+    { path: "./fonts/barlow-500.woff2", weight: "500" },
+    { path: "./fonts/barlow-600.woff2", weight: "600" },
+  ],
+});
+const heading = localFont({ variable: "--font-heading", src: "./fonts/big-shoulders.woff2", weight: "600 800" });
+const stencil = localFont({ variable: "--font-stencil", src: "./fonts/big-shoulders-stencil.woff2", weight: "800 900" });
+const led = localFont({ variable: "--font-led", src: "./fonts/doto.woff2", weight: "800 900" });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://pickem.xomware.com"),
