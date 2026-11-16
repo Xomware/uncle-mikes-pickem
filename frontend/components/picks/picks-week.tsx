@@ -18,6 +18,7 @@ import { sheetHref } from "@/lib/sheet";
 import { cn } from "@/lib/utils";
 
 const LAST_WEEK = 18;
+const SHEET_LINK = "chalk inline-flex min-h-11 items-center gap-1.5 text-xs tracking-[0.14em] hover:text-primary";
 
 export function PicksWeek() {
   const params = useSearchParams();
@@ -62,13 +63,18 @@ function WeekBody({ view, reload }: { view: WeekView; reload: () => void }) {
         <WeekLink groupId={group.groupId} week={week.week - 1} label="Previous week" />
         <WeekLink groupId={group.groupId} week={week.week + 1} label="Next week" />
       </div>
-      <Link
-        href={sheetHref(group.groupId, week.week)}
-        className="chalk mt-2 inline-flex min-h-11 items-center gap-1.5 text-xs tracking-[0.14em] hover:text-primary"
-      >
-        <Printer className="size-4" aria-hidden="true" />
-        Printable sheet
-      </Link>
+      <div className="mt-2 flex flex-wrap gap-x-5">
+        <Link href={sheetHref(group.groupId, week.week)} className={SHEET_LINK}>
+          <Printer className="size-4" aria-hidden="true" />
+          Printable sheet
+        </Link>
+        {week.locked && (
+          <Link href={sheetHref(group.groupId, week.week, true)} className={SHEET_LINK}>
+            <Printer className="size-4" aria-hidden="true" />
+            Group sheet
+          </Link>
+        )}
+      </div>
 
       {/* The game clock: time to lock on the scoreboard. */}
       <p role="status" className="scoreboard mt-5 flex items-center gap-3 px-4 py-3 text-sm">
