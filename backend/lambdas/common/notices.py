@@ -132,5 +132,16 @@ def gow_admin_ctx(week: int, games: list[dict], tokens: list[str], deadline: dat
     }
 
 
+def gow_set_ctx(week: int, game: dict, chosen_by: str | None, lock_at: str) -> dict:
+    """gow_set.html. chosen_by is the organizer's name, or None when the hype auto-pick set it."""
+    return {
+        "week": week,
+        "matchup": matchup(game),
+        "when": lock_label(game["kickoff"]),
+        "chosen_by": chosen_by,
+        "lock": lock_label(lock_at),
+    }
+
+
 def revived_ctx(week: int, labels: list[str], entries: list[dict]) -> dict:
     return {"week": week, "labels": labels, "alive": alive(entries)}

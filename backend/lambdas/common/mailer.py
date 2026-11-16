@@ -85,6 +85,11 @@ def _key(sub: str, group_id: str, event_id: str) -> dict:
     return {"PK": f"MAIL#{sub}#{group_id}#{event_id}", "SK": "MAIL"}
 
 
+def was_sent(sub: str, group_id: str, event_id: str) -> bool:
+    item = dynamodb.Table(os.environ["OPS_TABLE"]).get_item(Key=_key(sub, group_id, event_id)).get("Item")
+    return bool(item) and item["status"] == "sent"
+
+
 def claim(sub: str, group_id: str, event_id: str, now: datetime) -> bool:
     try:
         dynamodb.Table(os.environ["OPS_TABLE"]).put_item(
