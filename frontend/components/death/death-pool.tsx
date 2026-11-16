@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, Lock, Plus } from "lucide-react";
+import { Check, Info, Lock, Plus } from "lucide-react";
+import Link from "next/link";
 import { type FormEvent, useCallback, useState } from "react";
 
 import { DeathGrid } from "@/components/death/death-grid";
@@ -9,6 +10,7 @@ import { ReplayTheDown } from "@/components/death/replay-the-down";
 import { SuddenDeathLockup } from "@/components/death/sudden-death-lockup";
 import { Helmet } from "@/components/field/helmet";
 import { Coin } from "@/components/field/icons";
+import { TeamLogo } from "@/components/field/team-logo";
 import { LoadError } from "@/components/load-error";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
@@ -22,6 +24,7 @@ import {
   setDeathPick,
 } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
+import { gameHref } from "@/lib/game";
 import { formatLine, takenTeams, teamLine, withPick } from "@/lib/death";
 import { etTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
@@ -158,6 +161,7 @@ function EntryCard({ entry, week, startLives, groupId, onPicked }: EntryCardProp
       )}
       {!out && week && !week.locked && (
         <TeamPicker
+          groupId={groupId}
           games={week.games}
           taken={takenTeams(entry, week.number)}
           current={current}
@@ -175,6 +179,7 @@ function EntryCard({ entry, week, startLives, groupId, onPicked }: EntryCardProp
 }
 
 interface PickerProps {
+  groupId: string;
   games: DeathGame[];
   taken: Set<string>;
   current: string | null;
@@ -182,7 +187,7 @@ interface PickerProps {
   onChoose: (team: string) => void;
 }
 
-function TeamPicker({ games, taken, current, pending, onChoose }: PickerProps) {
+function TeamPicker({ groupId, games, taken, current, pending, onChoose }: PickerProps) {
   return (
     <div className="mt-4 border-t pt-3">
       {/* The weekly pick is the coin toss. */}
@@ -196,9 +201,14 @@ function TeamPicker({ games, taken, current, pending, onChoose }: PickerProps) {
     <ul className="mt-3 space-y-3">
       {games.map((g) => (
         <li key={g.gameId}>
-          <p className="mb-1 text-xs text-muted-foreground">
+          <Link
+            href={gameHref(groupId, g.gameId)}
+            aria-label={`${g.away} at ${g.home}, ${etTime(g.kickoff)}, game info`}
+            className="mb-1 inline-flex min-h-8 items-center gap-1 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+          >
             {etTime(g.kickoff)}
-          </p>
+            <Info className="size-3.5" aria-hidden="true" />
+          </Link>
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
             {[g.away, g.home].map((team, i) => (
               <TeamButton
@@ -246,6 +256,7 @@ function TeamButton({ team, line, used, selected, pending, onChoose, className }
         className,
       )}
     >
+      <TeamLogo abbr={team} className={cn("size-7", used && "grayscale")} />
       <span className={cn("font-display text-xl font-extrabold", used && "line-through")}>{team}</span>
       <span className="flex-1 text-sm text-muted-foreground">{used ? "Used" : line}</span>
       {selected && <Check className="size-5 text-flood" aria-label="Your pick" />}
