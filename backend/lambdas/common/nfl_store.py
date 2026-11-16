@@ -1,8 +1,9 @@
-"""The pickem-nfl table. cron_tick is the only writer; everything else reads.
+"""The pickem-nfl table. cron_tick writes the season; games_info only its own cache rows.
 
     SEASON#2026#W10 / WEEK           lockAt, tiebreakGameId, gameIds
     SEASON#2026#W10 / GAME#<espnId>  one game, keyed by ESPN event id
     CURRENT / WEEK                   the regular-season week ESPN calls current
+    GAME#<espnId> / INFO#<source>    games_info's distilled ESPN summary: "live", or a capture prefix
 
 The 2026 replay (F5) keeps its own copy, written only by replay_load:
 
@@ -200,6 +201,33 @@ def as_of(game: dict, now: datetime) -> dict:
     return game
 
 
+def find_game(season: int, game_id: str, replay: bool) -> tuple[int, dict] | None:
+    """(week, GAME) for an ESPN event id, in one BatchGetItem over all 18 weeks."""
+    name = os.environ["NFL_TABLE"]
+    pk = replay_pk if replay else week_pk
+    keys = [{"PK": pk(season, w), "SK": f"GAME#{game_id}"} for w in range(1, 19)]
+    resp = dynamodb.batch_get_item(RequestItems={name: {"Keys": keys}})
+    if resp.get("UnprocessedKeys"):
+        raise RuntimeError(f"BatchGetItem left {game_id} keys unprocessed")
+    items = resp["Responses"][name]
+    if not items:
+        return None
+    item = plain(items[0])
+    week = int(item.pop("PK").rsplit("W", 1)[1])
+    item.pop("SK")
+    return week, item
+
+
+def get_info(game_id: str, source: str) -> dict | None:
+    """A cached /games/info build. `source` is "live" or the replay capture prefix it came from."""
+    item = table().get_item(Key={"PK": f"GAME#{game_id}", "SK": f"INFO#{source}"}).get("Item")
+    return plain(item["info"]) if item else None
+
+
+def save_info(game_id: str, source: str, info: dict) -> None:
+    table().put_item(Item={"PK": f"GAME#{game_id}", "SK": f"INFO#{source}", "info": json.loads(json.dumps(info), parse_float=Decimal)})
+
+
 @dataclass(frozen=True)
 class Feed:
     """NFL data as one group sees it: the replay rows on its virtual clock, or the live season."""
@@ -213,6 +241,14 @@ class Feed:
 
     def games(self, week: int) -> list[dict]:
         return games_as_of(self.season, week, self.now) if self.replay else list_games(self.season, week)
+
+    def game(self, game_id: str) -> dict | None:
+        """One game with its week number, as of the group's clock."""
+        found = find_game(self.season, game_id, self.replay)
+        if not found:
+            return None
+        week, game = found
+        return {**(as_of(game, self.now) if self.replay else game), "week": week}
 
     def locked(self, week_item: dict) -> bool:
         return week_item["lockAt"] <= iso(self.now)
