@@ -5,7 +5,7 @@ import { type FormEvent, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { advanceReplay } from "@/lib/api/client";
+import { advanceReplay, regrade } from "@/lib/api/client";
 import { fromLocalInput, openWeek, toLocalInput, weekJump } from "@/lib/replay";
 
 interface Props {
@@ -30,6 +30,10 @@ export function ReplayBar({ groupId, organizer, replay, onMoved }: Props) {
     try {
       const { clock } = await advanceReplay(groupId, to);
       setExact(toLocalInput(clock));
+      // /replay/advance doesn't grade. Regrade before onMoved, so what refetches on the new clock sees it.
+      await regrade(groupId).catch((err: unknown) =>
+        setError(`Clock moved, but regrading failed: ${err instanceof Error ? err.message : "unknown error"}`),
+      );
       onMoved(clock);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not move the clock.");

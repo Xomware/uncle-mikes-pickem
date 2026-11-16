@@ -208,6 +208,20 @@ export const setGow = (groupId: string, week: number, gameId: string) =>
   post<{ gow: Gow }>("/gow/set", { groupId, week, gameId });
 export const cancelGame = (groupId: string, week: number, gameId: string, canceled: boolean) =>
   post<{ canceled: string[] }>("/games/cancel", { groupId, week, gameId, canceled });
+
+/** What a regrade rewrote: the weeks whose RESULT changed, the season table, newly eliminated death entries. */
+export interface Regraded {
+  weeks: number[];
+  standings: boolean;
+  eliminated: string[];
+}
+
+/** Regrades one week, or every locked week when week is left out. Organizer. */
+export const regrade = (groupId: string, week?: number) => post<Regraded>("/results/regrade", { groupId, week });
+/** Null scores clear the override. Organizer. */
+export const overrideScore = (groupId: string, week: number, gameId: string, awayScore: number | null, homeScore: number | null) =>
+  post<Regraded>("/results/override", { groupId, week, gameId, awayScore, homeScore });
+
 export interface Injury {
   name: string;
   position: string | null;
