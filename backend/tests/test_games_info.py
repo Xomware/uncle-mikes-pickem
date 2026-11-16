@@ -5,7 +5,7 @@ from pathlib import Path
 import boto3
 import pytest
 
-from lambdas.common import nflverse
+from lambdas.common import espn, game_view, nflverse
 from tests.conftest import DOM, PAT, call, table
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -20,7 +20,7 @@ SNAP = "raw/season=2026/type=2/week=10/2026-11-12T140012Z"
 def info(app, monkeypatch):
     monkeypatch.setenv("CAPTURE_BUCKET", "cap")
     module = app("games_info")
-    monkeypatch.setattr(module, "s3", boto3.client("s3"))
+    monkeypatch.setattr(game_view, "s3", boto3.client("s3"))
     monkeypatch.setattr(nflverse, "fetch", lambda: CSV)
     module.espn_calls = []
 
@@ -28,7 +28,7 @@ def info(app, monkeypatch):
         module.espn_calls.append(url)
         return 200, SUMMARY
 
-    monkeypatch.setattr(module.espn, "get", get)
+    monkeypatch.setattr(espn, "get", get)
     return module
 
 
@@ -115,7 +115,7 @@ def test_members_only_and_bad_ids(info):
 def test_espn_failure_is_a_502(info, monkeypatch):
     seed_live()
     group("live", "2026-11-12T18:00:00Z")
-    monkeypatch.setattr(info.espn, "get", lambda url: (503, b""))
+    monkeypatch.setattr(espn, "get", lambda url: (503, b""))
     assert get(info, "live")[0] == 502
 
 
