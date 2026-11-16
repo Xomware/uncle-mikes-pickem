@@ -53,7 +53,7 @@ def app(monkeypatch):
 
         def load(name):
             module = importlib.import_module(f"lambdas.{name}.handler")
-            monkeypatch.setattr(module, "dynamodb", boto3.resource("dynamodb"))
+            monkeypatch.setattr(module, "dynamodb", boto3.resource("dynamodb"), raising=False)
             return module
 
         yield load
@@ -126,3 +126,16 @@ def store(monkeypatch):
 
         monkeypatch.setattr(nfl_store, "dynamodb", boto3.resource("dynamodb"))
         yield nfl_store
+
+
+BOSS = {"sub": "u-boss", "email": "Boss@Example.com", "name": "Boss"}
+
+
+@pytest.fixture
+def boss(app, monkeypatch):
+    """The super admin list in moto SSM, holding BOSS's address. Returns BOSS's claims."""
+    monkeypatch.setenv("SUPER_ADMIN_PARAM", "/pickem/super-admin-emails")
+    boto3.client("ssm").put_parameter(
+        Name="/pickem/super-admin-emails", Type="StringList", Value="someone@else.com, boss@example.com"
+    )
+    return BOSS

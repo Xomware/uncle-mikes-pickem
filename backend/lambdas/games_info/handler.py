@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 
 import boto3
 
-from lambdas.common import espn, game_info, nfl_store, nflverse
+from lambdas.common import espn, flags, game_info, nfl_store, nflverse
 from lambdas.common.api import ApiError, api_handler, query_param, respond, user
 from lambdas.common.groups import membership
 
@@ -106,6 +106,7 @@ def payload(game: dict, info: dict, source: dict, now: datetime) -> dict:
 def handler(event, context):
     me = user(event)
     gid = query_param(event, "groupId")
+    flags.require("gameInfo", gid)
     game_id = query_param(event, "gameId")
     if not game_id.isdigit():
         raise ApiError(400, "gameId must be an ESPN event id")

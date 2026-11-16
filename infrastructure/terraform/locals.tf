@@ -19,5 +19,6 @@ locals {
     NFL_TABLE         = aws_dynamodb_table.nfl.id
     APP_TABLE         = aws_dynamodb_table.app.id
     OPS_TABLE         = aws_dynamodb_table.ops.id
+    SUPER_ADMIN_PARAM = aws_ssm_parameter.super_admin_emails.name
   }
 }

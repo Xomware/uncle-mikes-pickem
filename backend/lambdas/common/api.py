@@ -51,12 +51,18 @@ def allow_origin(event: dict) -> str:
     return origin if origin in allowed else allowed[0]
 
 
+# Cleared at the start of every invocation: a warm container must not serve the last request's reads.
+INVOCATION_CACHES: list = []
+
+
 def api_handler(name: str):
     """ApiError becomes its status; anything else a 500 with the trace in the log, not the body."""
 
     def decorate(fn):
         @functools.wraps(fn)
         def wrapper(event, context):
+            for clear in INVOCATION_CACHES:
+                clear()
             try:
                 response = fn(event, context)
             except ApiError as e:

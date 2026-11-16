@@ -66,6 +66,10 @@ locals {
     { name = "test", description = "Send the test email to the caller", path_part = "test", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
   ]
 
+  config_lambdas = [
+    { name = "flags", description = "Read the resolved feature flags, global or for a group (?groupId=)", path_part = "flags", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+  ]
+
   all_api_lambdas = merge(
     { for l in local.me_lambdas : "me_${l.name}" => l },
     { for l in local.groups_lambdas : "groups_${l.name}" => l },
@@ -81,6 +85,7 @@ locals {
     { for l in local.results_lambdas : "results_${l.name}" => l },
     { for l in local.standings_lambdas : "standings_${l.name}" => l },
     { for l in local.email_lambdas : "email_${l.name}" => l },
+    { for l in local.config_lambdas : "config_${l.name}" => l },
   )
 
   # One role per function, granted only the table actions its handler makes.
@@ -94,7 +99,7 @@ locals {
   # One line per key: merge conflicts here are resolved by keeping both lines.
   api_grants = {
     me_profile     = ["app:UpdateItem"]
-    groups_create  = ["app:PutItem", "nfl:GetItem"]
+    groups_create  = ["app:GetItem", "app:PutItem", "nfl:GetItem"]
     groups_mine    = ["app_index:Query"]
     groups_get     = ["app:Query", "nfl:GetItem"]
     invites_create = ["app:GetItem", "app:PutItem"]
@@ -110,9 +115,9 @@ locals {
     games_info     = ["app:GetItem", "nfl:BatchGetItem", "nfl:GetItem", "nfl:PutItem"]
     death_entry    = ["app:GetItem", "app:Query", "app:PutItem", "nfl:GetItem"]
     death_pick     = ["app:GetItem", "app:UpdateItem", "nfl:GetItem", "nfl:Query"]
-    death_board    = ["app:Query", "nfl:GetItem", "nfl:Query"]
+    death_board    = ["app:GetItem", "app:Query", "nfl:GetItem", "nfl:Query"]
 
-    payments_ledger = ["app:Query", "nfl:GetItem"]
+    payments_ledger = ["app:GetItem", "app:Query", "nfl:GetItem"]
     payments_mark   = ["app:GetItem", "app:PutItem"]
     replay_advance  = ["app:GetItem", "app:UpdateItem"]
 
@@ -126,6 +131,8 @@ locals {
     email_unsubscribe = ["app:GetItem", "app:UpdateItem"]
     email_preview     = ["app:GetItem"]
     email_test        = ["app:GetItem"]
+
+    config_flags = ["app:GetItem"]
   }
 
   # Beyond table actions: policy documents from ses.tf and capture.tf. One line per key.
@@ -136,6 +143,7 @@ locals {
     email_test        = [data.aws_iam_policy_document.unsubscribe_key.json, data.aws_iam_policy_document.send_email.json]
     gow_peek          = [data.aws_iam_policy_document.gow_link_key.json]
     gow_confirm       = [data.aws_iam_policy_document.gow_link_key.json]
+    groups_create     = [data.aws_iam_policy_document.super_admin_read.json]
   }
 
   # Environment beyond lambda_variables. One line per key.

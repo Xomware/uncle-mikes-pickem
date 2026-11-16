@@ -21,7 +21,7 @@ from datetime import datetime, timedelta, timezone
 import boto3
 from boto3.dynamodb.conditions import Attr, Key
 
-from lambdas.common import death, gow, gow_link, mailer, nfl_store, notices
+from lambdas.common import death, flags, gow, gow_link, mailer, nfl_store, notices
 from lambdas.common.groups import ORGANIZERS
 from lambdas.common.weeks import week_pk
 
@@ -35,6 +35,8 @@ OVERLAP = timedelta(minutes=30)
 REMIND_EARLY, REMIND_LATE = timedelta(hours=24), timedelta(hours=2)
 # Opens Monday 9:00 ET for the Tuesday-noon deadline: after the weekend, before the auto-pick.
 GOW_LEAD = timedelta(hours=27)
+# The super admin's off switch for each email preference kind (common/flags.py).
+KIND_FLAGS = {"results": "emailResults", "reminders": "emailReminders", "death": "emailDeath", "gowAdmin": "emailGowAdmin"}
 
 dynamodb = boto3.resource("dynamodb")
 
@@ -158,6 +160,10 @@ def deliver_all(group: dict, event_id: str, outs: list[tuple], now: datetime) ->
     to = addresses([m["sub"] for m, *_ in outs])
     counts = Counter()
     for member, kind, template, ctx in outs:
+        # Skipped before the claim, so turning the flag back on sends whatever is still due.
+        if not flags.enabled(KIND_FLAGS[kind], group["groupId"]):
+            counts["flagoff"] += 1
+            continue
         if member["sub"] not in to:
             counts["noaddress"] += 1
             continue
@@ -281,6 +287,7 @@ def drain(now: datetime) -> Counter:
 
 def handler(event, context):
     now = datetime.now(timezone.utc)
+    flags.reset()
     counts = drain(now) + scheduled(now)
     log.info("mail sweep %s", dict(counts))
     return dict(counts)

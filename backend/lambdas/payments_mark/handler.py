@@ -10,7 +10,7 @@ from typing import Annotated, Literal
 import boto3
 from pydantic import Field, StringConstraints, model_validator
 
-from lambdas.common import ledger
+from lambdas.common import flags, ledger
 from lambdas.common.api import ApiError, Request, api_handler, parse_body, respond, user
 from lambdas.common.groups import membership, require_organizer
 
@@ -42,6 +42,7 @@ class Mark(Request):
 def handler(event, context):
     me = user(event)
     body = parse_body(event, Mark)
+    flags.require("payments", body.groupId)
     table = dynamodb.Table(os.environ["APP_TABLE"])
     require_organizer(membership(table, body.groupId, me["sub"]))
 

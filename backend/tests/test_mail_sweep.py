@@ -105,6 +105,26 @@ def test_member_without_a_profile_is_counted_not_mailed(sweep, db):
     assert module.handler({}, None) == {"sent": 1, "noaddress": 1}
 
 
+def test_email_flag_off_holds_that_kind_until_it_is_back_on(sweep, db):
+    module, sent = sweep
+    db.put_item(Item={"PK": "CONFIG", "SK": "FLAGS", "flags": {"emailResults": False}})
+    confirm_week(db)
+    assert module.handler({}, None) == {"flagoff": 2}
+    assert sent == []
+    db.put_item(Item={"PK": "CONFIG", "SK": "FLAGS", "flags": {}})
+    assert module.handler({}, None) == {"sent": 2}
+
+
+def test_group_email_flag_blocks_only_its_kind(sweep, db):
+    module, sent = sweep
+    db.put_item(Item={"PK": "GROUP#g", "SK": "FLAGS", "flags": {"emailDeath": False}})
+    entry(db, "x", "b", {"1": "A0"})
+    entry(db, "z", "a", {"1": "H1"})
+    confirm_week(db)
+    assert module.handler({}, None) == {"sent": 2, "flagoff": 1}
+    assert death_mail(sent) == []
+
+
 def test_superseded_announcement_is_skipped(sweep, db):
     module, sent = sweep
     confirm_week(db)

@@ -12,7 +12,7 @@ import boto3
 from boto3.dynamodb.conditions import Attr, Key
 from pydantic import StringConstraints
 
-from lambdas.common import nfl_store
+from lambdas.common import flags, nfl_store
 from lambdas.common.api import ApiError, Request, api_handler, parse_body, respond, user
 from lambdas.common.death import entries_pk
 from lambdas.common.groups import membership, require_organizer
@@ -30,6 +30,7 @@ class AddEntry(Request):
 def handler(event, context):
     me = user(event)
     body = parse_body(event, AddEntry)
+    flags.require("deathPool", body.groupId)
     table = dynamodb.Table(os.environ["APP_TABLE"])
     caller = membership(table, body.groupId, me["sub"])
     owner = caller

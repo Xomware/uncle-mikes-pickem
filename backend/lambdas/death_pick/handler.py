@@ -10,7 +10,7 @@ from typing import Annotated
 import boto3
 from pydantic import Field, StringConstraints
 
-from lambdas.common import nfl_store
+from lambdas.common import flags, nfl_store
 from lambdas.common.api import ApiError, Request, api_handler, parse_body, respond, user
 from lambdas.common.death import LAST_WEEK, check_pick, entries_pk
 from lambdas.common.groups import membership
@@ -29,6 +29,7 @@ class SetPick(Request):
 def handler(event, context):
     me = user(event)
     body = parse_body(event, SetPick)
+    flags.require("deathPool", body.groupId)
     table = dynamodb.Table(os.environ["APP_TABLE"])
     caller = membership(table, body.groupId, me["sub"])
     group = table.get_item(Key={"PK": caller["PK"], "SK": "META"})["Item"]
