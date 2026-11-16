@@ -6,6 +6,7 @@ Model and its approximations: docs/features/uncle-mikes-pickem/ANALYTICS.md.
 from __future__ import annotations
 
 import random
+import statistics
 
 from lambdas.common import grade, standings
 
@@ -102,3 +103,55 @@ def week(
         "root": {s: {g: {"away": given(j, 0, i), "home": given(j, 1, i)} for j, g in enumerate(gids)} for i, s in enumerate(subs)},
         "yearly": yearly,
     }
+
+
+def spread(scores: list[int]) -> tuple[float, float]:
+    return statistics.fmean(scores), statistics.stdev(scores)
+
+
+def season(
+    known: dict[str, tuple[int, int]],
+    history: dict[str, list[int]],
+    open_week: dict | None,
+    remaining: int,
+    rng: random.Random,
+    sims: int = SIMS,
+) -> dict[str, dict]:
+    """P(win the season) for each season member.
+
+    known:     {sub: (yearly total, GOW points)} over the weeks no longer open
+    history:   {sub: yearly week scores}, the same weeks, for the future-week model
+    open_week: winprob.week's output for the open week, or None; season sim k takes that
+               week's sim k, so this week's scores keep their joint distribution
+    remaining: weeks after the open (or last graded) one
+
+    Future picks are unknown, so each future week is drawn from the member's own mean/SD of
+    past yearly week scores (pooled over the group under two weeks). Ties on the total go to
+    known GOW points, then split.
+    """
+    subs = sorted(known)
+    pooled = [s for scores in history.values() for s in scores]
+    if len(pooled) < 2 and open_week:
+        pooled = [y for row in open_week["yearly"] for y in row]
+    fallback = spread(pooled) if len(pooled) > 1 else (0.0, 0.0)
+    model = {s: spread(history[s]) if len(history.get(s, [])) > 1 else fallback for s in subs}
+    at = {s: open_week["subs"].index(s) for s in subs if open_week and s in open_week["subs"]}
+
+    wins = dict.fromkeys(subs, 0.0)
+    for k in range(sims):
+        totals = {s: known[s][0] for s in subs}
+        if open_week:
+            row = open_week["yearly"][k % len(open_week["yearly"])]
+            # A season member with no sheet this week gets the missed score: lowest season sheet - 1.
+            missed = min((row[i] for i in at.values()), default=1) - 1
+            for s in subs:
+                totals[s] += row[at[s]] if s in at else missed
+        if remaining:
+            for s in subs:
+                mean, sd = model[s]
+                totals[s] += round(rng.gauss(remaining * mean, remaining**0.5 * sd))
+        best = max((totals[s], known[s][1]) for s in subs)
+        top = [s for s in subs if (totals[s], known[s][1]) == best]
+        for s in top:
+            wins[s] += 1 / len(top)
+    return {s: {"pWin": round(wins[s] / sims, 4), "mean": round(model[s][0], 2), "sd": round(model[s][1], 2)} for s in subs}

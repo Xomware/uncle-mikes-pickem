@@ -69,7 +69,37 @@ def test_a_missing_item_is_written_on_an_unchanged_regrade(api, gid, odds_api):
     assert table().get_item(Key=key)["Item"]["model"] == analytics.MODEL
 
 
-def test_members_only(api, gid, odds_api):
+def test_members_only(api, gid, odds_api, season_api):
     call(api["results_regrade"], DOM, {"groupId": gid})
     assert get(odds_api, gid, OUTSIDER) == (404, "Group not found")
     assert call(odds_api, DOM, query={"groupId": gid, "week": "19"})[0] == 400
+    assert call(season_api, OUTSIDER, query={"id": gid}) == (404, "Group not found")
+
+
+@pytest.fixture
+def season_api(app):
+    return app("analytics_season")
+
+
+def season(season_api, gid):
+    return call(season_api, PAT, query={"id": gid})[1]
+
+
+def test_season_odds(api, gid, season_api):
+    assert season(season_api, gid)["members"] == []
+    only_first_final()
+    call(api["results_regrade"], DOM, {"groupId": gid})
+    data = season(season_api, gid)
+    assert data["throughWeek"] == 1
+    # Sam plays weekly only, so isn't on the yearly board.
+    assert {m["name"] for m in data["members"]} == {"Dom", "Pat"}
+    assert sum(m["pWin"] for m in data["members"]) == pytest.approx(1, abs=1e-3)
+
+    # A regrade with nothing new leaves it; a deleted item is written back.
+    key = {"PK": f"GROUP#{gid}#S2027", "SK": "ANALYTICS"}
+    table().update_item(Key=key, UpdateExpression="SET probe = :p", ExpressionAttributeValues={":p": 1})
+    call(api["results_regrade"], DOM, {"groupId": gid})
+    assert table().get_item(Key=key)["Item"]["probe"] == 1
+    table().delete_item(Key=key)
+    call(api["results_regrade"], DOM, {"groupId": gid})
+    assert season(season_api, gid)["throughWeek"] == 1

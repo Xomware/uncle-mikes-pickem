@@ -139,7 +139,7 @@ def regrade(table, group: dict, weeks: Iterable[int] | None = None) -> dict:
     members = [i for i in items if i["SK"].startswith("MEMBER#")]
     versions = [i for i in items if i["SK"].startswith(f"RULES#S{season}#")]
     last = feed.last_locked_week() or 0
-    changed = []
+    changed, sims = [], {}
     for week in sorted(set(range(1, last + 1) if weeks is None else weeks)):
         if week > last:
             continue
@@ -156,7 +156,9 @@ def regrade(table, group: dict, weeks: Iterable[int] | None = None) -> dict:
         if fresh:
             save(table, pk, gid, season, result, old)
             changed.append(week)
-        if fresh or analytics.stale(week_items):
-            body, _ = analytics.week_odds(result, games, week_items, rules_for(versions, week))
-            analytics.save_week(table, pk, body, group)
-    return {"weeks": changed, **season_fold.fold(table, gid, season, last, members, versions)}
+        if fresh or analytics.stale(next((i for i in week_items if i["SK"] == "ANALYTICS"), None)):
+            body, sims[week] = analytics.week_odds(result, games, week_items, rules_for(versions, week))
+            analytics.save(table, pk, body, group)
+    folded = season_fold.fold(table, gid, season, last, members, versions)
+    analytics.refresh_season(table, group, feed, members, versions, last, sims)
+    return {"weeks": changed, **folded}

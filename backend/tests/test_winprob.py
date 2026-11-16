@@ -90,6 +90,36 @@ def test_sim_scores_match_a_full_grade():
     assert yearly == expect
 
 
+def test_a_finished_season_is_certain_and_gow_breaks_the_tie():
+    known = {"a": (100, 10), "b": (100, 12), "c": (90, 30)}
+    history = {"a": [50, 50], "b": [40, 60], "c": [45, 45]}
+    out = winprob.season(known, history, None, 0, random.Random(1), sims=50)
+    assert {s: o["pWin"] for s, o in out.items()} == {"a": 0.0, "b": 1.0, "c": 0.0}
+
+
+def test_season_draws_future_weeks_from_each_members_history():
+    # Same total; a averages 10 a week more, so with 8 weeks left a is a heavy favourite.
+    known = {"a": (100, 0), "b": (100, 0)}
+    history = {"a": [60, 70, 80], "b": [50, 60, 70]}
+    out = winprob.season(known, history, None, 8, random.Random(1), sims=4000)
+    assert out["a"]["mean"] == 70 and out["a"]["sd"] == 10
+    assert 0.9 < out["a"]["pWin"] < 0.99
+    assert out["a"]["pWin"] + out["b"]["pWin"] == pytest.approx(1)
+    assert out == winprob.season(known, history, None, 8, random.Random(1), sims=4000)
+
+
+def test_season_takes_the_open_week_from_its_sims():
+    # BUF certainly wins g1, and KC on the GOW doubles: a's yearly week is 8, b's 5.
+    sheets = {"a": sheet(("BUF", 3), ("KC", 2), ("LV", 1)), "b": sheet(("NYJ", 3), ("KC", 2), ("LV", 1))}
+    week = run(sheets, results={"g2": "KC", "g3": "LV"}, p={"g1": 1.0})
+    known = {"a": (10, 0), "b": (12, 0), "c": (40, 0)}
+    out = winprob.season(known, {}, week, 0, random.Random(1), sims=100)
+    # c had no sheet: the missed score is the lowest season sheet (b's 5) - 1 = 4, so 44 beats a's 18.
+    assert {s: o["pWin"] for s, o in out.items()} == {"a": 0.0, "b": 0.0, "c": 1.0}
+    out = winprob.season({"a": (10, 0), "b": (12, 0)}, {}, week, 0, random.Random(1), sims=100)
+    assert out["a"]["pWin"] == 1.0  # 10 + 8 against 12 + 5
+
+
 def test_sim_budget():
     assert winprob.sims_for(20, 16) == 10_000
     assert winprob.sims_for(100, 16) == 2_500

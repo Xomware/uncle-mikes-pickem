@@ -34,6 +34,23 @@ From the same sims: for each member and undecided game, P(win the week | away wi
 P(win | home wins). Root for the side with the higher one; the gap is the swing. A side that never
 won in the sims (a certain game) has no conditional, and is shown as no swing.
 
+## The season (13.3)
+
+Season members only, 10,000 sims, read off the RESULT items:
+
+- **Known**: every graded week but the latest open one counts at its graded yearly score. An older week
+  still waiting on a postponed game counts as graded so far.
+- **The open week**: season sim k takes week sim k's yearly scores, so this week's scores keep their
+  joint distribution (two members on the same side of a game rise and fall together). A season member
+  with no sheet gets the missed score for that sim: the lowest season sheet minus 1.
+- **Future weeks: an approximation.** Picks are unknown, so each member's remaining n weeks are one draw
+  from N(n·mean, √n·SD) of their own past yearly week scores. Members are independent, though in
+  reality they share game outcomes. Under two weeks of history, the group's pooled scores stand in. In
+  Week 1 that pool is the open week's sims. The missed-week rule isn't modelled forward, beyond
+  being in the history.
+- **Ties** on the total go to GOW points from the known weeks (the real tiebreak), then split.
+- Recomputed with every regrade that changes a RESULT, so it moves per game as well as per week.
+
 ## When it runs
 
 `results.regrade` writes `GROUP#g#S<yr>#W<nn> / ANALYTICS` with each RESULT it rewrites, so every final,

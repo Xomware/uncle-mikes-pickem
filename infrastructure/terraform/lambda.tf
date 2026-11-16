@@ -55,6 +55,7 @@ locals {
   ]
   analytics_lambdas = [
     { name = "week", description = "Read a group-week's win odds and rooting guide (?groupId=&week=)", path_part = "week", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+    { name = "season", description = "Read a group's season win odds (?id=)", path_part = "season", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
   ]
   replay_lambdas = [
     { name = "advance", description = "Move a replay group's virtual clock", path_part = "advance", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
@@ -125,6 +126,7 @@ locals {
     results_week     = ["app:GetItem", "app:Query"]
     standings_season = ["app:GetItem", "app:Query"]
     analytics_week   = ["app:GetItem", "app:Query"]
+    analytics_season = ["app:GetItem", "app:Query"]
 
     email_prefs       = ["app_index:Query", "ops:GetItem"]
     email_prefs_set   = ["app:GetItem", "app:UpdateItem"]
