@@ -1,4 +1,4 @@
-import type { LedgerLine, PaymentKind, PaymentMethod } from "@/lib/api/client";
+import type { Ledger, LedgerLine, PaymentKind, PaymentMethod } from "@/lib/api/client";
 
 export const paymentNote = (group: string, season: number) => `${group} ${season}`;
 
@@ -6,6 +6,11 @@ export const dollars = (n: number) =>
   n.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: Number.isInteger(n) ? 0 : 2 });
 
 export const KIND_LABEL: Record<PaymentKind, string> = { weekly: "Weekly pot", yearly: "Yearly pot", death: "Death pool" };
+
+export function owedThrough({ feeBasis, owedThrough: week }: Pick<Ledger, "feeBasis" | "owedThrough">): string {
+  if (feeBasis === "perSeason") return "Season fees, paid once";
+  return week ? `Owed through Week ${week}` : "Weekly fees start when Week 1 locks";
+}
 
 export const lineLabel = (line: LedgerLine) =>
   line.kind === "death" ? `${KIND_LABEL.death} · ${line.label || "Entry"}` : KIND_LABEL[line.kind];

@@ -83,9 +83,13 @@ export interface Rules {
   deathSecondLife: boolean;
   lock: "firstKickoff";
   fees: Pots<number>;
+  /** perWeek: weekly and yearly fees are owed for every week played. perSeason: once. */
+  feeBasis: FeeBasis;
   potSplits: Pots<number[]>;
   payments: { method: PaymentMethod; handle: string }[];
 }
+
+export type FeeBasis = "perWeek" | "perSeason";
 
 export interface GroupDetail {
   group: { groupId: string; name: string; season: number; ownerSub: string };
@@ -102,6 +106,7 @@ export type PaymentKind = "weekly" | "yearly" | "death";
 export interface LedgerLine {
   kind: PaymentKind;
   owed: number;
+  /** amount covers owed. A perWeek fee paid through an earlier week has an amount but isn't paid. */
   paid: boolean;
   entryId?: string;
   label?: string | null;
@@ -135,6 +140,9 @@ export interface Ledger {
   methods: Rules["payments"];
   members: LedgerRow[];
   pots: Pots<Pot>;
+  /** The latest locked week; perWeek fees are owed through it. 0 before Week 1 locks. */
+  owedThrough: number;
+  feeBasis: FeeBasis;
 }
 
 export const myGroups = () => request<GroupSummary[]>("/groups/mine");

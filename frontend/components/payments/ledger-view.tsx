@@ -11,7 +11,7 @@ import { Input, Select } from "@/components/ui/input";
 import { type Ledger, type LedgerLine, type PaymentMethod, getLedger, markPayment } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
 import { groupHref, isOrganizer } from "@/lib/groups";
-import { KIND_LABEL, dollars, lineLabel } from "@/lib/payments";
+import { KIND_LABEL, dollars, lineLabel, owedThrough } from "@/lib/payments";
 import { METHOD_LABEL, POTS } from "@/lib/settings";
 
 const PLACE = ["1st", "2nd", "3rd"];
@@ -74,7 +74,7 @@ function Book({ ledger, onChange }: { ledger: Ledger; onChange: () => Promise<vo
   return (
     <>
       <section className="scoreboard mt-6 p-5">
-        <p className="text-muted-foreground">Collected</p>
+        <p className="text-muted-foreground">Collected · {owedThrough(ledger)}</p>
         <p className="mt-1">
           <span className="led text-5xl">{dollars(paid)}</span>{" "}
           <span className="font-display text-xl font-bold text-muted-foreground">of {dollars(owed)}</span>
@@ -164,7 +164,9 @@ function Line({ line, busy, defaults, methods, onMark }: LineProps) {
           <span className="text-sm text-muted-foreground">
             {line.paid
               ? `${dollars(line.amount!)} · ${METHOD_LABEL[line.method!]} · ${new Date(`${line.paidOn}T12:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
-              : `${dollars(line.owed)} due`}
+              : line.amount
+                ? `${dollars(line.amount)} paid · ${dollars(line.owed - line.amount)} due`
+                : `${dollars(line.owed)} due`}
           </span>
         </span>
         <Button variant="ghost" aria-label={`Edit ${lineLabel(line)} payment`} onClick={() => setEditing(editing ? null : current)}>

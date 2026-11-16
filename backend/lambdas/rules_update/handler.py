@@ -50,6 +50,7 @@ class Changes(Request):
     deathTie: Literal["loss", "win"] | None = None
     deathSecondLife: bool | None = None
     fees: Fees | None = None
+    feeBasis: Literal["perWeek", "perSeason"] | None = None
     potSplits: PotSplits | None = None
     payments: Annotated[list[Payment], Field(max_length=8)] | None = None
 

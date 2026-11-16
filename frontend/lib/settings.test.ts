@@ -10,6 +10,7 @@ const RULES: Rules = {
   deathSecondLife: false,
   lock: "firstKickoff",
   fees: { weekly: 10, yearly: 100, death: 20 },
+  feeBasis: "perWeek",
   potSplits: { weekly: [100], yearly: [60, 30, 10], death: [100] },
   payments: [{ method: "venmo", handle: "@organizer" }],
 };

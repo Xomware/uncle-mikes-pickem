@@ -1,4 +1,5 @@
-"""GET /payments/ledger?id=g: what each member owes and has paid, and the pots. Members see only their own row."""
+"""GET /payments/ledger?id=g: what each member owes through the latest locked week (owedThrough), what they've
+paid, and the pots. Members see only their own row."""
 
 import os
 
@@ -25,14 +26,16 @@ def handler(event, context):
     if not meta or not mine:
         raise ApiError(404, "Group not found")
     season = int(meta["season"])
-    rules = rules_for([i for i in items if i["SK"].startswith(f"RULES#S{season}#")], next_unlocked_week(meta))
+    versions = [i for i in items if i["SK"].startswith(f"RULES#S{season}#")]
+    through = next_unlocked_week(meta) - 1
+    rules = rules_for(versions, through + 1)
 
     pk = ledger.season_pk(gid, season)
 
     def rows(prefix):
         return table.query(KeyConditionExpression=Key("PK").eq(pk) & Key("SK").begins_with(prefix))["Items"]
 
-    book = ledger.build(sorted(members, key=lambda m: m["name"].lower()), rows("DEATH#"), rows("PAY#"), rules)
+    book = ledger.build(sorted(members, key=lambda m: m["name"].lower()), rows("DEATH#"), rows("PAY#"), versions, through)
     organizer = mine["role"] in ORGANIZERS
     return respond(
         200,
@@ -43,5 +46,7 @@ def handler(event, context):
             "methods": rules["payments"],
             "members": book["members"] if organizer else [r for r in book["members"] if r["sub"] == me["sub"]],
             "pots": book["pots"],
+            "owedThrough": through,
+            "feeBasis": book["feeBasis"],
         },
     )
