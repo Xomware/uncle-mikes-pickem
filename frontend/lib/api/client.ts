@@ -332,7 +332,7 @@ export interface ResultMember {
   gow: number;
   /** No complete sheet at lock: scored as the lowest submitter minus 1. */
   missed: boolean;
-  /** "1", or "1*" for a shared place. */
+  /** "1"; "1*" marks the MNF tiebreak winner when the top score was shared. Ties otherwise share the number. */
   place: string;
   games: Record<string, GameGrade>;
 }

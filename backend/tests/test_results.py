@@ -65,16 +65,26 @@ def test_week9_sheet_through_the_pipeline():
         gow = abs(diff)
         others = [c for c in range(n, 0, -1) if c != gow]
         right = subset(others, points - gow if diff > 0 else points) | ({gow} if diff > 0 else set())
-        items.append(sheet(m, pick_home([gow] + others[::-1], right)))
+        # m28 won the six-way tie at 120 on the MNF total (35); everyone else guesses 40.
+        items.append(sheet(m, pick_home([gow] + others[::-1], right), tiebreak=35 if m == "m28" else 40))
 
     out = grade(items, members, n)
     rows = out["members"]
     assert {m: r["weekly"] for m, r in rows.items()} == weekly
     assert {m: rows[m]["yearly"] for m in yearly} == yearly
     assert {m for m, r in rows.items() if r["missed"]} == {m for m, p in weekly.items() if p == 79}
-    for r in SHEET["weekly_w9"]:
-        assert rows[r["member"]]["place"].rstrip("*") == r["place"].rstrip("*")
+    assert {m: r["place"] for m, r in rows.items()} == {r["member"]: r["place"] for r in SHEET["weekly_w9"]}
+    assert out["winners"] == ["m28"]
     assert out["status"] == results.FINAL
+
+
+def test_sole_top_score_gets_no_star_and_an_exact_tiebreak_tie_stars_both():
+    sole = grade([sheet("a", pick_home([3, 2, 1], right={3, 2, 1})), sheet("b", pick_home([3, 2, 1], right=set()))],
+                 [member("a"), member("b")])
+    assert sole["members"]["a"]["place"] == "1"
+    split = grade([sheet(s, pick_home([3, 2, 1], right={3}), tiebreak=t) for s, t in (("a", 30), ("b", 40), ("c", 50))],
+                  [member("a"), member("b"), member("c")])
+    assert {s: r["place"] for s, r in split["members"].items()} == {"a": "1*", "b": "1*", "c": "1"}
 
 
 def test_right_wrong_void_and_gow():

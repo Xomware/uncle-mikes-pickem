@@ -11,11 +11,13 @@ from datetime import datetime
 from lambdas.common.gow import ET
 
 
-def place_label(place: str) -> str:
-    """Standings places to words: "3" is "3rd", "1*" is "tied 1st"."""
+def place_label(place: str, places: list[str]) -> str:
+    """A place in words among the board's `places`: "3" is "3rd", or "tied 3rd" when someone shares it.
+    The weekly tiebreak winner's "*" is ignored."""
     n = int(place.rstrip("*"))
     suffix = "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
-    return ("tied " if place.endswith("*") else "") + f"{n}{suffix}"
+    tied = sum(int(p.rstrip("*")) == n for p in places) > 1
+    return ("tied " if tied else "") + f"{n}{suffix}"
 
 
 def matchup(game: dict) -> str:
@@ -48,14 +50,15 @@ def week_ctx(result: dict, games: list[dict], sheets: dict[str, dict], standings
             gow = {**cell, "winner": outcome and outcome["result"], "points": row["gow"]}
 
     rows = (standings or {}).get("rows", [])
-    season = next(({**r, "place": place_label(r["place"])} for r in rows if r["member"] == sub), None)
+    season_places = [r["place"] for r in rows]
+    season = next(({**r, "place": place_label(r["place"], season_places)} for r in rows if r["member"] == sub), None)
     winners = result["winners"]
     return {
         "week": result["week"],
         "won": sub in winners,
         "missed": row["missed"],
         "score": row["weekly"],
-        "place": place_label(row["place"]),
+        "place": place_label(row["place"], [r["place"] for r in result["members"].values()]),
         "entrants": len(result["members"]),
         "winners": [{"name": "You" if s == sub else names[s], "tiebreak": sheets[s]["tiebreak"]} for s in winners],
         "winning_score": result["members"][winners[0]]["weekly"] if winners else None,
