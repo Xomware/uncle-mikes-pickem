@@ -6,6 +6,9 @@ import boto3
 import pytest
 from moto import mock_aws
 
+from lambdas.common import runs
+from tests.conftest import create_table
+
 NOW = datetime(2026, 11, 15, 17, 20, tzinfo=timezone.utc)
 
 
@@ -16,9 +19,11 @@ def game(gid, kickoff, state="pre"):
 @pytest.fixture
 def capture(monkeypatch):
     monkeypatch.setenv("CAPTURE_BUCKET", "cap")
+    monkeypatch.setenv("OPS_TABLE", "ops")
     monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
     with mock_aws():
         boto3.client("s3").create_bucket(Bucket="cap")
+        create_table("ops")
         from lambdas.capture import handler
 
         monkeypatch.setattr(handler, "s3", boto3.client("s3"))
@@ -77,6 +82,8 @@ def test_force_writes_slate_and_manifest(capture, monkeypatch):
         "gambit-survivor.json.gz", "injuries.json.gz", "standings.json.gz", "manifest.json.gz",
     }
     assert all(k.startswith("raw/season=2026/type=2/week=10/") for k in keys())
+    [run] = runs.recent("capture", 5)
+    assert (run["mode"], run["files"], "error" in run) == ("force", 6, False)
 
 
 def test_failed_fetch_keeps_rest_then_raises(capture, monkeypatch):
@@ -88,3 +95,4 @@ def test_failed_fetch_keeps_rest_then_raises(capture, monkeypatch):
     files = json.loads(gzip.decompress(body))["files"]
     assert [f["status"] for f in files if f["name"] == "gambit-survivor"] == [403]
     assert not any("survivor" in k for k in keys())
+    assert runs.recent("capture", 5)[0]["error"].startswith("RuntimeError: 1 fetches failed")

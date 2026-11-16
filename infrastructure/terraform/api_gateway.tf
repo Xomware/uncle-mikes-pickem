@@ -74,6 +74,11 @@ locals {
       invoke_arn = aws_lambda_function.api["config_${l.name}"].invoke_arn
     })
   ]
+  super_endpoints = [
+    for l in local.super_lambdas : merge(l, {
+      invoke_arn = aws_lambda_function.api["super_${l.name}"].invoke_arn
+    })
+  ]
 }
 
 module "api" {
@@ -117,5 +122,6 @@ module "api" {
     standings = { path_prefix = "standings", endpoints = local.standings_endpoints }
     email     = { path_prefix = "email", endpoints = local.email_endpoints }
     config    = { path_prefix = "config", endpoints = local.config_endpoints }
+    super     = { path_prefix = "super", endpoints = local.super_endpoints }
   }
 }

@@ -21,7 +21,7 @@ from datetime import datetime, timedelta, timezone
 import boto3
 from boto3.dynamodb.conditions import Attr, Key
 
-from lambdas.common import death, flags, gow, gow_link, mailer, nfl_store, notices
+from lambdas.common import death, flags, gow, gow_link, mailer, nfl_store, notices, runs
 from lambdas.common.groups import ORGANIZERS
 from lambdas.common.weeks import week_pk
 
@@ -288,6 +288,12 @@ def drain(now: datetime) -> Counter:
 def handler(event, context):
     now = datetime.now(timezone.utc)
     flags.reset()
-    counts = drain(now) + scheduled(now)
+    try:
+        counts = drain(now) + scheduled(now)
+    except Exception as e:
+        # The failed run is the row the super admin overview shows; re-raise so Errors fires.
+        runs.record("mail_sweep", now, {"error": f"{type(e).__name__}: {e}"})
+        raise
     log.info("mail sweep %s", dict(counts))
+    runs.record("mail_sweep", now, dict(counts))
     return dict(counts)

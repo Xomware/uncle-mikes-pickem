@@ -70,6 +70,16 @@ locals {
     { name = "flags", description = "Read the resolved feature flags, global or for a group (?groupId=)", path_part = "flags", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
   ]
 
+  # Every /super route 404s unless the caller is on the super admin list (common/superadmin.py).
+  super_lambdas = [
+    { name = "overview", description = "Super admin: counts, job health and mail volume", path_part = "overview", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+    { name = "groups", description = "Super admin: list every group", path_part = "groups", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+    { name = "group", description = "Super admin: read any group (?id=)", path_part = "group", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+    { name = "users", description = "Super admin: everyone who has signed in", path_part = "users", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+    { name = "flags", description = "Super admin: flag defaults and stored overrides", path_part = "flags", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+    { name = "emails", description = "Super admin: recent mail claims and events (?groupId=)", path_part = "emails", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+  ]
+
   all_api_lambdas = merge(
     { for l in local.me_lambdas : "me_${l.name}" => l },
     { for l in local.groups_lambdas : "groups_${l.name}" => l },
@@ -86,6 +96,7 @@ locals {
     { for l in local.standings_lambdas : "standings_${l.name}" => l },
     { for l in local.email_lambdas : "email_${l.name}" => l },
     { for l in local.config_lambdas : "config_${l.name}" => l },
+    { for l in local.super_lambdas : "super_${l.name}" => l },
   )
 
   # One role per function, granted only the table actions its handler makes.
@@ -133,6 +144,13 @@ locals {
     email_test        = ["app:GetItem"]
 
     config_flags = ["app:GetItem"]
+
+    super_overview = ["app:Scan", "app:Query", "nfl:GetItem", "nfl:Query", "ops:Query", "ops:Scan"]
+    super_groups   = ["app:Scan"]
+    super_group    = ["app:GetItem", "app:Query", "nfl:GetItem"]
+    super_users    = ["app:Scan"]
+    super_flags    = ["app:Scan"]
+    super_emails   = ["ops:Query", "ops:Scan"]
   }
 
   # Beyond table actions: policy documents from ses.tf and capture.tf. One line per key.
@@ -144,6 +162,12 @@ locals {
     gow_peek          = [data.aws_iam_policy_document.gow_link_key.json]
     gow_confirm       = [data.aws_iam_policy_document.gow_link_key.json]
     groups_create     = [data.aws_iam_policy_document.super_admin_read.json]
+    super_overview    = [data.aws_iam_policy_document.super_admin_read.json]
+    super_groups      = [data.aws_iam_policy_document.super_admin_read.json]
+    super_group       = [data.aws_iam_policy_document.super_admin_read.json]
+    super_users       = [data.aws_iam_policy_document.super_admin_read.json]
+    super_flags       = [data.aws_iam_policy_document.super_admin_read.json]
+    super_emails      = [data.aws_iam_policy_document.super_admin_read.json]
   }
 
   # Environment beyond lambda_variables. One line per key.

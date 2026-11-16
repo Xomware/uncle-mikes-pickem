@@ -2,12 +2,13 @@
 
 Terraform writes the list from Infisical /pickem SUPER_ADMIN_EMAILS. It is read on
 every call, so an edit lands after the next Terraform run with no deploy. Everyone
-else gets the 404 an unknown path would, so the portal can't be found by probing.
+else gets a 404, never a 403, so probing the portal says nothing about it.
 """
 
 import os
 
 import boto3
+from boto3.dynamodb.conditions import Attr
 
 from lambdas.common.api import ApiError, claims
 
@@ -31,4 +32,20 @@ def require(event: dict) -> dict:
         raise ApiError(404, "Not found")
     token = claims(event)
     return {"sub": token["sub"], "email": token["email"].strip().lower()}
+
+
+# Group META items. INVITE#code items also use SK META.
+GROUPS = Attr("SK").eq("META") & Attr("PK").begins_with("GROUP#")
+
+
+def scan(table_env: str, **kwargs) -> list[dict]:
+    """Every page of a filtered scan. Fine at this app's size, and only the super admin runs one."""
+    table = boto3.resource("dynamodb").Table(os.environ[table_env])
+    items = []
+    while True:
+        page = table.scan(**kwargs)
+        items += page["Items"]
+        if "LastEvaluatedKey" not in page:
+            return items
+        kwargs["ExclusiveStartKey"] = page["LastEvaluatedKey"]
 
