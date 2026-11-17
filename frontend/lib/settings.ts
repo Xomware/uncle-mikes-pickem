@@ -1,4 +1,4 @@
-import type { PaymentMethod, Pots, Rules } from "@/lib/api/client";
+import type { FeeBasis, PaymentMethod, Pots, Rules } from "@/lib/api/client";
 
 // Fees and splits stay strings while editing so a half-typed "6" or "60, 3" isn't coerced.
 export interface SettingsForm {
@@ -6,6 +6,7 @@ export interface SettingsForm {
   deathTie: Rules["deathTie"];
   deathSecondLife: boolean;
   fees: Pots<string>;
+  feeBasis: FeeBasis;
   potSplits: Pots<string>;
   payments: { method: PaymentMethod; handle: string }[];
 }
@@ -33,6 +34,7 @@ export function toForm(rules: Rules): SettingsForm {
     deathTie: rules.deathTie,
     deathSecondLife: rules.deathSecondLife,
     fees: map(rules.fees, String),
+    feeBasis: rules.feeBasis,
     potSplits: map(rules.potSplits, (s) => s.join(", ")),
     payments: rules.payments.map((p) => ({ ...p })),
   };
@@ -73,6 +75,7 @@ export function changesFrom(form: SettingsForm, current: Rules): { changes: Part
     deathTie: form.deathTie,
     deathSecondLife: form.deathSecondLife,
     fees,
+    feeBasis: form.feeBasis,
     potSplits,
     payments,
   };

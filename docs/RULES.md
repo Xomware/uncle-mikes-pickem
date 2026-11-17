@@ -12,6 +12,7 @@ Confirmed with Dom on 2026-11-12. The weekly sheet and standings for the 2026 se
 - **Weekly tiebreaker:** guess the total points scored in the Monday night game. Closest guess wins.
   - If there are two Monday games, use the later one.
   - Week 18 has no Monday game, so use the last game of the week.
+  - If the tiebreak game is canceled, a tie on points splits the weekly pot.
 - **Canceled game:** taken off the week, so the top confidence value that week is lower. This is an organizer setting.
 - **Picks are hidden** from other members until the lock. After the lock the whole group can see them.
 - **Late joiners:** get the missed-week score for each week before they joined.
@@ -49,6 +50,7 @@ Confirmed with Dom on 2026-11-12. The weekly sheet and standings for the 2026 se
 
 - The pool owner sets the fees (weekly, yearly, death pool), the payment methods (Venmo, Zelle, Cash App, and so on) and the handles.
 - Each member has an entry type. **Weekly** plays for the weekly pot only and pays the weekly fee. **Season** plays for the weekly and yearly pots and pays both fees. The member picks one when joining, and the organizer can change it.
+- Fees are charged per week, as on the paper sheet ("$1 WEEKLY / $2 YEARLY"): a member owes the weekly fee, plus the yearly fee if they're a season member, for every week from the week they joined through the latest locked week. Each death pool entry owes the death fee once. The organizer can switch to charging each fee once for the season.
 - The pool owner marks who has paid. The app never moves money.
 - The pool owner sets how the pots are split between weekly winners and yearly winners.
 

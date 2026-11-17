@@ -29,10 +29,11 @@ def handler(event, context):
     season = int(meta["season"])
     members = sorted((i for i in items if i["SK"].startswith("MEMBER#")), key=lambda m: m["name"].lower())
     versions = [i for i in items if i["SK"].startswith(f"RULES#S{season}#")]
-    rules = rules_for(versions, next_unlocked_week(meta))
+    through = next_unlocked_week(meta) - 1
+    rules = rules_for(versions, through + 1)
     seasonal = partition(ledger.season_pk(gid, season))
     entries = [i for i in seasonal if i["SK"].startswith("DEATH#")]
-    book = ledger.build(members, entries, [i for i in seasonal if i["SK"].startswith("PAY#")], rules)
+    book = ledger.build(members, entries, [i for i in seasonal if i["SK"].startswith("PAY#")], versions, through)
     names = {m["sub"]: m["name"] for m in members}
     lives = death.start_lives(versions)
 

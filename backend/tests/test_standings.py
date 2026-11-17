@@ -5,8 +5,8 @@ def g(weekly, gow=0):
     return {"weekly": weekly, "yearly": weekly + gow, "gow": gow}
 
 
-def test_places_share_with_star():
-    assert places({"a": 10, "b": 12, "c": 10, "d": 3}) == {"b": "1", "a": "2*", "c": "2*", "d": "4"}
+def test_places_share_without_a_mark():
+    assert places({"a": 10, "b": 12, "c": 10, "d": 3}) == {"b": "1", "a": "2", "c": "2", "d": "4"}
 
 
 def test_missed_score_is_lowest_minus_one():
@@ -53,7 +53,7 @@ def test_season_gow_breaks_total_tie():
 
 def test_season_shares_place_when_total_and_gow_tie():
     w1 = {"a": {"yearly": 50, "gow": 10}, "b": {"yearly": 50, "gow": 10}}
-    assert [r["place"] for r in season([w1])] == ["1*", "1*"]
+    assert [r["place"] for r in season([w1])] == ["1", "1"]
 
 
 def test_weekly_only_members_dont_set_the_yearly_floor():
@@ -61,3 +61,8 @@ def test_weekly_only_members_dont_set_the_yearly_floor():
     board = week_board({"a": g(50), "w": g(30, -10)}, ["a", "w", "c"], ["a", "c"])
     assert board["c"]["yearly"] == 49
     assert board["c"]["weekly"] == 29
+
+
+def test_weekly_winners_split_when_tiebreak_game_canceled():
+    weekly = {"a": 50, "b": 50, "c": 40}
+    assert weekly_winners(weekly, {"a": 40, "b": 47, "c": 45}, None) == ["a", "b"]

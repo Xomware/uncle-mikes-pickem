@@ -46,6 +46,10 @@ def test_a_flip_lands_on_the_next_invocation(app):
         ("payments", "payments_ledger", None, {"id": "g"}),
         ("payments", "payments_mark", {"groupId": "g", "sub": "u", "kind": "weekly", "paid": False}, None),
         ("gameInfo", "games_info", None, {"groupId": "g", "gameId": "1"}),
+        ("analytics", "analytics_week", None, {"groupId": "g", "week": "1"}),
+        ("analytics", "analytics_season", None, {"id": "g"}),
+        ("payouts", "payments_payouts", None, {"id": "g"}),
+        ("payouts", "payments_payout_mark", {"groupId": "g", "sub": "u", "pot": "yearly", "sent": False}, None),
     ],
 )
 def test_disabled_flag_404s_its_endpoints(app, name, handler, body, query):

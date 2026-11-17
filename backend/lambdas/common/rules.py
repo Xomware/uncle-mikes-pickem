@@ -14,6 +14,8 @@ DEFAULTS = {
     "lock": "firstKickoff",
     # Whole dollars. Weekly-entry members pay the weekly fee; season members pay weekly + yearly.
     "fees": {"weekly": 0, "yearly": 0, "death": 0},
+    # perWeek charges weekly and yearly fees for every week played; perSeason once. See common/ledger.py.
+    "feeBasis": "perWeek",
     # Percent of each pot by finishing place, summing to 100.
     "potSplits": {"weekly": [100], "yearly": [100], "death": [100]},
     "payments": [],
@@ -25,6 +27,7 @@ CHOICES = {
     "deathTie": {"loss", "win"},
     "deathSecondLife": {True, False},
     "lock": {"firstKickoff"},
+    "feeBasis": {"perWeek", "perSeason"},
 }
 
 

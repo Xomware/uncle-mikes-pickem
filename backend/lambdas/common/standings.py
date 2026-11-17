@@ -18,13 +18,9 @@ def fill_missed(scores: dict[str, int | None]) -> dict[str, int]:
 
 
 def places(scores: dict[str, int | tuple]) -> dict[str, str]:
-    """Competition ranking (1, 1, 3); a shared place prints as "1*"."""
+    """Competition ranking (1, 1, 3). A shared place carries no mark; results.week_result adds the "*"."""
     values = sorted(scores.values(), reverse=True)
-    out = {}
-    for member, score in scores.items():
-        place = values.index(score) + 1
-        out[member] = f"{place}*" if values.count(score) > 1 else str(place)
-    return out
+    return {member: str(values.index(score) + 1) for member, score in scores.items()}
 
 
 def week_board(graded: dict[str, dict], members: Iterable[str], season_members: Iterable[str]) -> dict[str, dict]:
@@ -50,13 +46,16 @@ def week_board(graded: dict[str, dict], members: Iterable[str], season_members: 
     }
 
 
-def weekly_winners(weekly: dict[str, int], guesses: dict[str, int], actual_total: int) -> list[str]:
+def weekly_winners(weekly: dict[str, int], guesses: dict[str, int], actual_total: int | None) -> list[str]:
     """Payout winners: top weekly score among submitters, then closest tiebreak guess.
-    An exact tie on the guess splits, so this can return several."""
+    An exact tie on the guess splits, so this can return several. With no total
+    (the tiebreak game was canceled) a tie on points splits."""
     if not guesses:
         return []
     best = max(weekly[m] for m in guesses)
     top = [m for m in guesses if weekly[m] == best]
+    if actual_total is None:
+        return sorted(top)
     closest = min(abs(guesses[m] - actual_total) for m in top)
     return sorted(m for m in top if abs(guesses[m] - actual_total) == closest)
 

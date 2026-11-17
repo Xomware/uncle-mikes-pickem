@@ -44,6 +44,12 @@ variable "gow_link_secret" {
   sensitive   = true
 }
 
+variable "anthropic_api_key" {
+  description = "Anthropic API key for the game write-ups, from Infisical /pickem ANTHROPIC_API_KEY."
+  type        = string
+  sensitive   = true
+}
+
 variable "alarm_email" {
   description = "Where capture alarms go, from Infisical /pickem ALARM_EMAIL."
   type        = string
