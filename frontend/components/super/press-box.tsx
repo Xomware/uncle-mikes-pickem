@@ -3,7 +3,10 @@
 import { type ReactNode, useEffect, useState } from "react";
 
 import { FieldTitle } from "@/components/field/field-title";
+import { EmailsTab } from "@/components/super/emails-tab";
+import { FlagsTab } from "@/components/super/flags-tab";
 import { GroupsTab } from "@/components/super/groups-tab";
+import { JobsTab } from "@/components/super/jobs-tab";
 import { OverviewTab } from "@/components/super/overview-tab";
 import { UsersTab } from "@/components/super/users-tab";
 import { isSuperAdmin } from "@/lib/flags";
@@ -13,6 +16,9 @@ const TABS = {
   overview: { label: "Overview", body: () => <OverviewTab /> },
   groups: { label: "Groups", body: () => <GroupsTab /> },
   users: { label: "Users", body: () => <UsersTab /> },
+  flags: { label: "Feature flags", body: () => <FlagsTab /> },
+  emails: { label: "Emails", body: () => <EmailsTab /> },
+  jobs: { label: "Jobs", body: () => <JobsTab /> },
 } satisfies Record<string, { label: string; body: () => ReactNode }>;
 
 type Tab = keyof typeof TABS;

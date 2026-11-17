@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { ago, jobHealth, matches } from "./super";
+import { FLAG_DEFAULTS } from "./flags";
+import { ago, jobHealth, matches, resolve } from "./super";
 
 const NOW = new Date("2027-09-12T18:00:00Z");
 const run = (at: string, ok = true) => ({ at, ok, error: ok ? null : "boom", mode: null });
@@ -34,5 +35,19 @@ describe("matches", () => {
     expect(matches("DOM", "Pool", "dom@example.com")).toBe(true);
     expect(matches("zzz", "Pool")).toBe(false);
     expect(matches("  ", "Pool")).toBe(true);
+  });
+});
+
+describe("resolve", () => {
+  it("takes the group override, then the global one, then the default", () => {
+    const view = {
+      defaults: FLAG_DEFAULTS,
+      global: { payments: false, deathPool: false },
+      groups: [{ groupId: "g", name: "G", flags: { payments: true } }],
+    };
+    expect(resolve(view, "payments", "g")).toBe(true);
+    expect(resolve(view, "deathPool", "g")).toBe(false);
+    expect(resolve(view, "gameInfo", "g")).toBe(true);
+    expect(resolve(view, "payments")).toBe(false);
   });
 });

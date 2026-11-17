@@ -1,4 +1,5 @@
-import { type EntryType, type Pot, type Pots, type Role, type Rules, request } from "@/lib/api/client";
+import { type EntryType, type Pot, type Pots, type Regraded, type Role, type Rules, request } from "@/lib/api/client";
+import type { FlagName, Flags } from "@/lib/flags";
 
 // The super admin portal's API. Every /super route answers 404 to anyone else.
 
@@ -58,6 +59,72 @@ export const getOverview = () => request<Overview>("/super/overview");
 export const getSuperGroups = () => request<SuperGroupRow[]>("/super/groups");
 export const getSuperGroup = (id: string) => request<SuperGroup>(`/super/group?id=${encodeURIComponent(id)}`);
 export const getSuperUsers = () => request<SuperUser[]>("/super/users");
+
+const post = <T>(path: string, body: unknown) => request<T>(path, { method: "POST", body: JSON.stringify(body) });
+
+/** Stored overrides only: a name missing from a map inherits. */
+export type Overrides = Partial<Flags>;
+
+export interface FlagsView {
+  defaults: Flags;
+  global: Overrides;
+  groups: { groupId: string; name: string; flags: Overrides }[];
+}
+
+export interface MailClaim {
+  sub: string;
+  groupId: string;
+  eventId: string;
+  status: "sent" | "failed";
+  at: string;
+}
+
+export interface MailEvent {
+  at: string;
+  type: string;
+  groupId: string;
+  season: number;
+  week: number;
+  eventId: string;
+}
+
+export type JobName = "tick" | "capture" | "replay-load" | "sweep";
+
+export const getSuperFlags = () => request<FlagsView>("/super/flags");
+/** scope is "global" or a group id. null drops that override. */
+export const setSuperFlags = (scope: string, flags: Partial<Record<FlagName, boolean | string | null>>) =>
+  post<{ scope: string; flags: Overrides }>("/super/flags-set", { scope, flags });
+export const getEmails = (groupId?: string) =>
+  request<{ claims: MailClaim[]; events: MailEvent[] }>(`/super/emails${groupId ? `?groupId=${encodeURIComponent(groupId)}` : ""}`);
+export const runJob = (job: JobName, payload: Record<string, unknown>) =>
+  post<{ job: JobName; function: string }>("/super/cron", { job, payload });
+export const superRegrade = (groupId: string, week?: number) => post<Regraded>("/super/regrade", { groupId, week });
+
+type Toggle = Exclude<FlagName, "maintenanceBanner">;
+
+// global: the flag acts before any group exists, so a group override would do nothing.
+export const FLAG_INFO: { name: Toggle; label: string; hint: string; email?: true; global?: true }[] = [
+  { name: "deathPool", label: "Death pool", hint: "Survivor entries, picks and the board" },
+  { name: "payments", label: "Payments", hint: "The ledger, pay page and marking paid" },
+  { name: "gameInfo", label: "Game info", hint: "Lines, injuries and weather per game" },
+  { name: "filmRoom", label: "Film room", hint: "AI write-ups" },
+  { name: "analytics", label: "Analytics", hint: "Win odds, rooting guide, pick breakdowns" },
+  { name: "payouts", label: "Payouts", hint: "Who won what from the pots" },
+  { name: "printableSheets", label: "Printable sheets", hint: "Week, group and standings sheets" },
+  { name: "replayGroups", label: "Replay groups", hint: "Creating 2026 replay groups", global: true },
+  { name: "groupCreation", label: "Group creation", hint: "Off: only you can start groups", global: true },
+  { name: "emailResults", label: "Results", hint: "Week results and corrections", email: true },
+  { name: "emailReminders", label: "Reminders", hint: "Late-pick reminders and GOW-set notices", email: true },
+  { name: "emailDeath", label: "Death pool", hint: "Eliminations, lost lives, revives", email: true },
+  { name: "emailGowAdmin", label: "GOW admin", hint: "The organizer's pick-the-GOW email", email: true },
+  { name: "emailAnnouncements", label: "Announcements", hint: "Site-wide announcements", email: true },
+];
+
+/** What a flag resolves to at a scope: the stored override, else the global one, else the default. */
+export function resolve(view: FlagsView, name: FlagName, groupId?: string) {
+  const group = view.groups.find((g) => g.groupId === groupId)?.flags ?? {};
+  return group[name] ?? view.global[name] ?? view.defaults[name];
+}
 
 export const JOB_LABEL: Record<Job, string> = { cron_tick: "Scores tick", capture: "ESPN capture", mail_sweep: "Mail sweep" };
 
