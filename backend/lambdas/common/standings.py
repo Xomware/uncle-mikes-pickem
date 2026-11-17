@@ -18,13 +18,9 @@ def fill_missed(scores: dict[str, int | None]) -> dict[str, int]:
 
 
 def places(scores: dict[str, int | tuple]) -> dict[str, str]:
-    """Competition ranking (1, 1, 3); a shared place prints as "1*"."""
+    """Competition ranking (1, 1, 3). A shared place carries no mark; results.week_result adds the "*"."""
     values = sorted(scores.values(), reverse=True)
-    out = {}
-    for member, score in scores.items():
-        place = values.index(score) + 1
-        out[member] = f"{place}*" if values.count(score) > 1 else str(place)
-    return out
+    return {member: str(values.index(score) + 1) for member, score in scores.items()}
 
 
 def week_board(graded: dict[str, dict], members: Iterable[str], season_members: Iterable[str]) -> dict[str, dict]:

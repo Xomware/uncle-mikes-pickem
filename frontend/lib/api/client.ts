@@ -83,9 +83,13 @@ export interface Rules {
   deathSecondLife: boolean;
   lock: "firstKickoff";
   fees: Pots<number>;
+  /** perWeek: weekly and yearly fees are owed for every week played. perSeason: once. */
+  feeBasis: FeeBasis;
   potSplits: Pots<number[]>;
   payments: { method: PaymentMethod; handle: string }[];
 }
+
+export type FeeBasis = "perWeek" | "perSeason";
 
 export interface GroupDetail {
   group: { groupId: string; name: string; season: number; ownerSub: string };
@@ -102,6 +106,7 @@ export type PaymentKind = "weekly" | "yearly" | "death";
 export interface LedgerLine {
   kind: PaymentKind;
   owed: number;
+  /** amount covers owed. A perWeek fee paid through an earlier week has an amount but isn't paid. */
   paid: boolean;
   entryId?: string;
   label?: string | null;
@@ -135,6 +140,9 @@ export interface Ledger {
   methods: Rules["payments"];
   members: LedgerRow[];
   pots: Pots<Pot>;
+  /** The latest locked week; perWeek fees are owed through it. 0 before Week 1 locks. */
+  owedThrough: number;
+  feeBasis: FeeBasis;
 }
 
 export const myGroups = () => request<GroupSummary[]>("/groups/mine");
@@ -277,6 +285,8 @@ export interface GameInfo {
   headToHead: { season: number; week: number; gameType: string; kickoff: string; away: string; home: string; awayScore: number; homeScore: number }[];
   /** capture: a replay group's snapshot; none: no snapshot yet, so injuries, form and weather are empty. */
   source: { kind: "espn" | "capture" | "none"; at: string | null; note?: string };
+  /** The Film Room preview, written by Claude before kickoff. null until the Wednesday run. */
+  writeup: { text: string; model: string; generatedAt: string } | null;
 }
 
 export const getGameInfo = (groupId: string, gameId: string) =>
@@ -332,7 +342,7 @@ export interface ResultMember {
   gow: number;
   /** No complete sheet at lock: scored as the lowest submitter minus 1. */
   missed: boolean;
-  /** "1", or "1*" for a shared place. */
+  /** "1"; "1*" marks the MNF tiebreak winner when the top score was shared. Ties otherwise share the number. */
   place: string;
   games: Record<string, GameGrade>;
 }
@@ -446,6 +456,60 @@ export interface Mark {
 }
 
 export const markPayment = (mark: Mark) => post<Omit<Mark, "groupId">>("/payments/mark", mark);
+
+/** One winner's share of one pot. Amounts in this block are cents. */
+export interface Payout {
+  pot: PaymentKind;
+  /** Weekly payouts only. */
+  week: number | null;
+  sub: string;
+  name: string;
+  amount: number;
+  /** The result behind it can't change any more: a final week or season table, a decided death pool. */
+  final: boolean;
+  sent: boolean;
+}
+
+export interface PayoutTotal {
+  sub: string;
+  name: string;
+  won: number;
+  pending: number;
+  sent: number;
+}
+
+/** Visible to every member. */
+export interface Payouts {
+  group: { groupId: string; name: string; season: number };
+  role: Role;
+  throughWeek: number;
+  weeks: { week: number; status: WeekResult["status"]; pot: number; winners: string[] }[];
+  /** pot is projected through Week 18; accrued is what Weeks 1..throughWeek have added. */
+  season: { pot: number; accrued: number; final: boolean; throughWeek: number };
+  death: {
+    pot: number;
+    entries: number;
+    alive: number;
+    decided: boolean;
+    winners: { entryId: string; label: string | null; sub: string }[];
+  };
+  payouts: Payout[];
+  members: PayoutTotal[];
+}
+
+export const getPayouts = (id: string) => request<Payouts>(`/payments/payouts?id=${encodeURIComponent(id)}`);
+
+export interface PayoutMark {
+  groupId: string;
+  sub: string;
+  pot: PaymentKind;
+  week?: number;
+  sent: boolean;
+  method?: PaymentMethod;
+  sentOn?: string;
+}
+
+export const markPayout = (mark: PayoutMark) => post<Omit<PayoutMark, "groupId">>("/payments/payout-mark", mark);
 
 export type EmailType = "results" | "reminders" | "death" | "gowAdmin";
 export type EmailPrefs = Record<EmailType, boolean>;

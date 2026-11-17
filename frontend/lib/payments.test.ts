@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { dollars, payLink, paymentNote } from "./payments";
+import { dollars, owedThrough, payLink, paymentNote } from "./payments";
+
+describe("owedThrough", () => {
+  it("names the week perWeek fees run through, or that they haven't started", () => {
+    expect(owedThrough({ feeBasis: "perWeek", owedThrough: 6 })).toBe("Owed through Week 6");
+    expect(owedThrough({ feeBasis: "perWeek", owedThrough: 0 })).toBe("Weekly fees start when Week 1 locks");
+    expect(owedThrough({ feeBasis: "perSeason", owedThrough: 6 })).toBe("Season fees, paid once");
+  });
+});
 
 const note = paymentNote("Sunday Crew", 2027);
 

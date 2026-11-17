@@ -160,7 +160,7 @@ function WeekResults({ view, result }: { view: WeekView; result: WeekResult | nu
           </tbody>
         </table>
         <p className="mt-2 px-1 text-xs text-muted-foreground">
-          * shares the place. GOW is what the Primetime pick adds to the yearly table.
+          * won the MNF tiebreaker. GOW is what the Primetime pick adds to the yearly table.
         </p>
       </div>
     </section>

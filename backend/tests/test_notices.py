@@ -16,8 +16,8 @@ RESULT = {
     "games": {"1": {"awayScore": 24, "homeScore": 27, "result": "MIA"}, "2": {"awayScore": 20, "homeScore": 17, "result": "KC"}},
     "members": {
         "a": {"weekly": 3, "yearly": 6, "gow": 2, "missed": False, "place": "1", "games": {"1": "right", "2": "right"}},
-        "b": {"weekly": 0, "yearly": -2, "gow": -2, "missed": False, "place": "2*", "games": {"1": "wrong", "2": "wrong"}},
-        "c": {"weekly": 0, "yearly": -3, "gow": 0, "missed": True, "place": "2*", "games": {}},
+        "b": {"weekly": 0, "yearly": -2, "gow": -2, "missed": False, "place": "2", "games": {"1": "wrong", "2": "wrong"}},
+        "c": {"weekly": 0, "yearly": -3, "gow": 0, "missed": True, "place": "2", "games": {}},
     },
 }
 SHEETS = {
@@ -29,10 +29,17 @@ NAMES = {"a": "Ann", "b": "Bo", "c": "Cy"}
 
 
 @pytest.mark.parametrize("place,label", [
-    ("1", "1st"), ("2", "2nd"), ("3*", "tied 3rd"), ("4", "4th"), ("11", "11th"), ("12*", "tied 12th"), ("21", "21st"),
+    ("1", "1st"), ("2", "2nd"), ("3", "tied 3rd"), ("4", "4th"), ("11", "11th"), ("12", "tied 12th"), ("21", "21st"),
 ])
 def test_place_label(place, label):
-    assert notices.place_label(place) == label
+    board = ["1", "2", "3", "3", "4", "11", "12", "12", "21"]
+    assert notices.place_label(place, board) == label
+
+
+def test_tiebreak_star_still_reads_as_a_tie():
+    assert notices.place_label("1*", ["1*", "1", "3"]) == "tied 1st"
+    assert notices.place_label("1", ["1*", "1", "3"]) == "tied 1st"
+    assert notices.place_label("3", ["1*", "1", "3"]) == "3rd"
 
 
 def test_winner_gets_grid_gow_and_season():

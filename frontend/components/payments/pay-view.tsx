@@ -10,7 +10,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { type Ledger, getLedger } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
 import { groupHref } from "@/lib/groups";
-import { dollars, lineLabel, payLink, paymentNote } from "@/lib/payments";
+import { dollars, lineLabel, owedThrough, payLink, paymentNote } from "@/lib/payments";
 import { METHOD_LABEL } from "@/lib/settings";
 
 export function PayView() {
@@ -46,7 +46,9 @@ function Balance({ ledger }: { ledger: Ledger }) {
       <section className="scoreboard mt-6 p-5">
         <p className="text-muted-foreground">{group.name} · {group.season} season</p>
         <p className="led mt-2 text-6xl leading-none">{dollars(me.balance)}</p>
-        <p className="text-sm text-muted-foreground">{me.balance > 0 ? "left to pay" : "owed"}</p>
+        <p className="text-sm text-muted-foreground">
+          {me.balance > 0 ? "left to pay" : "owed"} · {owedThrough(ledger)}
+        </p>
         <ul className="mt-4 divide-y border-t">
           {me.lines.map((line) => (
             <li key={`${line.kind}${line.entryId ?? ""}`} className="flex min-h-11 items-center gap-2 py-2">

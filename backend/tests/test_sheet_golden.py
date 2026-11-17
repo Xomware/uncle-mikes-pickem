@@ -34,9 +34,9 @@ def test_week9_missed_score_on_both_boards():
 
 def test_week9_places():
     got = places({r["member"]: r["points"] for r in WEEKLY})
-    for r in WEEKLY:
-        assert got[r["member"]].rstrip("*") == r["place"].rstrip("*")
-    assert got["m28"] == "1*" and got["m03"] == "1*"  # six-way tie at 120
+    # The sheet's only "*" is m28's, the tiebreak winner; places() has no tiebreak, so it's unmarked here.
+    assert got == {r["member"]: r["place"].rstrip("*") for r in WEEKLY}
+    assert got["m28"] == "1" and got["m03"] == "1"  # six-way tie at 120
     assert got["m02"] == "47"  # alone at 80
 
 
@@ -60,7 +60,7 @@ def test_season_totals_and_order():
     # Only W9's GOW points are recoverable from the sheet, so the ranking runs on totals
     # alone, where the sheet's shared places (15, 19, 24, 29) must come out the same.
     assert [r["member"] for r in rows] == [r["member"] for r in YEARLY]
-    assert [r["place"].rstrip("*") for r in rows] == [str(r["place"]) for r in YEARLY]
+    assert [r["place"] for r in rows] == [str(r["place"]) for r in YEARLY]
 
 
 def outcomes_from_grid():
