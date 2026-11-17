@@ -7,6 +7,7 @@ Fact pack:
     "abbr": "WSH",
     "overallRecord": "2-5-1",
     "roadRecord": "0-3",
+    "lastFiveRecord": "1-3-1",
     "lastFive": [
       "L 30-13 vs IND",
       "T 27-27 OT vs NYG",
@@ -40,6 +41,7 @@ Fact pack:
     "abbr": "NYG",
     "overallRecord": "5-2-1",
     "homeRecord": "3-1",
+    "lastFiveRecord": "3-1-1",
     "lastFive": [
       "W 36-24 vs ARI",
       "T 27-27 OT @ WSH",
