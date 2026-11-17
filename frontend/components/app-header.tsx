@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut } from "lucide-react";
+import { Binoculars, LogOut, TriangleAlert, UserRound, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -9,17 +9,23 @@ import { Brand } from "@/components/brand";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/use-auth";
 import { DEFAULT_NEXT } from "@/lib/auth/next-path";
+import { useFlags, useSuperAdmin } from "@/lib/flags";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "/groups/", label: "Groups" },
-  { href: "/profile/", label: "Profile" },
+  { href: "/groups/", label: "Groups", icon: UsersRound },
+  { href: "/profile/", label: "Profile", icon: UserRound },
 ];
+const PRESS_BOX = { href: "/super/", label: "Press Box", icon: Binoculars };
 
 export function AppHeader() {
   const pathname = usePathname();
   const auth = useAuth();
   const [signingOut, setSigningOut] = useState(false);
+  const { maintenanceBanner } = useFlags();
+  // Only the super admin gets a 200 from /super/overview, so only they see the link.
+  const superAdmin = useSuperAdmin();
+  const items = superAdmin ? [...NAV, PRESS_BOX] : NAV;
 
   async function signOut() {
     setSigningOut(true);
@@ -32,20 +38,25 @@ export function AppHeader() {
       <div className="mx-auto flex max-w-5xl items-center gap-1 px-3 py-2 sm:px-6">
         <Brand href={DEFAULT_NEXT} className="mr-auto" />
         <nav aria-label="Main" className="flex items-center">
-          {NAV.map(({ href, label }) => {
+          {items.map(({ href, label, icon: Icon }) => {
             const active = pathname === href || pathname === href.slice(0, -1);
+            // With the Press Box link there's no room for three words beside the brand on a phone,
+            // so every link shows only its icon there.
+            const compact = superAdmin;
             return (
               <Link
                 key={href}
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "inline-flex h-11 items-center border-b-[3px] border-transparent px-2.5 font-display text-base font-bold tracking-wider text-chalk/80 uppercase outline-none hover:text-chalk focus-visible:ring-3 focus-visible:ring-ring/60 sm:px-3",
+                  "inline-flex h-11 min-w-11 items-center justify-center border-b-[3px] border-transparent px-2.5 font-display text-base font-bold tracking-wider whitespace-nowrap text-chalk/80 uppercase outline-none hover:text-chalk focus-visible:ring-3 focus-visible:ring-ring/60 sm:px-3",
+                  compact && "px-0",
                   // The yellow first-down line marks where you are.
                   active && "border-primary text-chalk",
                 )}
               >
-                {label}
+                {compact && <Icon className="size-5 sm:hidden" aria-hidden="true" />}
+                <span className={compact ? "sr-only sm:not-sr-only" : undefined}>{label}</span>
               </Link>
             );
           })}
@@ -57,6 +68,12 @@ export function AppHeader() {
           </Button>
         )}
       </div>
+      {maintenanceBanner && (
+        <p role="status" className="flex items-center justify-center gap-2 bg-primary px-4 py-2 text-center text-sm font-semibold text-primary-foreground">
+          <TriangleAlert className="size-4 shrink-0" aria-hidden="true" />
+          {maintenanceBanner}
+        </p>
+      )}
     </header>
   );
 }

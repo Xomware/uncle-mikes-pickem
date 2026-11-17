@@ -9,7 +9,7 @@ import os
 import boto3
 from boto3.dynamodb.conditions import Key
 
-from lambdas.common import nfl_store
+from lambdas.common import flags, nfl_store
 from lambdas.common.api import ApiError, api_handler, query_param, respond, user
 from lambdas.common.death import LAST_WEEK, entries_pk, start_lives
 from lambdas.common.groups import next_unlocked_week
@@ -53,6 +53,7 @@ def game(g: dict) -> dict:
 def handler(event, context):
     me = user(event)
     gid = query_param(event, "id")
+    flags.require("deathPool", gid)
     table = dynamodb.Table(os.environ["APP_TABLE"])
     items = table.query(KeyConditionExpression=Key("PK").eq(f"GROUP#{gid}"))["Items"]
     meta = next((i for i in items if i["SK"] == "META"), None)

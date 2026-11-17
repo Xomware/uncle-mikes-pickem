@@ -11,6 +11,7 @@ import { Input, Select } from "@/components/ui/input";
 import { createGroup, myGroups } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
 import { ROLE_LABEL, groupHref, seasonOptions } from "@/lib/groups";
+import { useFlags, useSuperAdmin } from "@/lib/flags";
 import { REPLAY_SEASON } from "@/lib/replay";
 
 export function GroupsView() {
@@ -58,6 +59,8 @@ export function GroupsView() {
 }
 
 function CreateGroupForm() {
+  const flags = useFlags();
+  const superAdmin = useSuperAdmin();
   const router = useRouter();
   const [seasons] = useState(() => seasonOptions(new Date()));
   const [name, setName] = useState("");
@@ -71,13 +74,16 @@ function CreateGroupForm() {
     setSaving(true);
     setError(null);
     try {
-      const group = await createGroup(name.trim(), season, replay && season === REPLAY_SEASON);
+      const group = await createGroup(name.trim(), season, replay && flags.replayGroups && season === REPLAY_SEASON);
       router.push(groupHref(group.groupId));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create the group.");
       setSaving(false);
     }
   }
+
+  // Turned off, only the super admin can start groups; everyone else joins by invite.
+  if (!flags.groupCreation && !superAdmin) return null;
 
   return (
     <form onSubmit={submit} className="mt-10 panel p-5">
@@ -99,7 +105,7 @@ function CreateGroupForm() {
           </Select>
         </label>
       </div>
-      {season === REPLAY_SEASON && (
+      {season === REPLAY_SEASON && flags.replayGroups && (
         <label className="mt-4 flex min-h-11 items-start gap-3">
           <input
             type="checkbox"

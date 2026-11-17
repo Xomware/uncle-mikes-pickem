@@ -22,12 +22,11 @@ from datetime import datetime, timedelta, timezone
 import boto3
 from boto3.dynamodb.conditions import Attr
 
-from lambdas.common import espn, finals, gow, hype, nfl_store, nflverse, results, weeks
+from lambdas.common import espn, finals, gow, hype, nfl_store, nflverse, results, runs, weeks
 
 WINDOW_BEFORE = timedelta(minutes=15)
 # A suspended or postponed game never completes; don't let it hold the window open.
 WINDOW_AFTER = timedelta(hours=6)
-RUN_TTL = timedelta(days=30)
 # ESPN's predictor updates around 10:00Z; one fetch a day after that is enough.
 PREDICTOR_HOUR = 15
 REGULAR = 2
@@ -278,18 +277,6 @@ def regrade_groups(season: int, changed: list[int], sweep: bool) -> dict[str, li
     return out
 
 
-def record_run(now: datetime, mode: str, result: dict) -> None:
-    dynamodb.Table(os.environ["OPS_TABLE"]).put_item(
-        Item={
-            "PK": "POLL#cron_tick",
-            "SK": nfl_store.iso(now),
-            "mode": mode,
-            **result,
-            "ttl": int((now + RUN_TTL).timestamp()),
-        }
-    )
-
-
 def handler(event, context):
     now = datetime.now(timezone.utc)
     current = nfl_store.current_week()
@@ -305,7 +292,7 @@ def handler(event, context):
         result["regraded"] = regrade_groups(result["season"], result["finalsChanged"], sweep=mode != "live")
     except Exception as e:
         # The failed run is the row someone goes looking for; re-raise so Errors fires.
-        record_run(now, mode, {"error": f"{type(e).__name__}: {e}"})
+        runs.record("cron_tick", now, {"mode": mode, "error": f"{type(e).__name__}: {e}"})
         raise
-    record_run(now, mode, result)
+    runs.record("cron_tick", now, {"mode": mode, **result})
     return {"mode": mode, **result}

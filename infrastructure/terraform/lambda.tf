@@ -72,6 +72,23 @@ locals {
     { name = "test", description = "Send the test email to the caller", path_part = "test", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
   ]
 
+  config_lambdas = [
+    { name = "flags", description = "Read the resolved feature flags, global or for a group (?groupId=)", path_part = "flags", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+  ]
+
+  # Every /super route 404s unless the caller is on the super admin list (common/superadmin.py).
+  super_lambdas = [
+    { name = "overview", description = "Super admin: counts, job health and mail volume", path_part = "overview", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+    { name = "groups", description = "Super admin: list every group", path_part = "groups", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+    { name = "group", description = "Super admin: read any group (?id=)", path_part = "group", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+    { name = "users", description = "Super admin: everyone who has signed in", path_part = "users", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+    { name = "flags", description = "Super admin: flag defaults and stored overrides", path_part = "flags", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+    { name = "emails", description = "Super admin: recent mail claims and events (?groupId=)", path_part = "emails", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+    { name = "flags_set", description = "Super admin: change global or group flags", path_part = "flags-set", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+    { name = "regrade", description = "Super admin: regrade any group", path_part = "regrade", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+    { name = "cron", description = "Super admin: start a scheduled job now", path_part = "cron", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+  ]
+
   all_api_lambdas = merge(
     { for l in local.me_lambdas : "me_${l.name}" => l },
     { for l in local.groups_lambdas : "groups_${l.name}" => l },
@@ -88,6 +105,8 @@ locals {
     { for l in local.standings_lambdas : "standings_${l.name}" => l },
     { for l in local.analytics_lambdas : "analytics_${l.name}" => l },
     { for l in local.email_lambdas : "email_${l.name}" => l },
+    { for l in local.config_lambdas : "config_${l.name}" => l },
+    { for l in local.super_lambdas : "super_${l.name}" => l },
   )
 
   # One role per function, granted only the table actions its handler makes.
@@ -101,7 +120,7 @@ locals {
   # One line per key: merge conflicts here are resolved by keeping both lines.
   api_grants = {
     me_profile     = ["app:UpdateItem"]
-    groups_create  = ["app:PutItem", "nfl:GetItem"]
+    groups_create  = ["app:GetItem", "app:PutItem", "nfl:GetItem"]
     groups_mine    = ["app_index:Query"]
     groups_get     = ["app:Query", "nfl:GetItem"]
     invites_create = ["app:GetItem", "app:PutItem"]
@@ -117,9 +136,9 @@ locals {
     games_info     = ["app:GetItem", "nfl:BatchGetItem", "nfl:GetItem", "nfl:PutItem"]
     death_entry    = ["app:GetItem", "app:Query", "app:PutItem", "nfl:GetItem"]
     death_pick     = ["app:GetItem", "app:UpdateItem", "nfl:GetItem", "nfl:Query"]
-    death_board    = ["app:Query", "nfl:GetItem", "nfl:Query"]
+    death_board    = ["app:GetItem", "app:Query", "nfl:GetItem", "nfl:Query"]
 
-    payments_ledger      = ["app:Query", "nfl:GetItem"]
+    payments_ledger      = ["app:GetItem", "app:Query", "nfl:GetItem"]
     payments_mark        = ["app:GetItem", "app:PutItem"]
     payments_payouts     = ["app:GetItem", "app:Query", "nfl:GetItem"]
     payments_payout_mark = ["app:GetItem", "app:Query", "app:PutItem", "nfl:GetItem"]
@@ -137,6 +156,18 @@ locals {
     email_unsubscribe = ["app:GetItem", "app:UpdateItem"]
     email_preview     = ["app:GetItem"]
     email_test        = ["app:GetItem"]
+
+    config_flags = ["app:GetItem"]
+
+    super_overview  = ["app:Scan", "app:Query", "nfl:GetItem", "nfl:Query", "ops:Query", "ops:Scan"]
+    super_groups    = ["app:Scan"]
+    super_group     = ["app:GetItem", "app:Query", "nfl:GetItem"]
+    super_users     = ["app:Scan"]
+    super_flags     = ["app:Scan"]
+    super_emails    = ["ops:Query", "ops:Scan"]
+    super_flags_set = ["app:GetItem", "app:PutItem", "ops:PutItem"]
+    super_regrade   = ["app:GetItem", "app:Query", "app:PutItem", "app:UpdateItem", "nfl:GetItem", "nfl:Query", "ops:PutItem"]
+    super_cron      = ["ops:PutItem"]
   }
 
   # Beyond table actions: policy documents from ses.tf and capture.tf. One line per key.
@@ -147,6 +178,16 @@ locals {
     email_test        = [data.aws_iam_policy_document.unsubscribe_key.json, data.aws_iam_policy_document.send_email.json]
     gow_peek          = [data.aws_iam_policy_document.gow_link_key.json]
     gow_confirm       = [data.aws_iam_policy_document.gow_link_key.json]
+    groups_create     = [data.aws_iam_policy_document.super_admin_read.json]
+    super_overview    = [data.aws_iam_policy_document.super_admin_read.json]
+    super_groups      = [data.aws_iam_policy_document.super_admin_read.json]
+    super_group       = [data.aws_iam_policy_document.super_admin_read.json]
+    super_users       = [data.aws_iam_policy_document.super_admin_read.json]
+    super_flags       = [data.aws_iam_policy_document.super_admin_read.json]
+    super_emails      = [data.aws_iam_policy_document.super_admin_read.json]
+    super_flags_set   = [data.aws_iam_policy_document.super_admin_read.json]
+    super_regrade     = [data.aws_iam_policy_document.super_admin_read.json]
+    super_cron        = [data.aws_iam_policy_document.super_admin_read.json, data.aws_iam_policy_document.super_cron_invoke.json]
   }
 
   # Environment beyond lambda_variables. One line per key.

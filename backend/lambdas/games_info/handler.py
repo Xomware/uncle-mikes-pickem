@@ -9,7 +9,7 @@ import os
 
 import boto3
 
-from lambdas.common import nfl_store, writeup
+from lambdas.common import flags, nfl_store, writeup
 from lambdas.common.api import ApiError, api_handler, query_param, respond, user
 from lambdas.common.game_view import cached, payload
 from lambdas.common.groups import membership
@@ -21,6 +21,7 @@ dynamodb = boto3.resource("dynamodb")
 def handler(event, context):
     me = user(event)
     gid = query_param(event, "groupId")
+    flags.require("gameInfo", gid)
     game_id = query_param(event, "gameId")
     if not game_id.isdigit():
         raise ApiError(400, "gameId must be an ESPN event id")
@@ -35,6 +36,6 @@ def handler(event, context):
     if not game:
         raise ApiError(404, "That game isn't on this season's schedule")
     info, source = cached(game, feed)
-    stored = writeup.get(game_id)
+    stored = flags.enabled("filmRoom", gid) and writeup.get(game_id)
     film_room = stored and {k: stored[k] for k in ("text", "model", "generatedAt")}
     return respond(200, {**payload(game, info, source, feed.now), "writeup": film_room})

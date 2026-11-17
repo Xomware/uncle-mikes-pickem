@@ -12,7 +12,7 @@ import boto3
 from boto3.dynamodb.conditions import Key
 from pydantic import Field, StringConstraints, model_validator
 
-from lambdas.common import ledger, payouts
+from lambdas.common import flags, ledger, payouts
 from lambdas.common.api import ApiError, Request, api_handler, parse_body, respond, user
 from lambdas.common.groups import require_organizer
 
@@ -43,6 +43,7 @@ class PayoutMark(Request):
 def handler(event, context):
     me = user(event)
     body = parse_body(event, PayoutMark)
+    flags.require("payouts", body.groupId)
     table = dynamodb.Table(os.environ["APP_TABLE"])
     items = table.query(KeyConditionExpression=Key("PK").eq(f"GROUP#{body.groupId}"))["Items"]
     meta = next((i for i in items if i["SK"] == "META"), None)

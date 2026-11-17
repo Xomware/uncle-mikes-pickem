@@ -45,6 +45,13 @@ data "aws_iam_policy_document" "capture" {
   }
 
   # Write-only, and only under raw/: the archive is append-only by construction.
+  # POLL#capture run rows for the super admin overview (common/runs.py).
+  statement {
+    sid       = "RecordRun"
+    actions   = ["dynamodb:PutItem"]
+    resources = [aws_dynamodb_table.ops.arn]
+  }
+
   statement {
     sid       = "WriteRaw"
     actions   = ["s3:PutObject"]
@@ -95,6 +102,7 @@ resource "aws_lambda_function" "capture" {
   environment {
     variables = {
       CAPTURE_BUCKET = aws_s3_bucket.capture.id
+      OPS_TABLE      = aws_dynamodb_table.ops.id
     }
   }
 

@@ -1,15 +1,14 @@
 "use client";
 
 import { ChevronDown, ChevronUp, CircleAlert, CircleCheck, Info, LoaderCircle, Star, Undo2 } from "lucide-react";
-import Link from "next/link";
 import { type ReactNode, useState } from "react";
 
 import { LightBank } from "@/components/field/icons";
 import { TeamLogo } from "@/components/field/team-logo";
+import { GameInfoLink } from "@/components/game/game-info-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { type Game, type Team, type WeekView, cancelGame, setGow, setPicks } from "@/lib/api/client";
-import { gameHref } from "@/lib/game";
 import { isOrganizer } from "@/lib/groups";
 import { type Sheet, confAt, isComplete, pickedCount, sameSheet, spreadText, swap, toPayload, toSheet } from "@/lib/picks";
 import { etTime } from "@/lib/time";
@@ -262,8 +261,9 @@ function GameRow({ groupId, dirty, game, conf, team, isGow, isTiebreak, editable
             </span>
             <TeamButton team={game.home} picked={team} editable={editable} onPick={onPick} />
           </div>
-          <Link
-            href={gameHref(groupId, game.gameId)}
+          <GameInfoLink
+            groupId={groupId}
+            gameId={game.gameId}
             // The sheet lives in this page's state; leaving it unsaved would drop the draft.
             onClick={(e) => dirty && !window.confirm("Leave without saving your picks?") && e.preventDefault()}
             aria-label={`Game info for ${matchup}: ${details.join(", ")}`}
@@ -271,7 +271,7 @@ function GameRow({ groupId, dirty, game, conf, team, isGow, isTiebreak, editable
           >
             <span className="truncate">{details.join(" · ")}</span>
             <Info className="size-3.5 shrink-0" aria-hidden="true" />
-          </Link>
+          </GameInfoLink>
         </div>
 
         {editable && (

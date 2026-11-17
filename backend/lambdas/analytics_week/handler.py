@@ -9,7 +9,7 @@ import os
 import boto3
 from boto3.dynamodb.conditions import Key
 
-from lambdas.common import nfl_store, weeks
+from lambdas.common import flags, nfl_store, weeks
 from lambdas.common.api import ApiError, api_handler, query_param, respond, user
 
 dynamodb = boto3.resource("dynamodb")
@@ -19,6 +19,7 @@ dynamodb = boto3.resource("dynamodb")
 def handler(event, context):
     me = user(event)
     gid = query_param(event, "groupId")
+    flags.require("analytics", gid)
     week = query_param(event, "week")
     if not week.isdigit() or not 1 <= int(week) <= 18:
         raise ApiError(400, "week must be 1 to 18")

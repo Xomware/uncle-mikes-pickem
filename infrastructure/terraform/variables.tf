@@ -55,3 +55,9 @@ variable "alarm_email" {
   type        = string
   sensitive   = true
 }
+
+variable "super_admin_emails" {
+  description = "Comma-separated super admin emails, from Infisical /pickem SUPER_ADMIN_EMAILS."
+  type        = string
+  sensitive   = true
+}

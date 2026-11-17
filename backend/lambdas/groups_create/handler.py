@@ -11,7 +11,7 @@ from typing import Annotated
 import boto3
 from pydantic import Field, StringConstraints
 
-from lambdas.common import nfl_store
+from lambdas.common import flags, nfl_store, superadmin
 from lambdas.common.api import ApiError, Request, api_handler, parse_body, respond, user
 from lambdas.common.groups import REPLAY_SEASON, group_summary, member_item, replay_start
 
@@ -28,6 +28,11 @@ class CreateGroup(Request):
 def handler(event, context):
     me = user(event)
     body = parse_body(event, CreateGroup)
+    # Off means only the super admin can create groups, not nobody.
+    if not flags.enabled("groupCreation") and not superadmin.is_super(event):
+        raise ApiError(404, "Group creation is turned off")
+    if body.replay:
+        flags.require("replayGroups")
     gid = secrets.token_hex(6)
     group = {
         "PK": f"GROUP#{gid}",

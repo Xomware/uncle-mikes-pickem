@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 import boto3
 
-from lambdas.common import espn
+from lambdas.common import espn, runs
 
 PREKICK_WINDOW = timedelta(minutes=45)
 s3 = boto3.client("s3")
@@ -46,13 +46,25 @@ def put(key: str, body: bytes) -> None:
 
 def handler(event, context):
     now = datetime.now(timezone.utc)
+    try:
+        result = snapshot(now, bool((event or {}).get("force")))
+    except Exception as e:
+        # The failed run is the row the super admin overview shows; re-raise so Errors fires.
+        runs.record("capture", now, {"error": f"{type(e).__name__}: {e}"})
+        raise
+    if result["mode"]:
+        runs.record("capture", now, result)
+    return result
+
+
+def snapshot(now: datetime, force: bool) -> dict:
     status, body = espn.get(f"{espn.SITE}/scoreboard")
     if status != 200:
         raise RuntimeError(f"scoreboard returned {status}")
     board = json.loads(body)
     events = board["events"]
 
-    mode = choose_mode(now, events, bool((event or {}).get("force")))
+    mode = choose_mode(now, events, force)
     if mode is None:
         return {"mode": None}
 

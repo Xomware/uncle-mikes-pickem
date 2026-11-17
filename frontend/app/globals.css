@@ -118,6 +118,20 @@
   --ring: oklch(0.7 0.2 27);
 }
 
+/* The press box: the super admin portal, up in the booth after dark. Yellow stays the accent. */
+.press-box,
+:root:has(.press-box) {
+  --turf-1: oklch(0.17 0.025 250);
+  --turf-2: oklch(0.19 0.025 250);
+  --chalk: oklch(0.93 0.015 240);
+  --card: oklch(0.14 0.012 250);
+  --secondary: oklch(0.21 0.015 250);
+  --muted: oklch(0.21 0.015 250);
+  --muted-foreground: oklch(0.78 0.015 240);
+  --border: oklch(0.3 0.02 250);
+  --input: oklch(0.33 0.02 250);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
