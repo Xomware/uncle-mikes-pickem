@@ -399,6 +399,39 @@ export const getWeekResult = (groupId: string, week: number) =>
 export const getSeasonStandings = (groupId: string) =>
   request<SeasonStandings>(`/standings/season?id=${encodeURIComponent(groupId)}`);
 
+/** P(this member wins the week) if the away side wins the game, and if home does. null: that side can't win. */
+export interface RootSplit {
+  away: number | null;
+  home: number | null;
+}
+
+export interface WeekOdds {
+  groupId: string;
+  season: number;
+  week: number;
+  status: WeekResult["status"];
+  sims: number;
+  computedAt: string;
+  /** Undecided games only. */
+  games: Record<string, { pHome: number; source: "moneyline" | "spread" | "even" }>;
+  /** Most likely first. A member with no sheet has pWin 0 and no rooting guide. */
+  members: { sub: string; name: string; pWin: number; root: Record<string, RootSplit> }[];
+}
+
+/** Season members only; members is empty until a week is graded. */
+export interface SeasonOdds {
+  groupId: string;
+  season: number;
+  throughWeek: number;
+  sims: number;
+  computedAt: string | null;
+  members: { sub: string; name: string; pWin: number; mean: number; sd: number }[];
+}
+
+export const getWeekOdds = (groupId: string, week: number) =>
+  request<WeekOdds>(`/analytics/week?groupId=${encodeURIComponent(groupId)}&week=${week}`);
+export const getSeasonOdds = (groupId: string) => request<SeasonOdds>(`/analytics/season?id=${encodeURIComponent(groupId)}`);
+
 /** null for a 404: the week isn't graded yet. */
 export const unlessMissing = <T>(pending: Promise<T>): Promise<T | null> =>
   pending.catch((err: unknown) => {

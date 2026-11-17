@@ -18,7 +18,7 @@ from decimal import Decimal
 
 from boto3.dynamodb.conditions import Key
 
-from lambdas.common import clock, events, finals, grade, nfl_store, season as season_fold, standings
+from lambdas.common import analytics, clock, events, finals, grade, nfl_store, season as season_fold, standings
 from lambdas.common.rules import rules_for
 from lambdas.common.weeks import week_pk
 
@@ -146,7 +146,7 @@ def regrade(table, group: dict, weeks: Iterable[int] | None = None) -> dict:
     members = [i for i in items if i["SK"].startswith("MEMBER#")]
     versions = [i for i in items if i["SK"].startswith(f"RULES#S{season}#")]
     last = feed.last_locked_week() or 0
-    changed = []
+    changed, sims = [], {}
     for week in sorted(set(range(1, last + 1) if weeks is None else weeks)):
         if week > last:
             continue
@@ -156,10 +156,16 @@ def regrade(table, group: dict, weeks: Iterable[int] | None = None) -> dict:
         pk = week_pk(gid, season, week)
         week_items = nfl_store.plain(table.query(KeyConditionExpression=Key("PK").eq(pk))["Items"])
         tiebreak_id = nfl_week["tiebreakGameId"]
-        result = week_result(week, feed.games(week), week_items, members, versions, tiebreak_id, feed.replay)
+        games = feed.games(week)
+        result = week_result(week, games, week_items, members, versions, tiebreak_id, feed.replay)
         old = next((i for i in week_items if i["SK"] == "RESULT"), {})
-        if old.get("inputHash") == result["inputHash"]:
-            continue
-        save(table, pk, gid, season, result, old)
-        changed.append(week)
-    return {"weeks": changed, **season_fold.fold(table, gid, season, last, members, versions)}
+        fresh = old.get("inputHash") != result["inputHash"]
+        if fresh:
+            save(table, pk, gid, season, result, old)
+            changed.append(week)
+        if fresh or analytics.stale(next((i for i in week_items if i["SK"] == "ANALYTICS"), None)):
+            body, sims[week] = analytics.week_odds(result, games, week_items, rules_for(versions, week))
+            analytics.save(table, pk, body, group)
+    folded = season_fold.fold(table, gid, season, last, members, versions)
+    analytics.refresh_season(table, group, feed, members, versions, last, sims)
+    return {"weeks": changed, **folded}

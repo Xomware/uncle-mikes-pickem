@@ -3,8 +3,10 @@
 import { Trophy } from "lucide-react";
 import { useCallback } from "react";
 
+import { WeekOddsSection } from "@/components/analytics/week-odds";
 import { LoadError } from "@/components/load-error";
 import { GroupGrid } from "@/components/picks/group-grid";
+import { PickBreakdown } from "@/components/picks/pick-breakdown";
 import { OrganizerTools } from "@/components/results/organizer-tools";
 import { type WeekResult, type WeekView, getWeekResult, unlessMissing } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
@@ -35,10 +37,13 @@ export function LockedWeek({ view }: { view: WeekView }) {
         </div>
       )}
       {load.status === "ready" && <WeekResults view={view} result={load.data} />}
+      {/* Keyed on the grade, so an organizer's override refetches the odds it rewrote. */}
+      {load.status === "ready" && load.data && <WeekOddsSection key={load.data.gradedAt} view={view} />}
       {load.status === "ready" && isOrganizer(view.role) && (
         <OrganizerTools view={view} result={load.data} onChange={refresh} />
       )}
       <GroupGrid view={view} result={load.status === "ready" ? load.data : null} />
+      <PickBreakdown view={view} />
     </>
   );
 }

@@ -55,6 +55,10 @@ locals {
   standings_lambdas = [
     { name = "season", description = "Read a group's season standings (?id=)", path_part = "season", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
   ]
+  analytics_lambdas = [
+    { name = "week", description = "Read a group-week's win odds and rooting guide (?groupId=&week=)", path_part = "week", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+    { name = "season", description = "Read a group's season win odds (?id=)", path_part = "season", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+  ]
   replay_lambdas = [
     { name = "advance", description = "Move a replay group's virtual clock", path_part = "advance", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
   ]
@@ -82,6 +86,7 @@ locals {
     { for l in local.replay_lambdas : "replay_${l.name}" => l },
     { for l in local.results_lambdas : "results_${l.name}" => l },
     { for l in local.standings_lambdas : "standings_${l.name}" => l },
+    { for l in local.analytics_lambdas : "analytics_${l.name}" => l },
     { for l in local.email_lambdas : "email_${l.name}" => l },
   )
 
@@ -124,6 +129,8 @@ locals {
     results_regrade  = ["app:GetItem", "app:Query", "app:PutItem", "app:UpdateItem", "nfl:GetItem", "nfl:Query", "ops:PutItem"]
     results_week     = ["app:GetItem", "app:Query"]
     standings_season = ["app:GetItem", "app:Query"]
+    analytics_week   = ["app:GetItem", "app:Query"]
+    analytics_season = ["app:GetItem", "app:Query"]
 
     email_prefs       = ["app_index:Query", "ops:GetItem"]
     email_prefs_set   = ["app:GetItem", "app:UpdateItem"]

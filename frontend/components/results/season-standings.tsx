@@ -8,7 +8,8 @@ import { useCallback } from "react";
 import { FieldTitle } from "@/components/field/field-title";
 import { LoadError } from "@/components/load-error";
 import { buttonVariants } from "@/components/ui/button";
-import { type SeasonStandings, getGroup, getSeasonStandings } from "@/lib/api/client";
+import { pct } from "@/lib/analytics";
+import { type SeasonOdds, type SeasonStandings, getGroup, getSeasonOdds, getSeasonStandings } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
 import { groupHref } from "@/lib/groups";
 import { standingsHref } from "@/lib/results";
@@ -25,7 +26,7 @@ export function StandingsLink({ groupId }: { groupId: string }) {
 
 export function SeasonStandingsView() {
   const id = useSearchParams().get("id") ?? "";
-  const fetcher = useCallback(() => Promise.all([getGroup(id), getSeasonStandings(id)]), [id]);
+  const fetcher = useCallback(() => Promise.all([getGroup(id), getSeasonStandings(id), getSeasonOdds(id)]), [id]);
   const { load, retry } = useLoad(fetcher);
 
   return (
@@ -47,7 +48,7 @@ export function SeasonStandingsView() {
           <FieldTitle sub={`${load.data[0].group.name} · ${load.data[0].group.season} season`} className="mt-1">
             Standings
           </FieldTitle>
-          <SeasonTable standings={load.data[1]} />
+          <SeasonTable standings={load.data[1]} odds={load.data[2]} />
         </>
       )}
     </div>
@@ -56,7 +57,7 @@ export function SeasonStandingsView() {
 
 const NUM = "px-2 py-2 text-right";
 
-function SeasonTable({ standings }: { standings: SeasonStandings }) {
+function SeasonTable({ standings, odds }: { standings: SeasonStandings; odds: SeasonOdds }) {
   if (standings.rows.length === 0) {
     return (
       <p role="status" className="panel mt-6 p-4 text-sm text-muted-foreground">
@@ -64,6 +65,7 @@ function SeasonTable({ standings }: { standings: SeasonStandings }) {
       </p>
     );
   }
+  const chance = new Map(odds.members.map((m) => [m.sub, m.pWin]));
   const weeks = Array.from({ length: standings.throughWeek }, (_, i) => String(i + 1));
 
   return (
@@ -82,7 +84,7 @@ function SeasonTable({ standings }: { standings: SeasonStandings }) {
         </span>
       </div>
       <p className="mt-1 px-1 text-xs text-muted-foreground">
-        Season entries only. GOW points break a tie on the total. Scroll sideways for each week.
+        Season entries only. GOW points break a tie on the total. Odds simulate the weeks left. Scroll sideways for each week.
       </p>
       {/* Scrolls inside its box, so the page never scrolls sideways on a phone. */}
       <div className="relative mt-3 overflow-x-auto" tabIndex={0} role="region" aria-label="Season standings by week">
@@ -94,6 +96,11 @@ function SeasonTable({ standings }: { standings: SeasonStandings }) {
               </th>
               <th scope="col" className={NUM}>
                 Total
+              </th>
+              <th scope="col" className={NUM}>
+                <abbr title="Chance to win the season" className="no-underline">
+                  Odds
+                </abbr>
               </th>
               <th scope="col" className={NUM}>
                 GOW
@@ -116,6 +123,9 @@ function SeasonTable({ standings }: { standings: SeasonStandings }) {
                 </th>
                 <td className={NUM}>
                   <span className="led text-lg">{r.total}</span>
+                </td>
+                <td className={NUM}>
+                  {chance.has(r.member) ? <span className="led text-base text-primary">{pct(chance.get(r.member) ?? 0)}</span> : "-"}
                 </td>
                 <td className={cn(NUM, "tabular-nums")}>{r.gow > 0 ? `+${r.gow}` : r.gow}</td>
                 {weeks.map((w) => (
