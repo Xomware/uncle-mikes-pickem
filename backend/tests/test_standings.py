@@ -61,3 +61,8 @@ def test_weekly_only_members_dont_set_the_yearly_floor():
     board = week_board({"a": g(50), "w": g(30, -10)}, ["a", "w", "c"], ["a", "c"])
     assert board["c"]["yearly"] == 49
     assert board["c"]["weekly"] == 29
+
+
+def test_weekly_winners_split_when_tiebreak_game_canceled():
+    weekly = {"a": 50, "b": 50, "c": 40}
+    assert weekly_winners(weekly, {"a": 40, "b": 47, "c": 45}, None) == ["a", "b"]

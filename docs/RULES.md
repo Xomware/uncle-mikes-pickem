@@ -12,6 +12,7 @@ Confirmed with Dom on 2026-11-12. The weekly sheet and standings for the 2026 se
 - **Weekly tiebreaker:** guess the total points scored in the Monday night game. Closest guess wins.
   - If there are two Monday games, use the later one.
   - Week 18 has no Monday game, so use the last game of the week.
+  - If the tiebreak game is canceled, a tie on points splits the weekly pot.
 - **Canceled game:** taken off the week, so the top confidence value that week is lower. This is an organizer setting.
 - **Picks are hidden** from other members until the lock. After the lock the whole group can see them.
 - **Late joiners:** get the missed-week score for each week before they joined.

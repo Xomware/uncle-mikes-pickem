@@ -46,13 +46,16 @@ def week_board(graded: dict[str, dict], members: Iterable[str], season_members: 
     }
 
 
-def weekly_winners(weekly: dict[str, int], guesses: dict[str, int], actual_total: int) -> list[str]:
+def weekly_winners(weekly: dict[str, int], guesses: dict[str, int], actual_total: int | None) -> list[str]:
     """Payout winners: top weekly score among submitters, then closest tiebreak guess.
-    An exact tie on the guess splits, so this can return several."""
+    An exact tie on the guess splits, so this can return several. With no total
+    (the tiebreak game was canceled) a tie on points splits."""
     if not guesses:
         return []
     best = max(weekly[m] for m in guesses)
     top = [m for m in guesses if weekly[m] == best]
+    if actual_total is None:
+        return sorted(top)
     closest = min(abs(guesses[m] - actual_total) for m in top)
     return sorted(m for m in top if abs(guesses[m] - actual_total) == closest)
 
