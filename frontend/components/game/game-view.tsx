@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, CircleAlert, Droplets, House, Thermometer, Wind } from "lucide-react";
+import { ArrowLeft, CircleAlert, Clapperboard, Droplets, House, Thermometer, Wind } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { type ReactNode, useCallback } from "react";
@@ -60,6 +60,7 @@ function GameBody({ info }: { info: GameInfo }) {
           {source.note}
         </p>
       )}
+      {info.writeup && <FilmRoom writeup={info.writeup} />}
       <Conditions roof={game.venue.roof} weather={weather} />
       {(away.form.length > 0 || home.form.length > 0) && (
         <Section title="Last five">
@@ -153,6 +154,27 @@ function TeamColumn({ team, split, score }: { team: InfoTeam; split: string; sco
       )}
       {score != null && <span className="led mt-2 text-4xl leading-none">{score}</span>}
     </div>
+  );
+}
+
+function FilmRoom({ writeup }: { writeup: NonNullable<GameInfo["writeup"]> }) {
+  return (
+    <Section title="Film Room">
+      <article className="panel p-3">
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1 rounded bg-secondary px-1.5 py-0.5 font-display font-bold tracking-[0.14em] text-foreground uppercase">
+            <Clapperboard className="size-3.5" aria-hidden="true" />
+            AI preview
+          </span>
+          <time dateTime={writeup.generatedAt}>Written {etDate(writeup.generatedAt)}</time>
+        </p>
+        <div className="mt-2 space-y-2 leading-relaxed">
+          {writeup.text.split(/\n\s*\n/).map((para) => (
+            <p key={para}>{para}</p>
+          ))}
+        </div>
+      </article>
+    </Section>
   );
 }
 
