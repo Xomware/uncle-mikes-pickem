@@ -46,12 +46,12 @@ def kickoff_label(kickoff: str) -> str:
     return f"{at:%a %b} {at.day}, {at.hour % 12 or 12}:{at:%M} {at:%p} ET"
 
 
-def side(team: dict) -> dict:
+def side(team: dict, split: str) -> dict:
     return {
         "team": team.get("name") or team["abbr"],
         "abbr": team["abbr"],
-        "record": team.get("record"),
-        "homeOrRoadRecord": team.get("split"),
+        "overallRecord": team.get("record"),
+        split: team.get("split"),
         "lastFive": [f"{f['result']} {f['score']} {f['atVs']} {f['opponent']}" for f in team["form"]],
         "injuries": [
             {"player": i["name"], "position": i["position"], "status": i["status"], "injury": i["detail"]}
@@ -69,8 +69,8 @@ def fact_pack(view: dict) -> dict:
     return {
         "week": game["week"],
         "kickoff": kickoff_label(game["kickoff"]),
-        "away": side(view["away"]),
-        "home": side(view["home"]),
+        "away": side(view["away"], "roadRecord"),
+        "home": side(view["home"], "homeRecord"),
         "venue": {"name": venue.get("name"), "city": venue.get("city"), "roof": venue.get("roof")},
         "line": {
             "favorite": lines.get("details"),

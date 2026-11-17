@@ -5,8 +5,8 @@ Fact pack:
   "away": {
     "team": "Washington Commanders",
     "abbr": "WSH",
-    "record": "2-5-1",
-    "homeOrRoadRecord": "0-3",
+    "overallRecord": "2-5-1",
+    "roadRecord": "0-3",
     "lastFive": [
       "L 30-13 vs IND",
       "T 27-27 OT vs NYG",
@@ -38,8 +38,8 @@ Fact pack:
   "home": {
     "team": "New York Giants",
     "abbr": "NYG",
-    "record": "5-2-1",
-    "homeOrRoadRecord": "3-1",
+    "overallRecord": "5-2-1",
+    "homeRecord": "3-1",
     "lastFive": [
       "W 36-24 vs ARI",
       "T 27-27 OT @ WSH",
