@@ -46,12 +46,20 @@ def kickoff_label(kickoff: str) -> str:
     return f"{at:%a %b} {at.day}, {at.hour % 12 or 12}:{at:%M} {at:%p} ET"
 
 
+def last_five_record(form: list[dict]) -> str:
+    """W-L, with -T only when there was a tie, the way NFL records read."""
+    w, l, t = (sum(f["result"] == r for f in form) for r in "WLT")
+    return f"{w}-{l}-{t}" if t else f"{w}-{l}"
+
+
 def side(team: dict, split: str) -> dict:
     return {
         "team": team.get("name") or team["abbr"],
         "abbr": team["abbr"],
         "overallRecord": team.get("record"),
         split: team.get("split"),
+        # Haiku miscounted wins in the form list (0-5 written as "lost four of five"), so it gets the tally too.
+        "lastFiveRecord": last_five_record(team["form"]),
         "lastFive": [f"{f['result']} {f['score']} {f['atVs']} {f['opponent']}" for f in team["form"]],
         "injuries": [
             {"player": i["name"], "position": i["position"], "status": i["status"], "injury": i["detail"]}
