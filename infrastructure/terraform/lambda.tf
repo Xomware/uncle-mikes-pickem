@@ -43,6 +43,8 @@ locals {
   payments_lambdas = [
     { name = "ledger", description = "Read what members owe and have paid, and the pots (?id=)", path_part = "ledger", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
     { name = "mark", description = "Mark a member's fee paid or unpaid", path_part = "mark", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
+    { name = "payouts", description = "Read each pot's winners and payouts (?id=)", path_part = "payouts", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+    { name = "payout_mark", description = "Mark a winner's payout sent or unsent", path_part = "payout-mark", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
   ]
   # Override and cancel are inputs: each regrades the week and refolds the season (common/results.py).
   results_lambdas = [
@@ -112,9 +114,11 @@ locals {
     death_pick     = ["app:GetItem", "app:UpdateItem", "nfl:GetItem", "nfl:Query"]
     death_board    = ["app:Query", "nfl:GetItem", "nfl:Query"]
 
-    payments_ledger = ["app:Query", "nfl:GetItem"]
-    payments_mark   = ["app:GetItem", "app:PutItem"]
-    replay_advance  = ["app:GetItem", "app:UpdateItem"]
+    payments_ledger      = ["app:Query", "nfl:GetItem"]
+    payments_mark        = ["app:GetItem", "app:PutItem"]
+    payments_payouts     = ["app:GetItem", "app:Query", "nfl:GetItem"]
+    payments_payout_mark = ["app:GetItem", "app:Query", "app:PutItem", "nfl:GetItem"]
+    replay_advance       = ["app:GetItem", "app:UpdateItem"]
 
     results_override = ["app:GetItem", "app:Query", "app:PutItem", "app:DeleteItem", "app:UpdateItem", "nfl:GetItem", "nfl:Query", "ops:PutItem"]
     results_regrade  = ["app:GetItem", "app:Query", "app:PutItem", "app:UpdateItem", "nfl:GetItem", "nfl:Query", "ops:PutItem"]

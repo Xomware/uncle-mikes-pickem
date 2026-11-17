@@ -145,6 +145,12 @@ function SettingsEditor({ detail, onSaved, onEdit }: EditorProps) {
       </Section>
 
       <Section title="Fees" hint="Whole dollars. Weekly-only members pay the weekly fee; season members pay weekly and yearly.">
+        <Field label="Charged">
+          <Select value={form.feeBasis} onChange={(e) => update({ feeBasis: e.target.value as SettingsForm["feeBasis"] })}>
+            <option value="perWeek">Every week played</option>
+            <option value="perSeason">Once for the season</option>
+          </Select>
+        </Field>
         <div className="grid gap-4 sm:grid-cols-3">
           {POTS.map((pot) => (
             <Field key={pot} label={POT_LABEL[pot]} error={errors[`fees.${pot}`]}>

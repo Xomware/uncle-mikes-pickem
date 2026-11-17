@@ -128,7 +128,6 @@ function SeasonTable({ standings }: { standings: SeasonStandings }) {
           </tbody>
         </table>
       </div>
-      <p className="mt-2 px-1 text-xs text-muted-foreground">* shares the place.</p>
     </section>
   );
 }
