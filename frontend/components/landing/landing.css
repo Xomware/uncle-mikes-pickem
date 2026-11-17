@@ -6,6 +6,11 @@
   }
 }
 
+/* The intro covers the page while it plays (lib/intro.ts sets this). */
+html[data-intro="play"] {
+  overflow: hidden;
+}
+
 /* Scroll reveals: hidden only once ScrollReveals has added .reveals, so no-JS still shows them. */
 .reveals [data-reveal]:not([data-shown]) {
   opacity: 0;
