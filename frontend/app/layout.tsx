@@ -40,8 +40,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
+    // The landing's inline intro gate sets data-intro before hydration.
     <html
       lang="en"
+      suppressHydrationWarning
       className={`dark ${body.variable} ${heading.variable} ${stencil.variable} ${led.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">{children}</body>

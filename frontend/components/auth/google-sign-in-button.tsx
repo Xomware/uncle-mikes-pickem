@@ -10,10 +10,12 @@ import { useAuth } from "@/lib/auth/use-auth";
 interface GoogleSignInButtonProps {
   /** Where to land after sign-in. Defaults to the current page. */
   nextPath?: string;
+  /** "Sign in" at the default size, for a nav bar. */
+  compact?: boolean;
   className?: string;
 }
 
-export function GoogleSignInButton({ nextPath, className }: GoogleSignInButtonProps) {
+export function GoogleSignInButton({ nextPath, compact = false, className }: GoogleSignInButtonProps) {
   const { signInWithGoogle } = useAuth();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,9 +34,14 @@ export function GoogleSignInButton({ nextPath, className }: GoogleSignInButtonPr
 
   return (
     <div className={className}>
-      <Button size="lg" className="w-full font-semibold sm:w-auto" onClick={start} disabled={busy}>
+      <Button
+        size={compact ? "default" : "lg"}
+        className={compact ? "font-semibold" : "w-full font-semibold sm:w-auto"}
+        onClick={start}
+        disabled={busy}
+      >
         {busy ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : <GoogleMark />}
-        {busy ? "Opening Google..." : "Continue with Google"}
+        {compact ? "Sign in" : busy ? "Opening Google..." : "Continue with Google"}
       </Button>
       {error && (
         <p role="alert" className="mt-3 text-sm text-wrong">
