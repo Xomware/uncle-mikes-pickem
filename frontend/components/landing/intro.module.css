@@ -89,6 +89,8 @@
   left: 42%;
   top: 14px;
   font-family: var(--font-stencil);
+  -webkit-text-stroke: 0.04em currentColor;
+  paint-order: stroke fill;
   font-weight: 900;
   font-size: 3.2rem;
   line-height: 1;
@@ -222,6 +224,8 @@
 }
 .conf {
   font-family: var(--font-stencil);
+  -webkit-text-stroke: 0.04em currentColor;
+  paint-order: stroke fill;
   font-weight: 900;
   font-size: clamp(1.7rem, 8vw, 2.3rem);
   line-height: 1;
@@ -400,14 +404,8 @@
     padding-top: 7rem;
   }
 }
-.lockup :global(.hero-post) {
-  animation-delay: 5200ms;
-}
 .lockup :global(.hero-paint) {
-  animation-delay: 5380ms;
-}
-.lockup :global(.hero-chalk) {
-  animation-delay: 5700ms;
+  animation-delay: 5200ms;
 }
 
 .skip {

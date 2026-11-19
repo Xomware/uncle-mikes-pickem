@@ -196,13 +196,22 @@
   box-shadow: 0 1px 0 oklch(1 0 0 / 0.05) inset, 0 12px 28px -14px oklch(0.1 0.03 160 / 0.9);
 }
 
-/* Paint on grass: stencil letters, chalk white, scuffed by the worn mask. */
+/* Paint on grass: varsity letters, chalk white, scuffed by the worn mask. */
 @utility paint {
   font-family: var(--font-stencil);
   font-weight: 900;
   text-transform: uppercase;
   color: var(--chalk);
+  -webkit-text-stroke: 0.04em currentColor;
+  paint-order: stroke fill;
   text-shadow: 0.04em 0.05em 0 oklch(0.2 0.05 150 / 0.55);
+}
+
+/* Graduate is a single light weight; a stroke in the text colour brings it up to
+   the logo's block letters wherever the varsity face is used. */
+.font-stencil {
+  -webkit-text-stroke: 0.04em currentColor;
+  paint-order: stroke fill;
 }
 
 /* Scuffs out flecks of paint or chalk, like a field late in the season. */

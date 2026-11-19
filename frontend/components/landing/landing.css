@@ -125,23 +125,11 @@ html[data-intro="play"] {
   }
 }
 
-.hero-post {
-  animation: hero-drop 700ms cubic-bezier(0.3, 1.4, 0.5, 1) 300ms backwards;
-}
 .hero-paint {
   animation: hero-stamp 520ms cubic-bezier(0.2, 0.8, 0.3, 1.2) 500ms backwards;
 }
-.hero-chalk {
-  animation: lx-wipe 700ms ease-out 900ms backwards;
-}
 .hero-rise {
   animation: lx-rise 600ms ease-out var(--d, 1100ms) backwards;
-}
-@keyframes hero-drop {
-  from {
-    opacity: 0;
-    transform: translateY(-60px);
-  }
 }
 @keyframes hero-stamp {
   from {

@@ -76,7 +76,8 @@ class Face:
         return self.cap * size / self.upem
 
 
-STENCIL = Face("big-shoulders-stencil.woff2", 900)
+# The site moved to Graduate; the generated marks keep the stencil face, kept here.
+STENCIL = Face(Path(__file__).parent / "big-shoulders-stencil.woff2", 900)
 HEAD = Face("big-shoulders.woff2", 700)
 HEAD_X = Face("big-shoulders.woff2", 800)
 LED = Face("doto.woff2", 900)
