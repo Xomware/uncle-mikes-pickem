@@ -14,7 +14,9 @@ const body = localFont({
   ],
 });
 const heading = localFont({ variable: "--font-heading", src: "./fonts/big-shoulders.woff2", weight: "600 800" });
-const stencil = localFont({ variable: "--font-stencil", src: "./fonts/big-shoulders-stencil.woff2", weight: "800 900" });
+// Graduate ships one weight. Declaring the full range stops the browser faking
+// bold over the font-black classes; the paint utility thickens it with a stroke.
+const stencil = localFont({ variable: "--font-stencil", src: "./fonts/graduate.woff2", weight: "100 900" });
 const led = localFont({ variable: "--font-led", src: "./fonts/doto.woff2", weight: "800 900" });
 
 export const metadata: Metadata = {
@@ -28,7 +30,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "Uncle Mike's NFL Pick Em",
-    images: [{ url: "/brand/og.png", width: 1200, height: 630, alt: "Uncle Mike's Pick Em, painted in an end zone" }],
+    images: [{ url: "/brand/og.png", width: 1200, height: 630, alt: "Uncle Mike's Pick Em" }],
   },
   twitter: { card: "summary_large_image" },
 };
