@@ -76,10 +76,7 @@ class Face:
         return self.cap * size / self.upem
 
 
-# The site moved to Graduate; the generated marks keep the stencil face, kept here.
-STENCIL = Face(Path(__file__).parent / "big-shoulders-stencil.woff2", 900)
-HEAD = Face("big-shoulders.woff2", 700)
-HEAD_X = Face("big-shoulders.woff2", 800)
+VARSITY = Face("graduate.woff2", 400)
 LED = Face("doto.woff2", 900)
 
 
@@ -92,10 +89,14 @@ def goalpost(x, y, h, color, pylon=True):
             f'<path d="M16 39V30c0-3-2-4-2-6"/><path d="M5 22h22M5 22V2.5M27 22V2.5"/></g>{flags}</g>')
 
 
-def painted(d, fill, shadow, dx, dy):
-    """Stencil paint with the hero's goalpost-yellow offset shadow."""
-    sh = f'<path d="{d}" fill="{shadow}" transform="translate({dx:.2f} {dy:.2f})"/>' if shadow else ""
-    return sh + f'<path d="{d}" fill="{fill}"/>'
+def painted(d, fill, edge, size):
+    """The primary logo's lettering: a black keyline, an edge colour, and the fill
+    stroked in its own colour to bring Graduate up to the logo's block weight."""
+    out = ""
+    if edge:
+        out += f'<path d="{d}" fill="none" stroke="#000" stroke-width="{size * 0.2:.1f}" stroke-linejoin="round"/>'
+        out += f'<path d="{d}" fill="none" stroke="{edge}" stroke-width="{size * 0.11:.1f}" stroke-linejoin="round"/>'
+    return out + f'<path d="{d}" fill="{fill}" stroke="{fill}" stroke-width="{size * 0.045:.1f}" stroke-linejoin="round"/>'
 
 
 def svg(w, h, body, title):
@@ -114,50 +115,52 @@ def endzone_bg(w, h, rx=0, goal_line=True):
 
 
 def chalk_line(text, cx, y, size, color, rule):
-    d, w = HEAD.text(text, size, cx, y, track=0.5, anchor="middle")
-    cap = HEAD.cap_px(size)
-    gap, rl = size * 0.9, rule
-    ry = y - cap / 2 - size * 0.05
-    rules = (f'<rect x="{cx - w / 2 - gap - rl:.1f}" y="{ry:.1f}" width="{rl}" height="{size * 0.12:.1f}" fill="{color}"/>'
-             f'<rect x="{cx + w / 2 + gap:.1f}" y="{ry:.1f}" width="{rl}" height="{size * 0.12:.1f}" fill="{color}"/>')
-    return f'<path d="{d}" fill="{color}"/>' + rules
+    d, w = VARSITY.text(text, size, cx, y, track=0.3, anchor="middle")
+    cap = VARSITY.cap_px(size)
+    gap = size * 0.7
+    ry = y - cap / 2 - size * 0.06
+    rules = (f'<rect x="{cx - w / 2 - gap - rule:.1f}" y="{ry:.1f}" width="{rule}" height="{size * 0.12:.1f}" fill="{color}"/>'
+             f'<rect x="{cx + w / 2 + gap:.1f}" y="{ry:.1f}" width="{rule}" height="{size * 0.12:.1f}" fill="{color}"/>')
+    return painted(d, color, None, size) + rules
 
 
-# 1. Stacked lockup: goalpost, UNCLE / MIKE'S, - PICK EM -
-def stacked(fill, shadow, sub, post, bg=None, name="lockup-stacked"):
-    W, size = 760, 230
-    cap = STENCIL.cap_px(size)
-    top = 40 + 150 + 40
+# 1. Stacked, one-colour ink for print. The full-colour stacked logo is Dom's
+# artwork (logo-primary.png); this redraws its shape for paper.
+def stacked_ink():
+    size, pad = 200, 40
+    cap = VARSITY.cap_px(size)
+    top = pad + 200 + 40
     l1y, l2y = top + cap, top + cap * 2 + size * 0.16
-    d1, _ = STENCIL.text("UNCLE", size, W / 2, l1y, track=0.0, anchor="middle")
-    d2, _ = STENCIL.text("MIKE'S", size, W / 2, l2y, track=0.0, anchor="middle")
-    subY = l2y + 110
-    H = subY + 46
-    body = (endzone_bg(W, H + 10, rx=0) if bg else "")
-    body += goalpost(W / 2 - 60, 40, 150, post)
-    body += painted(d1, fill, shadow, size * 0.035, size * 0.045) + painted(d2, fill, shadow, size * 0.035, size * 0.045)
-    body += chalk_line("PICK EM", W / 2, subY, 62, sub, 80)
-    (OUT / f"{name}.svg").write_text(svg(W, H + (10 if bg else 0), body, "Uncle Mike's Pick Em"))
+    _, w1 = VARSITY.text("UNCLE", size, 0, 0)
+    _, w2 = VARSITY.text("MIKE’S", size, 0, 0)
+    W = max(w1, w2) + pad * 2 + size * 0.1
+    d1, _ = VARSITY.text("UNCLE", size, W / 2, l1y, anchor="middle")
+    d2, _ = VARSITY.text("MIKE’S", size, W / 2, l2y, anchor="middle")
+    subY = l2y + 100
+    H = subY + pad
+    body = goalpost(W / 2 - 80, pad, 200, C["ink"], pylon=False)
+    body += painted(d1, C["ink"], None, size) + painted(d2, C["ink"], None, size)
+    body += chalk_line("PICK EM", W / 2, subY, 60, C["ink"], 90)
+    (OUT / "lockup-stacked-ink.svg").write_text(svg(W, H, body, "Uncle Mike's Pick Em"))
 
 
-stacked(C["chalk"], C["goalpost"], C["chalk"], C["goalpost"])
-stacked(C["chalk"], C["goalpost"], C["chalk"], C["goalpost"], bg=True, name="lockup-stacked-endzone")
-stacked(C["ink"], None, C["ink"], C["ink"], name="lockup-stacked-ink")
+stacked_ink()
 
 
-# 2. Horizontal lockup (the nav): goalpost | UNCLE MIKE'S over P I C K  E M
-def horizontal(fill, shadow, sub, post, name):
-    size = 150
-    cap = STENCIL.cap_px(size)
-    gx, gh = 20, 190
-    tx = gx + gh * 0.8 + 40
-    y1 = 30 + cap
-    d1, w1 = STENCIL.text("UNCLE MIKE'S", size, tx, y1)
-    sub_size = 64
-    d2, w2 = HEAD.text("PICK EM", sub_size, tx + 4, y1 + 30 + HEAD.cap_px(sub_size), track=0.62)
-    W, H = tx + max(w1, w2) + 40, y1 + 30 + HEAD.cap_px(sub_size) + 34
-    body = goalpost(gx, (H - gh) / 2, gh, post) + painted(d1, fill, shadow, size * 0.035, size * 0.045)
-    body += f'<path d="{d2}" fill="{sub}"/>'
+# 2. Horizontal lockup (nav, email): goalpost | UNCLE MIKE’S over PICK EM
+def horizontal(fill, edge, sub, post, name):
+    size = 130
+    cap = VARSITY.cap_px(size)
+    gx, gh = 30, 190
+    tx = gx + gh * 0.8 + 50
+    y1 = 46 + cap
+    d1, w1 = VARSITY.text("UNCLE MIKE’S", size, tx, y1)
+    sub_size = 58
+    y2 = y1 + 40 + VARSITY.cap_px(sub_size)
+    d2, w2 = VARSITY.text("PICK EM", sub_size, tx + 4, y2, track=0.55)
+    W, H = tx + max(w1, w2) + 46, y2 + 40
+    body = goalpost(gx, (H - gh) / 2, gh, post, pylon=edge is not None)
+    body += painted(d1, fill, edge, size) + painted(d2, sub, edge and "#000", sub_size)
     (OUT / f"{name}.svg").write_text(svg(W, H, body, "Uncle Mike's Pick Em"))
 
 
@@ -165,15 +168,16 @@ horizontal(C["chalk"], C["goalpost"], C["chalk"], C["goalpost"], "lockup-horizon
 horizontal(C["ink"], None, C["ink"], C["ink"], "lockup-horizontal-ink")
 
 
-# 3. App icon: end zone tile, UM monogram painted on it.
+# 3. App icon: end zone tile, UM in the logo's lettering.
 def icon_monogram():
     S = 512
     body = endzone_bg(S, S, rx=112, goal_line=False)
     body += f'<rect x="0" y="{S - 70}" width="{S}" height="22" fill="{C["chalk"]}" clip-path="url(#ez)"/>'
-    size = 290
-    cap = STENCIL.cap_px(size)
-    d, _ = STENCIL.text("UM", size, S / 2 - 6, (S - 70) / 2 + cap / 2 + 4, track=0.02, anchor="middle")
-    body += painted(d, C["chalk"], C["goalpost"], size * 0.035, size * 0.045)
+    _, w = VARSITY.text("UM", 100, 0, 0)
+    size = 100 * 330 / w
+    cap = VARSITY.cap_px(size)
+    d, _ = VARSITY.text("UM", size, S / 2, (S - 70) / 2 + cap / 2 + 6, anchor="middle")
+    body += painted(d, C["chalk"], C["goalpost"], size)
     (OUT / "icon-monogram.svg").write_text(svg(S, S, body, "Uncle Mike's Pick Em"))
 
 
@@ -191,20 +195,21 @@ icon_monogram()
 icon_goalpost()
 
 
-# 4. Sudden Death: LED OVERTIME over blood-red stencil, on a night board or clear.
+# 4. Sudden Death: LED OVERTIME over blood-red varsity, on a night board or clear.
 def sudden(name, board):
-    W, size = 900, 210
-    cap = STENCIL.cap_px(size)
-    led, _ = LED.text("OVERTIME", 56, W / 2, 40 + LED.cap_px(56), track=0.32, anchor="middle")
-    y1 = 40 + LED.cap_px(56) + 40 + cap
-    d1, _ = STENCIL.text("SUDDEN", size, W / 2, y1, anchor="middle")
-    d2, _ = STENCIL.text("DEATH", size, W / 2, y1 + cap + size * 0.08, anchor="middle")
-    H = y1 + cap + size * 0.08 + 56
-    bgd = (f'<rect width="{W}" height="{H}" rx="24" fill="{C["night"]}"/>'
-           f'<rect x="0" y="0" width="{W}" height="10" fill="{C["blood"]}"/>') if board else ""
+    size, pad = 190, 56
+    cap = VARSITY.cap_px(size)
+    _, w = VARSITY.text("SUDDEN", size, 0, 0)
+    W = w + pad * 2 + size * 0.2
+    led, _ = LED.text("OVERTIME", 56, W / 2, 44 + LED.cap_px(56), track=0.32, anchor="middle")
+    y1 = 44 + LED.cap_px(56) + 52 + cap
+    d1, _ = VARSITY.text("SUDDEN", size, W / 2, y1, anchor="middle")
+    d2, _ = VARSITY.text("DEATH", size, W / 2, y1 + cap + size * 0.2, anchor="middle")
+    H = y1 + cap + size * 0.2 + pad
+    bgd = (f'<rect width="{W:.0f}" height="{H:.0f}" rx="24" fill="{C["night"]}"/>'
+           f'<rect width="{W:.0f}" height="10" fill="{C["blood"]}"/>') if board else ""
     body = bgd + f'<path d="{led}" fill="{C["led"]}"/>'
-    shadow = "#000000"
-    body += painted(d1, C["blood"], shadow, size * 0.03, size * 0.04) + painted(d2, C["blood"], shadow, size * 0.03, size * 0.04)
+    body += painted(d1, C["blood"], "#000", size) + painted(d2, C["blood"], "#000", size)
     (OUT / f"{name}.svg").write_text(svg(W, H, body, "Sudden Death"))
 
 
@@ -214,12 +219,14 @@ sudden("sudden-death-board", True)
 
 # 5. Confidence chip: the 16 tile from the pick sheet.
 def chip():
-    S, size = 240, 190
-    d, _ = STENCIL.text("16", size, S / 2, S / 2 + STENCIL.cap_px(size) / 2 - 8, anchor="middle")
+    S = 240
+    _, w = VARSITY.text("16", 100, 0, 0)
+    size = 100 * 160 / w
+    d, _ = VARSITY.text("16", size, S / 2, S / 2 + VARSITY.cap_px(size) / 2 - 8, anchor="middle")
     body = (f'<rect width="{S}" height="{S}" rx="28" fill="{C["ink"]}"/>'
             f'<defs><clipPath id="c"><rect width="{S}" height="{S}" rx="28"/></clipPath></defs>'
             f'<rect y="{S - 16}" width="{S}" height="16" fill="{C["chalk"]}" clip-path="url(#c)"/>'
-            f'<path d="{d}" fill="{C["goalpost"]}"/>')
+            + painted(d, C["goalpost"], None, size))
     (OUT / "mark-confidence-16.svg").write_text(svg(S, S, body, "Confidence 16"))
 
 

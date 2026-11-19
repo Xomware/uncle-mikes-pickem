@@ -16,6 +16,10 @@ import { chromium } from "playwright-core";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = join(ROOT, "public/brand");
+const logo = (name) => {
+  const type = name.endsWith(".svg") ? "image/svg+xml" : "image/png";
+  return `data:${type};base64,${readFileSync(join(OUT, "logos", name)).toString("base64")}`;
+};
 const art = (name) => `url("data:image/svg+xml;base64,${readFileSync(join(ROOT, "app/art", name)).toString("base64")}")`;
 
 // The day palette from globals.css, as hex for the PNG pages.
@@ -35,7 +39,7 @@ const C = {
 };
 
 const FONTS =
-  "https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil:wght@900&family=Big+Shoulders:wght@800&display=block";
+  "https://fonts.googleapis.com/css2?family=Graduate&family=Big+Shoulders:wght@800&display=block";
 
 const goalpost = (color = C.yellow) => `
   <svg viewBox="0 0 32 40" fill="none">
@@ -55,10 +59,6 @@ const BASE_CSS = `
       ${art("grass.svg")} 0 0 / 240px 240px,
       repeating-linear-gradient(to bottom, ${C.turf1} 0 calc(var(--y) * 5), ${C.turf2} 0 calc(var(--y) * 10));
   }
-  .paint {
-    font-family: "Big Shoulders Stencil"; font-weight: 900; text-transform: uppercase; color: ${C.chalk};
-    -webkit-mask-image: ${art("worn.svg")}; -webkit-mask-size: 180px;
-  }
   .chalk { font-family: "Big Shoulders"; font-weight: 800; text-transform: uppercase; color: ${C.chalk}; }
   .center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
 `;
@@ -68,23 +68,11 @@ const page = (w, h, body, css = "") => `<!doctype html><html><head>
   <style>:root { --w: ${w}px; --h: ${h}px; --s: 1; --y: 24px; } ${BASE_CSS} ${css}</style>
   </head><body>${body}</body></html>`;
 
-const wordmark = (px, shadow = true) => `
-  <div class="paint" style="font-size:${px}px;line-height:.86;letter-spacing:.01em;${shadow ? `text-shadow:.035em .045em 0 ${C.yellow}` : ""}">Uncle Mike's</div>`;
-
 const og = page(
   1200,
   630,
-  `<div class="endzone center" style="height:440px;border-bottom:12px solid ${C.chalk}">
-      <div style="width:64px;height:80px">${goalpost()}</div>
-      <div style="margin-top:14px">${wordmark(188)}</div>
-      <div class="chalk" style="margin-top:18px;font-size:48px;letter-spacing:.5em;display:flex;align-items:center;gap:28px">
-        <span style="width:90px;height:5px;background:${C.chalk}"></span>Pick Em<span style="width:90px;height:5px;background:${C.chalk}"></span>
-      </div>
-    </div>
-    <div class="turf center" style="height:190px">
-      <div class="chalk" style="font-size:34px;letter-spacing:.24em;background:${C.board};padding:14px 30px;border-radius:8px;box-shadow:0 0 0 4px #000,0 0 0 6px #4a4238">
-        Confidence picks <span style="color:${C.yellow}">&middot;</span> Sudden death
-      </div>
+  `<div class="endzone center" style="height:630px;border-bottom:12px solid ${C.chalk}">
+      <img src="${logo("logo-primary.png")}" style="height:540px;filter:drop-shadow(0 0 30px #f5cf2a55)">
     </div>`,
 );
 
@@ -92,12 +80,8 @@ const og = page(
 const emailHeader = page(
   1200,
   300,
-  `<div class="endzone center" style="height:300px;flex-direction:row;gap:30px">
-      <div style="width:72px;height:90px">${goalpost()}</div>
-      <div style="display:flex;flex-direction:column;align-items:flex-start">
-        ${wordmark(132)}
-        <div class="chalk" style="margin-top:10px;font-size:40px;letter-spacing:.56em">Pick Em</div>
-      </div>
+  `<div class="endzone center" style="height:300px">
+      <img src="${logo("lockup-horizontal.svg")}" style="height:210px">
     </div>`,
 );
 
@@ -114,7 +98,7 @@ const suddenDeathHeader = page(
       <div class="chalk" style="font-size:34px;letter-spacing:.6em;color:${C.flood};display:flex;align-items:center;gap:24px">
         <span style="width:70px;height:5px;background:${C.blood}"></span>Overtime<span style="width:70px;height:5px;background:${C.blood}"></span>
       </div>
-      <div style="font-family:'Big Shoulders Stencil';font-weight:900;font-size:150px;line-height:.9;text-transform:uppercase;color:${C.blood};text-shadow:0 0 36px #e8433a99">Sudden death</div>
+      <div style="font-family:Graduate;font-size:118px;line-height:1.05;text-transform:uppercase;color:${C.blood};-webkit-text-stroke:5px ${C.blood};paint-order:stroke fill;text-shadow:0 0 36px #e8433a99">Sudden death</div>
       <div class="chalk" style="font-size:24px;letter-spacing:.4em;color:${C.flood};opacity:.8;margin-top:6px">Uncle Mike's Pick Em</div>
     </div>`,
 );
@@ -163,7 +147,9 @@ async function shot(html, w, h, scale, transparent = false) {
 mkdirSync(OUT, { recursive: true });
 writeFileSync(join(OUT, "icon.svg"), iconSvg(12));
 writeFileSync(join(OUT, "favicon.ico"), ico(await shot(iconPage(32, 12), 32, 32, 1, true), 32));
-writeFileSync(join(OUT, "apple-touch-icon.png"), await shot(iconPage(180, 0), 180, 180, 1));
+// The UM tile on its own end zone colour, so the square iOS crop has no corners to fill.
+const touchIcon = `<body style="margin:0;background:${C.end1}"><img src="${logo("icon-monogram.svg")}" width="180" height="180" style="display:block">`;
+writeFileSync(join(OUT, "apple-touch-icon.png"), await shot(touchIcon, 180, 180, 1));
 writeFileSync(join(OUT, "og.png"), await shot(og, 1200, 630, 1));
 writeFileSync(join(OUT, "email-header.png"), await shot(emailHeader, 1200, 300, 1));
 writeFileSync(join(OUT, "email-header-sudden-death.png"), await shot(suddenDeathHeader, 1200, 300, 1));
