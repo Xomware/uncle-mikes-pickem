@@ -23,7 +23,7 @@ export function Brand({ href, className }: BrandProps) {
         alt="Uncle Mike's Pick Em, home"
         width={411}
         height={132}
-        className="h-11 w-auto"
+        className="h-8 w-auto sm:h-11"
       />
     </Link>
   );
