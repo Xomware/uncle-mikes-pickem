@@ -3,7 +3,7 @@
 // sessionStorage, so a stale target can't hijack an unrelated sign-in days later.
 
 const NEXT_KEY = "pickem.next";
-export const DEFAULT_NEXT = "/groups/";
+export const DEFAULT_NEXT = "/slate/";
 
 // Same-origin paths only: a leading "//" or a backslash would make this an open redirect.
 export function isSafePath(value: string | null | undefined): value is string {
