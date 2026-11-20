@@ -4,6 +4,7 @@
 locals {
   me_lambdas = [
     { name = "profile", description = "Upsert and return the caller's profile from the ID token", path_part = "profile", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+    { name = "stats", description = "Read the caller's season stats in one group (?id=)", path_part = "stats", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
   ]
   groups_lambdas = [
     { name = "create", description = "Create a group with the caller as owner", path_part = "create", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
@@ -120,6 +121,7 @@ locals {
   # One line per key: merge conflicts here are resolved by keeping both lines.
   api_grants = {
     me_profile     = ["app:UpdateItem"]
+    me_stats       = ["app:GetItem", "app:Query", "nfl:GetItem", "nfl:Query"]
     groups_create  = ["app:GetItem", "app:PutItem", "nfl:GetItem"]
     groups_mine    = ["app_index:Query"]
     groups_get     = ["app:Query", "nfl:GetItem"]

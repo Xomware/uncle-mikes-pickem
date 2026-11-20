@@ -4,6 +4,7 @@ import { CircleAlert, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { EmailPrefs } from "@/components/profile/email-prefs";
+import { MyStatsSection } from "@/components/profile/my-stats";
 import { Button } from "@/components/ui/button";
 import { getProfile, type Profile } from "@/lib/api/client";
 
@@ -32,9 +33,9 @@ export function ProfileView() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
-      <h1 className="paint worn mt-1 text-5xl leading-none sm:text-6xl">Profile</h1>
-      <section aria-live="polite" aria-busy={load.status === "loading"} className="mt-6 panel p-5">
+    <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-x-6 px-4 py-8 sm:px-6 lg:grid-cols-3 lg:grid-rows-[auto_auto_1fr] lg:items-start">
+      <h1 className="paint worn mt-1 text-5xl leading-none sm:text-6xl lg:col-span-3">Profile</h1>
+      <section aria-live="polite" aria-busy={load.status === "loading"} className="mt-6 panel p-5 lg:col-start-1">
         {load.status === "loading" && <ProfileSkeleton />}
         {load.status === "error" && (
           <div role="alert">
@@ -51,7 +52,12 @@ export function ProfileView() {
         )}
         {load.status === "ready" && <ProfileDetails profile={load.profile} />}
       </section>
-      <EmailPrefs />
+      <div className="mt-8 min-w-0 lg:col-span-2 lg:col-start-2 lg:row-span-2 lg:row-start-2 lg:mt-6">
+        <MyStatsSection />
+      </div>
+      <div className="min-w-0 lg:col-start-1">
+        <EmailPrefs />
+      </div>
     </div>
   );
 }
