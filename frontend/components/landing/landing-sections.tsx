@@ -138,8 +138,9 @@ export function SuddenDeath() {
     <section id="sudden-death" aria-labelledby="sd-title" className="night scroll-mt-16 py-16 lg:py-24">
       <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-16">
         <div>
-          <Heading id="sd-title" eyebrow="The death pool" className="text-blood [text-shadow:0.035em_0.045em_0_oklch(0.1_0.02_20)]">
-            Sudden Death
+          <Heading id="sd-title" eyebrow="The death pool">
+            {/* eslint-disable-next-line @next/next/no-img-element -- static export, no image optimizer */}
+            <img src="/brand/sudden-death.webp" alt="Sudden Death" width={1056} height={527} className="h-auto w-full max-w-md" />
           </Heading>
           <p className="mt-5 max-w-prose text-lg leading-relaxed" {...reveal(1)}>
             Runs alongside the pick-em with its own pot. One team a week. Win and you&apos;re through.
