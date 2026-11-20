@@ -1,19 +1,29 @@
 "use client";
 
-import { useCallback } from "react";
+import { type CSSProperties, useCallback } from "react";
 
 import { LoadError } from "@/components/load-error";
-import { Blank, Paper, SheetTeam, dollars } from "@/components/sheets/paper";
-import { type GroupDetail, type Team, type WeekView, getGroup, getWeek } from "@/lib/api/client";
+import { TeamLogo } from "@/components/field/team-logo";
+import { Blank, Paper, dollars } from "@/components/sheets/paper";
+import {
+  type GroupDetail,
+  type Team,
+  type WeekView,
+  getGroup,
+  getWeek,
+} from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
 import { useAuth } from "@/lib/auth/use-auth";
-import { picksHref, spreadText } from "@/lib/picks";
-import { byeTeams, easternTime, gameDates, slotName, slots } from "@/lib/sheet";
+import { picksHref } from "@/lib/picks";
+import { byeTeams, deadline, gameDates, slotName, slots } from "@/lib/sheet";
 import { cn } from "@/lib/utils";
 
 /** The weekly pick sheet laid out like Uncle Mike's paper one: blank before picks, filled after. */
 export function WeekSheet({ id, week }: { id: string; week?: number }) {
-  const fetcher = useCallback(() => Promise.all([getWeek(id, week), getGroup(id)]), [id, week]);
+  const fetcher = useCallback(
+    () => Promise.all([getWeek(id, week), getGroup(id)]),
+    [id, week],
+  );
   const { load, retry } = useLoad(fetcher);
   const back = picksHref(id, week);
 
@@ -21,7 +31,11 @@ export function WeekSheet({ id, week }: { id: string; week?: number }) {
   if (load.status === "error") {
     return (
       <div className="mx-auto w-full max-w-3xl px-4 py-6">
-        <LoadError title="Couldn't load the sheet" message={load.message} onRetry={retry} />
+        <LoadError
+          title="Couldn't load the sheet"
+          message={load.message}
+          onRetry={retry}
+        />
       </div>
     );
   }
@@ -35,7 +49,10 @@ export function WeekSheet({ id, week }: { id: string; week?: number }) {
 
 export function SheetLoading() {
   return (
-    <div className="mx-auto w-full max-w-3xl animate-pulse space-y-3 px-4 py-6" aria-busy="true">
+    <div
+      className="mx-auto w-full max-w-3xl animate-pulse space-y-3 px-4 py-6"
+      aria-busy="true"
+    >
       <span className="block h-11 w-40 rounded bg-muted" />
       <span className="block h-[32rem] rounded-sm bg-muted" />
       <span className="sr-only">Loading the sheet</span>
@@ -43,83 +60,116 @@ export function SheetLoading() {
   );
 }
 
+// The paper sheet's own tags: Thursday and the night games get a bar, Sunday afternoon doesn't.
+const BAR: Record<string, string> = {
+  "MONDAY NIGHT GAME": "*MONDAY NIGHT GAME *",
+};
+const barText = (label: string) => BAR[label] ?? `*** ${label} ***`;
+const barred = (label: string) => !label.startsWith("SUNDAY GAME");
+
+const firstName = (name: string | undefined) =>
+  name?.split(" ")[0]?.toUpperCase() ?? "YOUR ORGANIZER";
+
 function SheetBody({ view, detail }: { view: WeekView; detail: GroupDetail }) {
   const auth = useAuth();
   const { week, games, gow, mine } = view;
   const { fees } = detail.rules;
   const open = games.filter((g) => !g.canceled).length;
   const tiebreak = games.find((g) => g.gameId === week.tiebreakGameId);
-  const teams: Record<string, Team> = Object.fromEntries(games.flatMap((g) => [g.away, g.home]).map((t) => [t.abbr, t]));
   const byes = byeTeams(games);
-  const name = view.members.find((m) => m.sub === mine?.sub)?.name ?? (auth.status === "signedIn" ? auth.name : null);
-  const feeText = [`${dollars(fees.weekly)} WEEKLY`, `${dollars(fees.yearly)} YEARLY`];
-  if (fees.death > 0) feeText.push(`${dollars(fees.death)} DEATH POOL`);
+  const groups = slots(games, gow?.gameId ?? null);
+  const name =
+    view.members.find((m) => m.sub === mine?.sub)?.name ??
+    (auth.status === "signedIn" ? auth.name : null);
+  const organizer = firstName(
+    detail.members.find((m) => m.sub === detail.group.ownerSub)?.name,
+  );
+  const total = mine
+    ? Object.values(mine.picks).reduce(
+        (sum, p) => sum + (p.team ? p.conf : 0),
+        0,
+      )
+    : null;
+  // Rows share the page height left after the title and the footer, so 16 games still print on one sheet.
+  const rows = games.length + groups.filter((g) => barred(g.label)).length;
 
   return (
-    <div className="text-sm leading-snug uppercase print:text-[10.5pt]">
-      <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-1 border-b-2 border-(--ink) pb-2">
-        <div>
-          <p className="text-xs font-semibold tracking-[0.2em] text-(--ink-soft)">
-            Uncle Mike&apos;s NFL Pick Em · {view.group.name}
-          </p>
-          <h1 className="text-3xl font-bold">
-            Week {week.week} <span className="text-lg font-semibold">{gameDates(games)}</span>
-          </h1>
-        </div>
-        <p className="font-semibold">{feeText.join(" / ")}</p>
-      </header>
+    <div
+      className="font-[Helvetica,Arial,sans-serif] text-sm leading-tight font-bold uppercase print:text-[10pt]"
+      style={{ "--row": `calc(6.9in / ${rows})` } as CSSProperties}
+    >
+      <h1 className="text-center font-[Helvetica,Arial,sans-serif] text-xl font-bold print:text-[15pt]">
+        Week {week.week}&nbsp;&nbsp;{gameDates(games)}
+      </h1>
 
-      <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-        <p>
-          Name: <Blank value={name} className="min-w-48 normal-case" />
-        </p>
-        <p className="font-semibold">Number 1 to {open}</p>
-      </div>
-
-      <table className="mt-3 w-full border-collapse">
-        <thead className="text-xs text-(--ink-soft)">
-          <tr>
-            <th scope="col" className="text-left font-semibold">Game</th>
-            <th scope="col" className="text-left font-semibold">Line</th>
-            <th scope="col" className="text-right font-semibold">Pick</th>
-            <th scope="col" className="text-right font-semibold">
-              <abbr title="Confidence" className="no-underline">Conf</abbr>
-            </th>
-          </tr>
-        </thead>
-        {slots(games, gow?.gameId ?? null).map((slot) => (
-          <tbody key={slot.label + slot.games[0].gameId} className="break-inside-avoid">
-            <tr>
-              <th
-                colSpan={4}
-                scope="colgroup"
-                className={cn("pt-3 pb-1 text-left text-xs font-bold tracking-wider", slot.gow && "text-sm")}
-              >
-                *** {slot.label} ***
-              </th>
-            </tr>
+      <table className="mt-4 w-full table-fixed border-collapse">
+        <colgroup>
+          <col />
+          <col className="w-10" />
+          <col />
+          <col className="w-16" />
+          <col className="w-14 sm:w-40" />
+        </colgroup>
+        {groups.map((slot) => (
+          <tbody
+            key={slot.label + slot.games[0].gameId}
+            className="break-inside-avoid"
+          >
+            {barred(slot.label) && (
+              <tr>
+                <th
+                  colSpan={3}
+                  scope="colgroup"
+                  className="border border-(--ink) bg-(--bar) py-0.5 text-center print:h-(--row)"
+                >
+                  {barText(slot.label)}
+                </th>
+                <td className="border border-(--ink)" />
+                <td />
+              </tr>
+            )}
             {slot.games.map((g) => {
               const pick = mine?.picks[g.gameId];
+              const picked = pick?.team || null;
               return (
-                <tr key={g.gameId} className={cn("border-b border-(--rule)", g.canceled && "text-(--ink-soft)")}>
-                  <td className={cn("py-1 pr-2 font-semibold whitespace-nowrap", g.canceled && "line-through")}>
-                    <SheetTeam team={g.away} /> @ <SheetTeam team={g.home} />
-                  </td>
-                  <td className="py-1 pr-2 whitespace-nowrap text-(--ink-soft)">{spreadText(g) ?? ""}</td>
-                  {g.canceled ? (
-                    <td colSpan={2} className="py-1 text-right text-xs font-semibold">
-                      Canceled
-                    </td>
-                  ) : (
-                    <>
-                      <td className="py-1 text-right">
-                        <Blank value={pick?.team ? <SheetTeam team={teams[pick.team] ?? { abbr: pick.team }} /> : undefined} className="w-18" />
-                      </td>
-                      <td className="py-1 pl-2 text-right">
-                        <Blank value={pick?.team ? pick.conf : undefined} className="w-10" />
-                      </td>
-                    </>
+                <tr
+                  key={g.gameId}
+                  className={cn(
+                    "h-14 print:h-(--row)",
+                    g.canceled && "text-(--ink-soft)",
                   )}
+                >
+                  <td className="border-y border-l border-(--ink) text-center">
+                    <PaperLogo team={g.away} circled={picked === g.away.abbr} />
+                  </td>
+                  <td
+                    className={cn(
+                      "border-y border-(--ink) pt-3 text-center text-base",
+                      g.canceled && "line-through",
+                    )}
+                  >
+                    @
+                  </td>
+                  <td className="border-y border-r border-(--ink) text-center">
+                    <PaperLogo team={g.home} circled={picked === g.home.abbr} />
+                  </td>
+                  <td className="border border-(--ink) text-center text-2xl tabular-nums print:text-[18pt]">
+                    {g.canceled ? (
+                      <span className="text-[0.6rem]">Canceled</span>
+                    ) : picked ? (
+                      pick?.conf
+                    ) : null}
+                  </td>
+                  <td className="pl-2 text-xs whitespace-nowrap print:text-[9pt]">
+                    {slot.gow && (
+                      <>
+                        <span className="sm:hidden">&lt;GOW</span>
+                        <span className="max-sm:hidden">
+                          &lt;Game of the week
+                        </span>
+                      </>
+                    )}
+                  </td>
                 </tr>
               );
             })}
@@ -127,34 +177,108 @@ function SheetBody({ view, detail }: { view: WeekView; detail: GroupDetail }) {
         ))}
       </table>
 
-      <div className="mt-4 space-y-2">
+      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 font-normal">
+        <span className="text-base">Bye teams:</span>
+        {byes.length ? (
+          byes.map((abbr) => <PaperLogo key={abbr} team={{ abbr }} />)
+        ) : (
+          <span>None</span>
+        )}
+      </div>
+
+      <p className="mt-4 flex items-baseline justify-center gap-6 text-xs print:text-[9pt]">
+        <span>
+          Name: <Blank value={name} className="min-w-56 normal-case" />
+        </span>
+        <span className="text-base tabular-nums">{total ?? ""}</span>
+      </p>
+
+      <div className="mt-3 grid grid-cols-[auto_1fr] gap-x-8 gap-y-1.5 text-[0.7rem] print:text-[8pt]">
         <p>
-          Tiebreaker score
-          {tiebreak && (
-            <span className="text-(--ink-soft)">
-              {" "}
-              ({slotName(tiebreak)}: <SheetTeam team={tiebreak.away} /> @ <SheetTeam team={tiebreak.home} />)
-            </span>
+          <Blank className="w-16" /> {dollars(fees.weekly)} weekly
+        </p>
+        <p className="text-xs print:text-[9pt]">Number 1 to {open}</p>
+        <p>
+          <Blank className="w-16" /> {dollars(fees.yearly)} yearly
+        </p>
+        <p className="text-xs print:text-[9pt]">
+          Tiebreaker score (
+          {tiebreak ? (
+            <span className="normal-case">{titleCase(slotName(tiebreak))}</span>
+          ) : (
+            "Monday Night Game"
           )}
-          : <Blank value={mine?.tiebreak ?? undefined} className="w-14" />
+          ) : <Blank value={mine?.tiebreak ?? undefined} className="w-24" />
         </p>
-        <p>
-          Bye teams:{" "}
-          <span className="font-semibold">
-            {byes.length
-              ? byes.map((abbr, i) => (
-                  <span key={abbr}>
-                    {i > 0 && ", "}
-                    <SheetTeam team={{ abbr }} />
-                  </span>
-                ))
-              : "None"}
-          </span>
-        </p>
-        <p className="border-t-2 border-(--ink) pt-2 text-center font-bold">
-          {week.locked ? `Picks locked ${easternTime(week.lockAt)}` : `Please have your picks in by ${easternTime(week.lockAt)}`}
-        </p>
+        {fees.death > 0 && (
+          <p>
+            <Blank className="w-16" /> {dollars(fees.death)} sudden death
+          </p>
+        )}
+      </div>
+
+      <div className="mt-4 grid grid-cols-[1fr_auto] items-end gap-x-6 text-xs print:text-[9pt]">
+        <div className="text-center">
+          <p className="bg-[oklch(0.95_0.2_105)] py-0.5 text-[oklch(0.55_0.24_27)]">
+            Please have your picks in by{" "}
+            <Ordinal text={deadline(week.lockAt)} />
+          </p>
+          <p>No picks will be accepted after this time.</p>
+          <p>Any questions or concerns, call {organizer}</p>
+        </div>
+        {fees.death > 0 && (
+          <div className="text-[0.65rem] print:text-[7.5pt]">
+            <p>Sudden death pool team:</p>
+            <span className="mt-1 block h-6 w-36 border border-(--ink) bg-[oklch(0.84_0.09_55)]" />
+          </div>
+        )}
       </div>
     </div>
+  );
+}
+
+const titleCase = (s: string) =>
+  s.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+
+/** A team logo the size the paper prints them; a pick is circled the way a pen would. */
+function PaperLogo({
+  team,
+  circled = false,
+}: {
+  team: Team;
+  circled?: boolean;
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex size-10 items-center justify-center rounded-full border-2 border-transparent align-middle print:size-[min(0.42in,calc(var(--row)-3px))]",
+        circled && "border-(--ink)",
+      )}
+    >
+      <span className="size-7 print:size-[min(0.3in,calc(var(--row)-12px))]">
+        <TeamLogo
+          {...team}
+          loading="eager"
+          className="size-full drop-shadow-none"
+        />
+      </span>
+      <span className="sr-only">
+        {team.abbr}
+        {circled ? " (picked)" : ""}
+      </span>
+    </span>
+  );
+}
+
+/** The paper writes "19th" in lowercase inside an all-caps line. */
+function Ordinal({ text }: { text: string }) {
+  return text.split(/(?<=\d)(st|nd|rd|th)\b/).map((part, i) =>
+    i % 2 ? (
+      <span key={i} className="normal-case">
+        {part}
+      </span>
+    ) : (
+      part
+    ),
   );
 }

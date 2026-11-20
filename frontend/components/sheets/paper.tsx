@@ -18,6 +18,7 @@ const css = (landscape: boolean) => `
   --ink: oklch(0.22 0.02 255);
   --ink-soft: oklch(0.45 0.02 255);
   --rule: oklch(0.72 0.01 255);
+  --bar: oklch(0.86 0 0);
   --right: oklch(0.9 0.09 150);
   --wrong: oklch(0.89 0.07 25);
   print-color-adjust: exact;

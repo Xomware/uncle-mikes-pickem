@@ -91,6 +91,27 @@ export function easternTime(iso: string): string {
   return `${weekday.toUpperCase()} ${date} ${hour % 12 || 12}:${minute} ${hour < 12 ? "AM" : "PM"} ET`;
 }
 
+const paperDate = new Intl.DateTimeFormat("en-US", {
+  timeZone: ZONE,
+  weekday: "long",
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
+
+const ordinal = (n: number) => {
+  if (n % 100 >= 11 && n % 100 <= 13) return `${n}th`;
+  return `${n}${["th", "st", "nd", "rd"][n % 10] ?? "th"}`;
+};
+
+/** "NOON ON THURSDAY, NOV. 19th 2026", as the deadline line on the paper sheet reads. */
+export function deadline(iso: string): string {
+  const { hour, minute } = et(iso);
+  const p = Object.fromEntries(paperDate.formatToParts(new Date(iso)).map((x) => [x.type, x.value]));
+  const time = hour === 12 && minute === "00" ? "NOON" : `${hour % 12 || 12}:${minute} ${hour < 12 ? "AM" : "PM"}`;
+  return `${time} ON ${p.weekday.toUpperCase()}, ${p.month.toUpperCase()}. ${ordinal(Number(p.day))} ${p.year}`;
+}
+
 /** Open games in the paper sheet's order: the group grid's columns. */
 export const sheetGames = (view: WeekView) =>
   slots(view.games.filter((g) => !g.canceled), view.gow?.gameId ?? null).flatMap((s) => s.games);
