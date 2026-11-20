@@ -101,6 +101,16 @@
   --flood: oklch(0.96 0.015 240);
 }
 
+/* Phones carry the main nav as a tab bar on the bottom edge; anything pinned there sits above it. */
+:root {
+  --tabbar-h: 0px;
+}
+@media (width < 40rem) {
+  :root:has(nav[data-tabbar]) {
+    --tabbar-h: calc(3.5rem + env(safe-area-inset-bottom));
+  }
+}
+
 /* Night game. Scoped to the death pool; :has() flips the field behind it too. */
 .sudden-death,
 :root:has(.sudden-death) {
