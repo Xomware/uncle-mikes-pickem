@@ -1,6 +1,6 @@
 "use client";
 
-import { Binoculars, CalendarDays, LogOut, Shield, TriangleAlert, UserRound, UsersRound } from "lucide-react";
+import { Binoculars, CalendarDays, ListOrdered, LogOut, Shield, TriangleAlert, UserRound, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -16,6 +16,7 @@ const NAV = [
   { href: "/slate/", label: "Slate", icon: CalendarDays },
   { href: "/groups/", label: "Groups", icon: UsersRound },
   { href: "/teams/", label: "Teams", icon: Shield },
+  { href: "/leaderboard/", label: "Leaders", icon: ListOrdered },
   { href: "/profile/", label: "Profile", icon: UserRound },
 ];
 const PRESS_BOX = { href: "/super/", label: "Press Box", icon: Binoculars };
