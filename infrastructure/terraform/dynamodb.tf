@@ -29,7 +29,7 @@ resource "aws_dynamodb_table" "app" {
   range_key                   = "SK"
 
   attribute {
-    name = "PK" # USER#sub, GROUP#g, GROUP#g#S2027, GROUP#g#S2027#W05, INVITE#code
+    name = "PK" # USER#sub, GROUP#g, GROUP#g#S2027, GROUP#g#S2027#W05, INVITE#code, LEADERBOARD
     type = "S"
   }
   attribute {

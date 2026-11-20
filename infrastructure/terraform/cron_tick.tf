@@ -32,7 +32,7 @@ data "aws_iam_policy_document" "cron_tick" {
 
   # Auto GOW: scan for groups, read each group-week's canceled games, then a
   # conditional put. Regrade (common/results.py): query group and group-week
-  # partitions, put RESULT and STANDINGS, update DEATH entries.
+  # partitions, put RESULT and STANDINGS, update DEATH entries. Then put LEADERBOARD.
   statement {
     sid       = "AutoGowAndRegrade"
     actions   = ["dynamodb:Scan", "dynamodb:Query", "dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem"]

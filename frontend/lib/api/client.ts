@@ -456,6 +456,43 @@ export const getWeekResult = (groupId: string, week: number) =>
 export const getSeasonStandings = (groupId: string) =>
   request<SeasonStandings>(`/standings/season?id=${encodeURIComponent(groupId)}`);
 
+/** A player's best entry across their groups. Names are first name and last initial. */
+export interface LeaderRow {
+  /** null: too few graded picks to rank on pick %. */
+  rank: number | null;
+  name: string;
+  correct: number;
+  wrong: number;
+  ties: number;
+  /** Confidence points from right picks, GOW bonus excluded. */
+  points: number;
+  /** Weeks won: the weekly payout, MNF tiebreak included. */
+  won: number;
+  /** Only for a group the caller is in. */
+  group: string | null;
+  you: boolean;
+}
+
+export interface LeaderBoard {
+  /** The first page. */
+  rows: LeaderRow[];
+  /** The caller's row, wherever it ranks. */
+  me: LeaderRow | null;
+  players: number;
+}
+
+export interface Leaderboard {
+  season: number;
+  /** The latest graded week, which thisWeek covers. */
+  week: number;
+  minGraded: number;
+  overall: LeaderBoard;
+  thisWeek: LeaderBoard;
+}
+
+/** null until the first leaderboard is built. */
+export const getLeaderboard = () => request<Leaderboard | null>("/standings/global");
+
 /** P(this member wins the week) if the away side wins the game, and if home does. null: that side can't win. */
 export interface RootSplit {
   away: number | null;

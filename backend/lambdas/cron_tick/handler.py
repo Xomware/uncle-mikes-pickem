@@ -9,6 +9,8 @@ ticks then set the top-hype GOW for any group still without one past Tuesday noo
 A tick that changes a final regrades those weeks for every live group of the season;
 hourly and forced ticks regrade every locked week of every current group, which is
 what picks up replay clocks, new members and death picks (common/results.py).
+Hourly and forced ticks, and any tick that rewrote a RESULT, then rebuild the global
+leaderboard (common/leaderboard.py).
 Every tick that works writes a poll row to pickem-ops.
 """
 
@@ -22,7 +24,7 @@ from datetime import datetime, timedelta, timezone
 import boto3
 from boto3.dynamodb.conditions import Attr
 
-from lambdas.common import espn, finals, gow, hype, nfl_store, nflverse, results, runs, weeks
+from lambdas.common import espn, finals, gow, hype, leaderboard, nfl_store, nflverse, results, runs, weeks
 
 WINDOW_BEFORE = timedelta(minutes=15)
 # A suspended or postponed game never completes; don't let it hold the window open.
@@ -292,6 +294,9 @@ def handler(event, context):
         if mode != "live":
             result["gowAuto"] = auto_gow()
         result["regraded"] = regrade_groups(result["season"], result["finalsChanged"], sweep=mode != "live")
+        if mode != "live" or result["regraded"]:
+            table = dynamodb.Table(os.environ["APP_TABLE"])
+            result["leaderboard"] = leaderboard.refresh(table, all_groups(table), result["season"])
     except Exception as e:
         # The failed run is the row someone goes looking for; re-raise so Errors fires.
         runs.record("cron_tick", now, {"mode": mode, "error": f"{type(e).__name__}: {e}"})

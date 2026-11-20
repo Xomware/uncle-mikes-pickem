@@ -60,6 +60,7 @@ locals {
   ]
   standings_lambdas = [
     { name = "season", description = "Read a group's season standings (?id=)", path_part = "season", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+    { name = "global", description = "Read the leaderboard across every group", path_part = "global", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
   ]
   analytics_lambdas = [
     { name = "week", description = "Read a group-week's win odds and rooting guide (?groupId=&week=)", path_part = "week", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
@@ -158,6 +159,7 @@ locals {
     results_regrade  = ["app:GetItem", "app:Query", "app:PutItem", "app:UpdateItem", "nfl:GetItem", "nfl:Query", "ops:PutItem"]
     results_week     = ["app:GetItem", "app:Query"]
     standings_season = ["app:GetItem", "app:Query"]
+    standings_global = ["app:Query", "app_index:Query"]
     analytics_week   = ["app:GetItem", "app:Query"]
     analytics_season = ["app:GetItem", "app:Query"]
 
