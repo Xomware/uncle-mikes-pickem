@@ -8,7 +8,7 @@ interface LockupProps {
 
 const BEAM = "pointer-events-none absolute inset-0 opacity-70 blur-[2px]";
 
-/** "Overtime / Sudden death" under two banks of floodlights, with how many helmets are still lit. */
+/** The Sudden Death mark under two banks of floodlights, with how many helmets are still lit. */
 export function SuddenDeathLockup({ alive, total }: LockupProps) {
   return (
     <header className="relative overflow-hidden rounded-xl border border-blood/40 bg-[oklch(0.11_0.012_20)] px-4 pt-7 pb-4 text-center">
@@ -22,13 +22,9 @@ export function SuddenDeathLockup({ alive, total }: LockupProps) {
       />
       <LightBank className="absolute top-1 left-2 size-7 -rotate-12" />
       <LightBank className="absolute top-1 right-2 size-7 rotate-12" />
-      <p className="relative flex items-center justify-center gap-3 font-display text-sm font-extrabold tracking-[0.5em] text-flood uppercase">
-        <span aria-hidden="true" className="h-0.5 w-8 bg-blood" />
-        Overtime
-        <span aria-hidden="true" className="h-0.5 w-8 bg-blood" />
-      </p>
-      <h2 className="relative mt-1 font-stencil text-6xl leading-[0.9] font-black text-[oklch(0.66_0.22_27)] uppercase [text-shadow:0_0_22px_oklch(0.6_0.22_27/0.6)] sm:text-7xl">
-        Sudden death
+      <h2 className="relative mx-auto w-full max-w-[22rem]">
+        {/* eslint-disable-next-line @next/next/no-img-element -- static export, no image optimizer */}
+        <img src="/brand/sudden-death.webp" alt="Sudden death overtime" width={1056} height={527} className="h-auto w-full" />
       </h2>
       <p className="relative mt-3 flex items-center justify-center gap-2 text-sm text-muted-foreground">
         <Helmet className="h-5 w-6" />
