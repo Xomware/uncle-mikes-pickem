@@ -1,7 +1,6 @@
 import { CalendarClock, ChevronDown, CloudSun, Mail, Percent, Printer, UsersRound, WalletCards } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { Goalpost } from "@/components/field/icons";
 import { Helmet } from "@/components/field/helmet";
 import { LandingCta } from "@/components/landing/landing-cta";
 import { delay, reveal } from "@/components/landing/reveal";
@@ -343,7 +342,8 @@ export function Footer() {
     <footer className="bg-card">
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-4 py-8 text-center text-sm text-muted-foreground sm:flex-row sm:justify-between sm:text-left">
         <span className="flex items-center gap-2">
-          <Goalpost className="h-6 w-5 text-primary" />
+          {/* eslint-disable-next-line @next/next/no-img-element -- static export, no image optimizer */}
+          <img src="/brand/goalpost.webp" alt="" width={123} height={96} className="h-6 w-auto" />
           Uncle Mike&apos;s Pick Em
         </span>
         <span>Not affiliated with the NFL or any team.</span>

@@ -2,19 +2,6 @@ import type { SVGProps } from "react";
 
 type IconProps = SVGProps<SVGSVGElement>;
 
-/** The brand mark: a slingshot goalpost. */
-export function Goalpost(props: IconProps) {
-  return (
-    <svg viewBox="0 0 32 40" fill="none" aria-hidden="true" {...props}>
-      <g stroke="currentColor" strokeWidth="3.2" strokeLinecap="square">
-        <path d="M16 39V30c0-3-2-4-2-6" />
-        <path d="M5 22h22M5 22V2.5M27 22V2.5" />
-      </g>
-      <path d="M5 1 .6 3.2 5 5.4zM27 1l4.4 2.2L27 5.4z" fill="oklch(0.66 0.2 40)" />
-    </svg>
-  );
-}
-
 /** A thrown penalty flag, weighted knot at the corner. */
 export function PenaltyFlag(props: IconProps) {
   return (

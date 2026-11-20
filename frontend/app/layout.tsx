@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   title: { default: "Uncle Mike's NFL Pick Em", template: "%s | Uncle Mike's NFL Pick Em" },
   description: "Weekly confidence picks, a Game of the Week, and a death pool for your group.",
   icons: {
-    icon: [{ url: "/brand/favicon.ico", sizes: "32x32" }, { url: "/brand/icon.svg", type: "image/svg+xml" }],
+    icon: [{ url: "/brand/favicon.ico", sizes: "32x32" }, { url: "/brand/icon.png", sizes: "512x512", type: "image/png" }],
     apple: "/brand/apple-touch-icon.png",
   },
   openGraph: {
