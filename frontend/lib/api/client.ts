@@ -538,3 +538,31 @@ export const getEmailPrefs = () => request<EmailSettings>("/email/prefs");
 export const setEmailPrefs = (groupId: string, prefs: Partial<EmailPrefs>) =>
   post<{ groupId: string; prefs: EmailPrefs }>("/email/prefs-set", { groupId, prefs });
 export const sendTestEmail = (groupId: string) => post<{ to: string; subject: string }>("/email/test", { groupId });
+
+export interface GradeTally {
+  right: number;
+  wrong: number;
+  tie: number;
+}
+
+/** The caller's season in one group. Void and pending games count for nothing. */
+export interface MyStats {
+  group: { groupId: string; name: string; season: number };
+  entryType: EntryType;
+  throughWeek: number;
+  /** null for a weekly-only member, or before Week 1 is graded. */
+  season: { place: string; total: number; gow: number } | null;
+  /** Cents. null while payouts are off for the group. pending is won on a result that can still change. */
+  money: { won: number; pending: number } | null;
+  /** field is how many members the week graded. */
+  weeks: { week: number; status: WeekResult["status"]; weekly: number; place: string; field: number; missed: boolean; won: boolean }[];
+  record: GradeTally;
+  points: { earned: number; possible: number };
+  /** Right picks in a row, in kickoff order. */
+  streak: { longest: number; current: number };
+  gow: GradeTally;
+  /** The caller's record picking each team. */
+  teams: (GradeTally & { team: string })[];
+}
+
+export const getMyStats = (id: string) => request<MyStats>(`/me/stats?id=${encodeURIComponent(id)}`);
