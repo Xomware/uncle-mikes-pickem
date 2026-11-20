@@ -1,6 +1,6 @@
 "use client";
 
-import { Binoculars, LogOut, TriangleAlert, UserRound, UsersRound } from "lucide-react";
+import { Binoculars, CalendarDays, LogOut, TriangleAlert, UserRound, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -13,6 +13,7 @@ import { useFlags, useSuperAdmin } from "@/lib/flags";
 import { cn } from "@/lib/utils";
 
 const NAV = [
+  { href: "/slate/", label: "Slate", icon: CalendarDays },
   { href: "/groups/", label: "Groups", icon: UsersRound },
   { href: "/profile/", label: "Profile", icon: UserRound },
 ];
@@ -36,13 +37,13 @@ export function AppHeader() {
   return (
     <header className="endzone">
       <div className="mx-auto flex max-w-5xl items-center gap-1 px-3 py-2 sm:px-6">
-        <Brand href={DEFAULT_NEXT} className="mr-auto" />
+        {/* A smaller wordmark on a phone, so the nav icons and sign-out fit beside it at 375px. */}
+        <Brand href={DEFAULT_NEXT} className="mr-auto max-sm:[&_.paint]:text-[1.2rem]" />
         <nav aria-label="Main" className="flex items-center">
           {items.map(({ href, label, icon: Icon }) => {
             const active = pathname === href || pathname === href.slice(0, -1);
-            // With the Press Box link there's no room for three words beside the brand on a phone,
-            // so every link shows only its icon there.
-            const compact = superAdmin;
+            // There's no room for three words beside the brand on a phone, so every link shows only its icon there.
+            const compact = items.length > 2;
             return (
               <Link
                 key={href}

@@ -1,7 +1,8 @@
-"""The pickem-nfl table. cron_tick writes the season; games_info only its own cache rows.
+"""The pickem-nfl table. cron_tick writes the season; games_info and nfl_week only their own cache rows.
 
     SEASON#2026#W10 / WEEK           lockAt, tiebreakGameId, gameIds
     SEASON#2026#W10 / GAME#<espnId>  one game, keyed by ESPN event id
+    SEASON#2026#W10 / RECORDS        nfl_week's team records going into the week, from nflverse
     CURRENT / WEEK                   the regular-season week ESPN calls current
     GAME#<espnId> / INFO#<source>    games_info's distilled ESPN summary: "live", or a capture prefix
 

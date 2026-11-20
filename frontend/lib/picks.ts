@@ -3,7 +3,7 @@ import type { Game, PickEntry, Team, WeekPicks, WeekView } from "@/lib/api/clien
 export type Outcome = "correct" | "wrong" | null;
 
 /** Green or red once the game has a winner. A tie stays neutral: how it scores is a group rule, graded in F7. */
-export function outcome(pick: PickEntry | undefined, game: Game): Outcome {
+export function outcome(pick: PickEntry | undefined, game: Pick<Game, "winner">): Outcome {
   if (!pick?.team || !game.winner || game.winner === "TIE") return null;
   return pick.team === game.winner ? "correct" : "wrong";
 }

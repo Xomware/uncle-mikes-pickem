@@ -292,6 +292,51 @@ export interface GameInfo {
 export const getGameInfo = (groupId: string, gameId: string) =>
   request<GameInfo>(`/games/info?groupId=${encodeURIComponent(groupId)}&gameId=${encodeURIComponent(gameId)}`);
 
+export interface SlateTeam extends Team {
+  /** Going into the week. null when nflverse couldn't be reached. */
+  record: string | null;
+}
+
+export interface SlateGame {
+  gameId: string;
+  week: number;
+  kickoff: string;
+  /** False while the NFL hasn't set the time; kickoff is a placeholder. */
+  timeValid: boolean | null;
+  state: "pre" | "in" | "post" | null;
+  completed: boolean | null;
+  awayScore: number | null;
+  homeScore: number | null;
+  winner: string | null;
+  tie: boolean | null;
+  away: SlateTeam;
+  home: SlateTeam;
+  lines: { spread?: number | null; overUnder?: number | null; details?: string | null } | null;
+  broadcasts: string[];
+  hype: number | null;
+}
+
+/** The caller's own sheet in one of their groups; picks is null until they save one. */
+export interface SlateGroup {
+  groupId: string;
+  name: string;
+  replay: boolean;
+  picks: Record<string, PickEntry> | null;
+}
+
+/** The live season's week, no group needed. */
+export interface Slate {
+  season: number;
+  week: number;
+  currentWeek: number;
+  /** Weeks on the schedule, ascending. */
+  weeks: number[];
+  games: SlateGame[];
+  groups: SlateGroup[];
+}
+
+export const getSlate = (week?: number) => request<Slate>(`/nfl/week${week ? `?week=${week}` : ""}`);
+
 export interface DeathGame {
   gameId: string;
   kickoff: string;
