@@ -330,20 +330,10 @@
     shake 300ms linear 4420ms,
     gone 220ms ease-in 4830ms forwards;
 }
-.otLed {
-  font-size: clamp(1.4rem, 6vw, 2rem);
-  color: var(--chalk);
-  text-shadow: 0 0 10px var(--blood);
-  letter-spacing: 0.3em;
-  animation: blink 300ms steps(1, end) 4400ms 3;
-}
 .sudden {
-  font-size: clamp(4rem, 19vw, 10rem);
-  line-height: 0.88;
-  color: var(--chalk);
-  text-shadow:
-    0.05em 0.06em 0 oklch(0.1 0.02 20),
-    0 0 40px oklch(0.6 0.22 27 / 0.8);
+  width: clamp(16rem, 80vw, 34rem);
+  height: auto;
+  filter: drop-shadow(0 0 40px oklch(0.6 0.22 27 / 0.6));
 }
 .helmet {
   width: clamp(4rem, 18vw, 6rem);
@@ -370,11 +360,6 @@
   to {
     opacity: 0;
     transform: scale(0.9);
-  }
-}
-@keyframes blink {
-  50% {
-    opacity: 0.2;
   }
 }
 

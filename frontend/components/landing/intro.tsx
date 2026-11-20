@@ -126,8 +126,8 @@ export function Intro() {
 
             <div className={styles.flash} />
             <div className={styles.overtime}>
-              <span className={`led ${styles.otLed}`}>OVERTIME</span>
-              <span className={`paint ${styles.sudden}`}>Sudden Death</span>
+              {/* eslint-disable-next-line @next/next/no-img-element -- static export, no image optimizer */}
+              <img src="/brand/sudden-death.webp" alt="Sudden Death" width={1056} height={527} className={styles.sudden} />
               <Helmet out className={styles.helmet} />
             </div>
 
