@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Game, SeasonStandings, WeekResult, WeekView } from "@/lib/api/client";
 
-import { byeTeams, easternTime, gameDates, GOW_LABEL, groupGridCsv, slots, standingsCsv } from "./sheet";
+import { byeTeams, deadline, easternTime, gameDates, GOW_LABEL, groupGridCsv, slots, standingsCsv } from "./sheet";
 
 const game = (gameId: string, away: string, home: string, kickoff: string): Game => ({
   gameId,
@@ -135,4 +135,14 @@ it("lays the season table out by week, blank for a week a late joiner has no sco
     ["1", "Amy", 109, 101, 210, 12],
     ["2", "Zed", null, 96, 96, -15],
   ]);
+});
+
+describe("deadline", () => {
+  it("writes the lock the way the paper does", () => {
+    expect(deadline("2026-11-19T17:00:00Z")).toBe("NOON ON THURSDAY, NOV. 19th 2026");
+    expect(deadline("2026-09-10T00:20:00Z")).toBe("8:20 PM ON WEDNESDAY, SEP. 9th 2026");
+    expect(deadline("2026-10-01T17:00:00Z")).toBe("1:00 PM ON THURSDAY, OCT. 1st 2026");
+    expect(deadline("2026-10-22T16:00:00Z")).toBe("NOON ON THURSDAY, OCT. 22nd 2026");
+    expect(deadline("2026-10-23T15:30:00Z")).toBe("11:30 AM ON FRIDAY, OCT. 23rd 2026");
+  });
 });
