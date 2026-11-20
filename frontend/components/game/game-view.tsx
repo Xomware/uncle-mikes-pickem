@@ -5,13 +5,16 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { type ReactNode, useCallback } from "react";
 
+import { GameStatus } from "@/components/field/game-status";
 import { TeamLogo } from "@/components/field/team-logo";
 import { Headshot } from "@/components/game/headshot";
 import { LoadError } from "@/components/load-error";
 import { type GameInfo, type InfoTeam, type Injury, getGameInfo } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
+import { usePoll } from "@/lib/api/use-poll";
 import { type Severity, moneyline, severity } from "@/lib/game";
 import { groupHref } from "@/lib/groups";
+import { inLiveWindow } from "@/lib/live";
 import { picksHref, spreadText } from "@/lib/picks";
 import { etDate } from "@/lib/time";
 import { cn } from "@/lib/utils";
@@ -23,7 +26,8 @@ export function GameView() {
   const groupId = params.get("groupId") ?? "";
   const gameId = params.get("gameId") ?? "";
   const fetcher = useCallback(() => getGameInfo(groupId, gameId), [groupId, gameId]);
-  const { load, retry } = useLoad(fetcher);
+  const { load, retry, refresh } = useLoad(fetcher);
+  usePoll(() => load.status === "ready" && !load.data.replay && inLiveWindow([load.data.game], Date.now()), refresh);
   const back = load.status === "ready" ? picksHref(groupId, load.data.game.week) : groupHref(groupId);
 
   return (
@@ -117,7 +121,7 @@ function Scoreboard({ info }: { info: GameInfo }) {
         <TeamColumn team={away} split="Road" score={started ? game.awayScore : null} />
         <div className="pt-4">
           {started ? (
-            <span className="led text-lg">{game.completed ? "FINAL" : "LIVE"}</span>
+            <GameStatus game={{ ...game, away, home }} score={false} />
           ) : (
             <span className="font-display text-2xl font-extrabold text-muted-foreground">@</span>
           )}

@@ -38,4 +38,4 @@ def handler(event, context):
     info, source = cached(game, feed)
     stored = flags.enabled("filmRoom", gid) and writeup.get(game_id)
     film_room = stored and {k: stored[k] for k in ("text", "model", "generatedAt")}
-    return respond(200, {**payload(game, info, source, feed.now), "writeup": film_room})
+    return respond(200, {**payload(game, info, source, feed.now), "writeup": film_room, "replay": feed.replay})

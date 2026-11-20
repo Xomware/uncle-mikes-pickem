@@ -108,6 +108,8 @@ def game_fields(event: dict) -> dict:
         # ESPN sends "0" before kickoff; a score means nothing until the game starts.
         "awayScore": int(scores["away"]) if started else None,
         "homeScore": int(scores["home"]) if started else None,
+        "period": c["status"].get("period"),
+        "clock": c["status"].get("displayClock"),
     }
     if status["completed"]:
         winner = [t["team"]["abbreviation"] for t in c["competitors"] if t.get("winner")]

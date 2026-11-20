@@ -1,10 +1,11 @@
+import { GameStatus } from "@/components/field/game-status";
 import { LightBank } from "@/components/field/icons";
 import { ResultMark } from "@/components/field/result-mark";
 import { TeamLogo } from "@/components/field/team-logo";
 import { GameInfoLink } from "@/components/game/game-info-link";
 import type { Team, WeekResult, WeekView } from "@/lib/api/client";
-import { gridRows, outcome } from "@/lib/picks";
-import { gradeMark } from "@/lib/results";
+import { pickMark } from "@/lib/live";
+import { gridRows } from "@/lib/picks";
 import { cn } from "@/lib/utils";
 
 /** Everyone's picks after lock, on the scoreboard: a row per member, a column per open game. */
@@ -50,6 +51,7 @@ export function GroupGrid({ view, result = null }: { view: WeekView; result?: We
                       {g.home.abbr}
                     </span>
                   </GameInfoLink>
+                  <GameStatus game={g} className="mt-1" />
                 </th>
               ))}
               <th scope="col" className="min-w-16 px-2 py-2 text-center align-bottom">
@@ -73,16 +75,15 @@ export function GroupGrid({ view, result = null }: { view: WeekView; result?: We
                 </th>
                 {games.map((g) => {
                   const pick = row.picks?.picks[g.gameId];
-                  // Graded picks know overrides, ties and voids; the game's winner covers the gap before grading.
-                  const graded = grades.get(row.sub);
-                  const mark = graded ? gradeMark(graded[g.gameId]) : outcome(pick, g);
+                  // Graded picks know overrides, ties and voids; the game's winner, then its live score, cover the gap before grading.
+                  const mark = pickMark(pick, g, grades.get(row.sub)?.[g.gameId]);
                   return (
                     <td
                       key={g.gameId}
                       className={cn(
                         "rounded-sm px-1 py-1.5 text-center",
-                        mark === "correct" && "bg-correct-muted",
-                        mark === "wrong" && "bg-wrong-muted",
+                        mark?.result === "correct" && (mark.live ? "bg-correct-muted/50" : "bg-correct-muted"),
+                        mark?.result === "wrong" && (mark.live ? "bg-wrong-muted/50" : "bg-wrong-muted"),
                         !mark && "bg-white/[0.04]",
                       )}
                     >
@@ -92,7 +93,7 @@ export function GroupGrid({ view, result = null }: { view: WeekView; result?: We
                           <span className="font-display text-base font-extrabold">{pick.team}</span>
                           <span className="flex items-center gap-1">
                             <span className="led text-sm">{pick.conf}</span>
-                            {mark && <ResultMark result={mark} className="text-[0.62rem]" />}
+                            {mark && <ResultMark result={mark.result} live={mark.live} className="text-[0.62rem]" />}
                           </span>
                         </span>
                       ) : (

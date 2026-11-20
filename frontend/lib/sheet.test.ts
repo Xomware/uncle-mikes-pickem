@@ -14,6 +14,11 @@ const game = (gameId: string, away: string, home: string, kickoff: string): Game
   state: "pre",
   completed: false,
   winner: null,
+  awayScore: null,
+  homeScore: null,
+  status: null,
+  period: null,
+  clock: null,
   canceled: false,
 });
 

@@ -94,6 +94,16 @@ def test_game_fields_keep_espn_spread_sign(tick):
     assert tick.game_fields(events["401873058"])["lines"]["spread"] == 3.0
 
 
+def test_game_fields_carry_the_live_score_and_clock(tick):
+    event = copy.deepcopy(next(e for e in board(10)["events"] if e["id"] == "401873052"))
+    c = event["competitions"][0]
+    c["status"] = {"period": 3, "displayClock": "4:12", "type": {"name": "STATUS_IN_PROGRESS", "state": "in", "completed": False}}
+    c["competitors"][0]["score"], c["competitors"][1]["score"] = "17", "10"
+    g = tick.game_fields(event)
+    assert (g["state"], g["period"], g["clock"]) == ("in", 3, "4:12")
+    assert (g[c["competitors"][0]["homeAway"] + "Score"], g[c["competitors"][1]["homeAway"] + "Score"]) == (17, 10)
+
+
 def test_game_fields_carry_espn_logo_and_colors(tick):
     event = copy.deepcopy(next(e for e in board(10)["events"] if e["id"] == "401873052"))
     home = tick.game_fields(event)["home"]

@@ -59,6 +59,16 @@ def test_after_lock_the_whole_group_is_visible(api, gid):
     assert {m["name"] for m in data["members"]} == {"Dom", "Pat"}
 
 
+def test_games_carry_the_live_score_and_clock(api, gid):
+    live = {"gameId": "101", "state": "in", "status": "STATUS_IN_PROGRESS", "period": 2, "clock": "0:41",
+            "awayScore": 7, "homeScore": 3}
+    nfl_store.save_game(2027, 1, live)
+    data = read(api, gid)[1]
+    assert data["group"]["replay"] is False
+    assert {k: data["games"][0][k] for k in live} == live
+    assert data["games"][1]["awayScore"] is None
+
+
 def test_defaults_to_the_current_week_and_checks_params(api, gid):
     assert read(api, gid)[1]["week"]["week"] == 1
     assert read(api, gid, week="1")[1]["week"]["week"] == 1
@@ -88,6 +98,7 @@ def test_a_replay_group_reads_replay_rows_on_its_clock(api):
     assert (data["week"]["week"], data["week"]["locked"]) == (1, False)
     # The replay clock is before kickoff, so the result stays hidden.
     assert data["games"][0]["winner"] is None
+    assert data["group"]["replay"] is True
 
     table().update_item(
         Key={"PK": f"GROUP#{gid}", "SK": "META"},

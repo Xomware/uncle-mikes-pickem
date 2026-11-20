@@ -58,6 +58,7 @@ def test_live_game_distills_the_summary(info):
     assert status == 200
     game, away, home = data["game"], data["away"], data["home"]
     assert (game["week"], game["kickoff"], game["state"]) == (10, "2026-11-13T01:15:00Z", "pre")
+    assert (game["status"], game["period"], game["clock"], data["replay"]) == ("STATUS_SCHEDULED", None, None, False)
     assert game["lines"]["details"] == "NYG -2.5" and game["lines"]["homeMoneyline"] == -135
     assert game["venue"] == {"name": "MetLife Stadium", "city": "East Rutherford", "state": "NJ", "grass": False, "roof": "outdoors"}
     assert game["broadcasts"] == ["Prime Video"]
@@ -166,4 +167,5 @@ def test_replay_reads_the_capture_before_its_clock(replay):
     assert data["source"] == {"kind": "capture", "at": "2026-11-12T14:00:12Z"}
     assert data["home"]["record"] == "5-2-1" and len(data["away"]["injuries"]) == 5
     assert data["game"]["state"] == "pre" and data["game"]["homeScore"] is None
+    assert data["replay"] is True
     assert replay.espn_calls == []

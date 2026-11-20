@@ -175,6 +175,14 @@ export interface Game {
   // Set once the game is final (F7): the winning team's abbr, or "TIE".
   winner: string | null;
   canceled: boolean;
+  /** Null until kickoff, and for a replay game still in progress. */
+  awayScore: number | null;
+  homeScore: number | null;
+  /** ESPN's status name, e.g. STATUS_HALFTIME. Null on replay rows. */
+  status: string | null;
+  period: number | null;
+  /** ESPN's display clock, "4:12". */
+  clock: string | null;
 }
 
 export interface PickEntry {
@@ -197,7 +205,7 @@ export interface Gow {
 }
 
 export interface WeekView {
-  group: { groupId: string; name: string; season: number };
+  group: { groupId: string; name: string; season: number; replay: boolean };
   role: Role;
   week: { season: number; week: number; lockAt: string; tiebreakGameId: string; locked: boolean; now: string };
   games: Game[];
@@ -256,6 +264,9 @@ export interface GameInfo {
     kickoff: string;
     timeValid: boolean | null;
     state: "pre" | "in" | "post" | null;
+    status: string | null;
+    period: number | null;
+    clock: string | null;
     completed: boolean | null;
     awayScore: number | null;
     homeScore: number | null;
@@ -287,6 +298,7 @@ export interface GameInfo {
   source: { kind: "espn" | "capture" | "none"; at: string | null; note?: string };
   /** The Film Room preview, written by Claude before kickoff. null until the Wednesday run. */
   writeup: { text: string; model: string; generatedAt: string } | null;
+  replay: boolean;
 }
 
 export const getGameInfo = (groupId: string, gameId: string) =>
