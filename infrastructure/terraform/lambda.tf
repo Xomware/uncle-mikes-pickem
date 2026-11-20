@@ -32,6 +32,7 @@ locals {
   # The live season's slate for any signed-in user; no group needed.
   nfl_lambdas = [
     { name = "week", description = "Read a week's games, records and the caller's picks in each group (?week=)", path_part = "week", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+    { name = "teams", description = "Read every team's record, and one team's schedule and pick records (?team=&groupId=&season=)", path_part = "teams", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
   ]
   # peek and confirm are public: the signed token in the admin email is their only credential.
   gow_lambdas = [
@@ -151,6 +152,7 @@ locals {
     payments_payouts     = ["app:GetItem", "app:Query", "nfl:GetItem"]
     payments_payout_mark = ["app:GetItem", "app:Query", "app:PutItem", "nfl:GetItem"]
     replay_advance       = ["app:GetItem", "app:UpdateItem"]
+    nfl_teams            = ["app:GetItem", "app:Query", "nfl:GetItem", "nfl:Query"]
 
     results_override = ["app:GetItem", "app:Query", "app:PutItem", "app:DeleteItem", "app:UpdateItem", "nfl:GetItem", "nfl:Query", "ops:PutItem"]
     results_regrade  = ["app:GetItem", "app:Query", "app:PutItem", "app:UpdateItem", "nfl:GetItem", "nfl:Query", "ops:PutItem"]

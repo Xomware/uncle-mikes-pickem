@@ -1,6 +1,6 @@
 "use client";
 
-import { Binoculars, CalendarDays, LogOut, TriangleAlert, UserRound, UsersRound } from "lucide-react";
+import { Binoculars, CalendarDays, LogOut, Shield, TriangleAlert, UserRound, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 const NAV = [
   { href: "/slate/", label: "Slate", icon: CalendarDays },
   { href: "/groups/", label: "Groups", icon: UsersRound },
+  { href: "/teams/", label: "Teams", icon: Shield },
   { href: "/profile/", label: "Profile", icon: UserRound },
 ];
 const PRESS_BOX = { href: "/super/", label: "Press Box", icon: Binoculars };
@@ -37,27 +38,24 @@ export function AppHeader() {
   return (
     <header className="endzone">
       <div className="mx-auto flex max-w-5xl items-center gap-1 px-3 py-2 sm:px-6">
-        {/* A smaller wordmark on a phone, so the nav icons and sign-out fit beside it at 375px. */}
-        <Brand href={DEFAULT_NEXT} className="mr-auto max-sm:[&_.paint]:text-[1.2rem]" />
+        <Brand href={DEFAULT_NEXT} className="mr-auto" />
         <nav aria-label="Main" className="flex items-center">
           {items.map(({ href, label, icon: Icon }) => {
             const active = pathname === href || pathname === href.slice(0, -1);
-            // There's no room for three words beside the brand on a phone, so every link shows only its icon there.
-            const compact = items.length > 2;
             return (
               <Link
                 key={href}
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "inline-flex h-11 min-w-11 items-center justify-center border-b-[3px] border-transparent px-2.5 font-display text-base font-bold tracking-wider whitespace-nowrap text-chalk/80 uppercase outline-none hover:text-chalk focus-visible:ring-3 focus-visible:ring-ring/60 sm:px-3",
-                  compact && "px-0",
+                  "inline-flex h-11 min-w-11 items-center justify-center border-b-[3px] border-transparent px-0 font-display text-base font-bold tracking-wider whitespace-nowrap text-chalk/80 uppercase outline-none hover:text-chalk focus-visible:ring-3 focus-visible:ring-ring/60 sm:px-3",
                   // The yellow first-down line marks where you are.
                   active && "border-primary text-chalk",
                 )}
               >
-                {compact && <Icon className="size-5 sm:hidden" aria-hidden="true" />}
-                <span className={compact ? "sr-only sm:not-sr-only" : undefined}>{label}</span>
+                {/* No room for three words beside the brand on a phone, so links show only their icon there. */}
+                <Icon className="size-5 sm:hidden" aria-hidden="true" />
+                <span className="sr-only sm:not-sr-only">{label}</span>
               </Link>
             );
           })}

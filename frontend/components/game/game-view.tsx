@@ -16,6 +16,7 @@ import { type Severity, moneyline, severity } from "@/lib/game";
 import { groupHref } from "@/lib/groups";
 import { inLiveWindow } from "@/lib/live";
 import { picksHref, spreadText } from "@/lib/picks";
+import { teamHref } from "@/lib/teams";
 import { etDate } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
@@ -45,19 +46,19 @@ export function GameView() {
         </div>
       )}
       {load.status === "error" && <LoadError title="Couldn't load this game" message={load.message} onRetry={retry} />}
-      {load.status === "ready" && <GameBody info={load.data} />}
+      {load.status === "ready" && <GameBody info={load.data} groupId={groupId} />}
     </div>
   );
 }
 
-function GameBody({ info }: { info: GameInfo }) {
+function GameBody({ info, groupId }: { info: GameInfo; groupId: string }) {
   const { game, away, home, weather, headToHead, source } = info;
   return (
     <>
       <h1 className="sr-only">
         {away.abbr} at {home.abbr}, Week {game.week}
       </h1>
-      <Scoreboard info={info} />
+      <Scoreboard info={info} groupId={groupId} />
       {source.kind === "none" && (
         <p role="note" className="panel mt-4 flex gap-2 p-3 text-sm text-muted-foreground">
           <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
@@ -102,7 +103,7 @@ function GameBody({ info }: { info: GameInfo }) {
   );
 }
 
-function Scoreboard({ info }: { info: GameInfo }) {
+function Scoreboard({ info, groupId }: { info: GameInfo; groupId: string }) {
   const { game, away, home } = info;
   const started = game.state !== "pre" && game.awayScore != null;
   const lines = game.lines;
@@ -118,7 +119,7 @@ function Scoreboard({ info }: { info: GameInfo }) {
   return (
     <section aria-label="Matchup" className="scoreboard mt-3 px-3 pt-4 pb-3">
       <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2 text-center">
-        <TeamColumn team={away} split="Road" score={started ? game.awayScore : null} />
+        <TeamColumn team={away} groupId={groupId} split="Road" score={started ? game.awayScore : null} />
         <div className="pt-4">
           {started ? (
             <GameStatus game={{ ...game, away, home }} score={false} />
@@ -126,7 +127,7 @@ function Scoreboard({ info }: { info: GameInfo }) {
             <span className="font-display text-2xl font-extrabold text-muted-foreground">@</span>
           )}
         </div>
-        <TeamColumn team={home} split="Home" score={started ? game.homeScore : null} />
+        <TeamColumn team={home} groupId={groupId} split="Home" score={started ? game.homeScore : null} />
       </div>
       <p className="mt-3 text-center text-sm">
         {game.timeValid === false ? "Time TBD" : etDate(game.kickoff)}
@@ -145,11 +146,24 @@ function Scoreboard({ info }: { info: GameInfo }) {
   );
 }
 
-function TeamColumn({ team, split, score }: { team: InfoTeam; split: string; score: number | null }) {
+interface TeamColumnProps {
+  team: InfoTeam;
+  groupId: string;
+  split: string;
+  score: number | null;
+}
+
+function TeamColumn({ team, groupId, split, score }: TeamColumnProps) {
   return (
     <div className="flex min-w-0 flex-col items-center">
-      <TeamLogo {...team} className="size-16 sm:size-20" />
-      <span className="mt-1 font-display text-2xl leading-none font-extrabold">{team.abbr}</span>
+      <Link
+        href={teamHref(team.abbr, groupId)}
+        aria-label={`${team.name ?? team.abbr}, team page`}
+        className="flex flex-col items-center rounded-md outline-none hover:text-primary focus-visible:ring-3 focus-visible:ring-ring/60"
+      >
+        <TeamLogo {...team} className="size-16 sm:size-20" />
+        <span className="mt-1 font-display text-2xl leading-none font-extrabold">{team.abbr}</span>
+      </Link>
       {team.record && (
         <span className="mt-1 text-xs text-muted-foreground">
           {team.record}

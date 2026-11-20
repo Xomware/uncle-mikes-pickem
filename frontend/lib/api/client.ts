@@ -611,3 +611,83 @@ export interface MyStats {
 }
 
 export const getMyStats = (id: string) => request<MyStats>(`/me/stats?id=${encodeURIComponent(id)}`);
+
+export interface WinLoss {
+  w: number;
+  l: number;
+  t: number;
+}
+
+export interface TeamRecord extends Team {
+  name: string;
+  conference: "AFC" | "NFC";
+  division: "East" | "North" | "South" | "West";
+  overall: WinLoss;
+  home: WinLoss;
+  road: WinLoss;
+  divisionRecord: WinLoss;
+  pointsFor: number;
+  pointsAgainst: number;
+  /** Up to the last five results, oldest first. */
+  form: ("W" | "L" | "T")[];
+}
+
+/** Locked weeks only. for/against count complete sheets; mine is the caller's pick on the game. */
+export interface GamePicks {
+  canceled: boolean;
+  for: number;
+  against: number;
+  mine: PickEntry | null;
+}
+
+export interface ScheduleGame {
+  week: number;
+  bye: false;
+  gameId: string;
+  kickoff: string;
+  timeValid: boolean;
+  home: boolean;
+  neutralSite: boolean;
+  opponent: Team;
+  state: "pre" | "in" | "post" | null;
+  result: "W" | "L" | "T" | null;
+  score: number | null;
+  opponentScore: number | null;
+  /** This team's own line, negative when it is favored. */
+  spread: number | null;
+  overUnder: number | null;
+  broadcasts: string[];
+  picks: GamePicks | null;
+}
+
+export type ScheduleRow = { week: number; bye: true } | ScheduleGame;
+
+/** The pickers' record: picking a team in its loss is an L, picking against it a W. */
+export interface PickRecords {
+  for: WinLoss;
+  against: WinLoss;
+}
+
+export interface TeamSeason extends TeamRecord {
+  schedule: ScheduleRow[];
+  /** Only with a group. */
+  picks: { group: PickRecords; mine: PickRecords } | null;
+}
+
+export interface NflTeams {
+  season: number;
+  replay: boolean;
+  /** The group's clock for a replay group. */
+  now: string;
+  group: { groupId: string; name: string } | null;
+  teams: TeamRecord[];
+  team: TeamSeason | null;
+}
+
+export function getNflTeams(groupId: string | null, team?: string) {
+  const query = new URLSearchParams();
+  if (team) query.set("team", team);
+  if (groupId) query.set("groupId", groupId);
+  const qs = query.toString();
+  return request<NflTeams>(`/nfl/teams${qs ? `?${qs}` : ""}`);
+}
