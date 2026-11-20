@@ -40,7 +40,11 @@ export function AppHeader() {
     <header className="endzone">
       <div className="mx-auto flex max-w-5xl items-center gap-1 px-3 py-2 sm:px-6">
         <Brand href={DEFAULT_NEXT} className="mr-auto" />
-        <nav aria-label="Main" className="flex items-center">
+        <nav
+          aria-label="Main"
+          data-tabbar
+          className="flex items-center max-sm:endzone max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-40 max-sm:grid max-sm:auto-cols-fr max-sm:grid-flow-col max-sm:border-t-2 max-sm:border-primary max-sm:pb-[env(safe-area-inset-bottom)]"
+        >
           {items.map(({ href, label, icon: Icon }) => {
             const active = pathname === href || pathname === href.slice(0, -1);
             return (
@@ -49,14 +53,14 @@ export function AppHeader() {
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "inline-flex h-11 min-w-11 items-center justify-center border-b-[3px] border-transparent px-0 font-display text-base font-bold tracking-wider whitespace-nowrap text-chalk/80 uppercase outline-none hover:text-chalk focus-visible:ring-3 focus-visible:ring-ring/60 sm:px-3",
-                  // The yellow first-down line marks where you are.
-                  active && "border-primary text-chalk",
+                  "inline-flex items-center justify-center font-display font-bold tracking-wider whitespace-nowrap text-chalk/80 uppercase outline-none hover:text-chalk focus-visible:ring-3 focus-visible:ring-ring/60",
+                  "h-14 flex-col gap-0.5 text-[0.65rem] sm:h-11 sm:min-w-11 sm:flex-row sm:border-b-[3px] sm:border-transparent sm:px-3 sm:text-base",
+                  // The yellow first-down line marks where you are; on the tab bar the tab goes yellow.
+                  active && "text-primary sm:border-primary sm:text-chalk",
                 )}
               >
-                {/* No room for three words beside the brand on a phone, so links show only their icon there. */}
                 <Icon className="size-5 sm:hidden" aria-hidden="true" />
-                <span className="sr-only sm:not-sr-only">{label}</span>
+                {label}
               </Link>
             );
           })}

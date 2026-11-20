@@ -5,7 +5,7 @@ export default function AuthedLayout({ children }: LayoutProps<"/">) {
   return (
     <>
       <AppHeader />
-      <main className="flex flex-1 flex-col">
+      <main className="flex flex-1 flex-col pb-(--tabbar-h)">
         <AuthGuard>{children}</AuthGuard>
       </main>
     </>

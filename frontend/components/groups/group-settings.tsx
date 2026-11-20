@@ -228,7 +228,7 @@ function SettingsEditor({ detail, onSaved, onEdit }: EditorProps) {
         )}
       </Section>
 
-      <div className="sticky bottom-0 -mx-4 border-t-2 border-primary bg-board px-4 py-3 sm:static sm:border-t-0 sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0">
+      <div className="sticky bottom-(--tabbar-h) -mx-4 border-t-2 border-primary bg-board px-4 py-3 sm:static sm:border-t-0 sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0">
         {Object.keys(errors).length > 0 && (
           <p role="alert" className="mb-2 text-wrong">
             Fix the highlighted fields.
