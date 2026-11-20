@@ -12,9 +12,11 @@ import { LockedWeek } from "@/components/results/week-results";
 import { buttonVariants } from "@/components/ui/button";
 import { type WeekView, getWeek } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
+import { usePoll } from "@/lib/api/use-poll";
 import { groupHref } from "@/lib/groups";
 import { countdown, picksHref } from "@/lib/picks";
 import { useFlags } from "@/lib/flags";
+import { inLiveWindow } from "@/lib/live";
 import { sheetHref } from "@/lib/sheet";
 import { etTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
@@ -27,7 +29,9 @@ export function PicksWeek() {
   const id = params.get("id") ?? "";
   const week = Number(params.get("week")) || undefined;
   const fetcher = useCallback(() => getWeek(id, week), [id, week]);
-  const { load, retry } = useLoad(fetcher);
+  const { load, retry, refresh } = useLoad(fetcher);
+  // A replay's clock only moves when the organizer moves it, so there is nothing to poll for.
+  usePoll(() => load.status === "ready" && !load.data.group.replay && inLiveWindow(load.data.games, Date.now()), refresh);
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:px-6" aria-busy={load.status === "loading"}>

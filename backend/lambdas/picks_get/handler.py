@@ -16,7 +16,10 @@ from lambdas.common.api import ApiError, api_handler, query_param, respond, user
 dynamodb = boto3.resource("dynamodb")
 
 LAST_WEEK = 18
-GAME_FIELDS = ("gameId", "kickoff", "away", "home", "lines", "broadcasts", "state", "completed", "winner")
+GAME_FIELDS = (
+    "gameId", "kickoff", "away", "home", "lines", "broadcasts", "state", "completed", "winner", "tie",
+    "status", "period", "clock", "awayScore", "homeScore",
+)
 
 
 def default_week(feed: nfl_store.Feed) -> int:
@@ -62,7 +65,7 @@ def handler(event, context):
     return respond(
         200,
         {
-            "group": {k: group[k] for k in ("groupId", "name", "season")},
+            "group": {**{k: group[k] for k in ("groupId", "name", "season")}, "replay": feed.replay},
             "role": members[me["sub"]]["role"],
             "week": {
                 "season": season,

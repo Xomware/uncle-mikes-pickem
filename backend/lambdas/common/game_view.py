@@ -19,7 +19,10 @@ from lambdas.common.api import ApiError
 
 CACHE_FOR = timedelta(minutes=30)
 INDOOR = ("dome", "closed")
-GAME_FIELDS = ("gameId", "week", "kickoff", "timeValid", "state", "completed", "awayScore", "homeScore", "winner", "tie")
+GAME_FIELDS = (
+    "gameId", "week", "kickoff", "timeValid", "state", "status", "period", "clock", "completed",
+    "awayScore", "homeScore", "winner", "tie",
+)
 NO_CAPTURE = "No ESPN snapshot before this point in the replay, so injuries, form and weather aren't available."
 
 s3 = boto3.client("s3")

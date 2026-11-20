@@ -15,8 +15,10 @@ import {
   unlessMissing,
 } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
+import { usePoll } from "@/lib/api/use-poll";
 import { useFlags } from "@/lib/flags";
 import { isOrganizer } from "@/lib/groups";
+import { inLiveWindow } from "@/lib/live";
 import { cn } from "@/lib/utils";
 
 /** A locked week: the graded scoreboard, then everyone's picks marked from it. */
@@ -27,7 +29,9 @@ export function LockedWeek({ view }: { view: WeekView }) {
     () => unlessMissing(getWeekResult(groupId, week)),
     [groupId, week],
   );
-  const { load, retry, setData } = useLoad(fetcher);
+  const { load, retry, setData, refresh: poll } = useLoad(fetcher);
+  // cron_tick regrades as games go final; keep the grades in step with the live scores.
+  usePoll(() => !view.group.replay && inLiveWindow(view.games, Date.now()), poll);
   const flags = useFlags(groupId);
   // Refetch in place after an organizer change, so the board doesn't drop to a skeleton.
   const refresh = async () => setData(await fetcher());

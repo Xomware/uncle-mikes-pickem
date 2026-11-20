@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export type Load<T> = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; data: T };
 
@@ -8,8 +8,10 @@ export type Load<T> = { status: "loading" } | { status: "error"; message: string
 export function useLoad<T>(fetcher: () => Promise<T>) {
   const [load, setLoad] = useState<Load<T>>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
+  const current = useRef(fetcher);
 
   useEffect(() => {
+    current.current = fetcher;
     let cancelled = false;
     fetcher().then(
       (data) => !cancelled && setLoad({ status: "ready", data }),
@@ -26,5 +28,14 @@ export function useLoad<T>(fetcher: () => Promise<T>) {
     setAttempt((n) => n + 1);
   }
 
-  return { load, retry, setData: (data: T) => setLoad({ status: "ready", data }) };
+  /** Refetch in place for polling. A failed poll keeps the last data on screen; the next one retries. */
+  function refresh() {
+    fetcher().then(
+      // Dropped when the page has moved on to another fetcher (a different week) meanwhile.
+      (data) => current.current === fetcher && setLoad({ status: "ready", data }),
+      () => undefined,
+    );
+  }
+
+  return { load, retry, refresh, setData: (data: T) => setLoad({ status: "ready", data }) };
 }
