@@ -3,8 +3,8 @@
 import { useCallback } from "react";
 
 import { LoadError } from "@/components/load-error";
-import { Blank, Paper, dollars } from "@/components/sheets/paper";
-import { type GroupDetail, type WeekView, getGroup, getWeek } from "@/lib/api/client";
+import { Blank, Paper, SheetTeam, dollars } from "@/components/sheets/paper";
+import { type GroupDetail, type Team, type WeekView, getGroup, getWeek } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
 import { useAuth } from "@/lib/auth/use-auth";
 import { picksHref, spreadText } from "@/lib/picks";
@@ -49,6 +49,8 @@ function SheetBody({ view, detail }: { view: WeekView; detail: GroupDetail }) {
   const { fees } = detail.rules;
   const open = games.filter((g) => !g.canceled).length;
   const tiebreak = games.find((g) => g.gameId === week.tiebreakGameId);
+  const teams: Record<string, Team> = Object.fromEntries(games.flatMap((g) => [g.away, g.home]).map((t) => [t.abbr, t]));
+  const byes = byeTeams(games);
   const name = view.members.find((m) => m.sub === mine?.sub)?.name ?? (auth.status === "signedIn" ? auth.name : null);
   const feeText = [`${dollars(fees.weekly)} WEEKLY`, `${dollars(fees.yearly)} YEARLY`];
   if (fees.death > 0) feeText.push(`${dollars(fees.death)} DEATH POOL`);
@@ -101,7 +103,7 @@ function SheetBody({ view, detail }: { view: WeekView; detail: GroupDetail }) {
               return (
                 <tr key={g.gameId} className={cn("border-b border-(--rule)", g.canceled && "text-(--ink-soft)")}>
                   <td className={cn("py-1 pr-2 font-semibold whitespace-nowrap", g.canceled && "line-through")}>
-                    {g.away.abbr} @ {g.home.abbr}
+                    <SheetTeam team={g.away} /> @ <SheetTeam team={g.home} />
                   </td>
                   <td className="py-1 pr-2 whitespace-nowrap text-(--ink-soft)">{spreadText(g) ?? ""}</td>
                   {g.canceled ? (
@@ -111,11 +113,9 @@ function SheetBody({ view, detail }: { view: WeekView; detail: GroupDetail }) {
                   ) : (
                     <>
                       <td className="py-1 text-right">
-                        
-                        <Blank value={pick?.team} className="w-14" />
+                        <Blank value={pick?.team ? <SheetTeam team={teams[pick.team] ?? { abbr: pick.team }} /> : undefined} className="w-18" />
                       </td>
                       <td className="py-1 pl-2 text-right">
-                        
                         <Blank value={pick?.team ? pick.conf : undefined} className="w-10" />
                       </td>
                     </>
@@ -133,13 +133,23 @@ function SheetBody({ view, detail }: { view: WeekView; detail: GroupDetail }) {
           {tiebreak && (
             <span className="text-(--ink-soft)">
               {" "}
-              ({slotName(tiebreak)}: {tiebreak.away.abbr} @ {tiebreak.home.abbr})
+              ({slotName(tiebreak)}: <SheetTeam team={tiebreak.away} /> @ <SheetTeam team={tiebreak.home} />)
             </span>
           )}
           : <Blank value={mine?.tiebreak ?? undefined} className="w-14" />
         </p>
         <p>
-          Bye teams: <span className="font-semibold">{byeTeams(games).join(", ") || "None"}</span>
+          Bye teams:{" "}
+          <span className="font-semibold">
+            {byes.length
+              ? byes.map((abbr, i) => (
+                  <span key={abbr}>
+                    {i > 0 && ", "}
+                    <SheetTeam team={{ abbr }} />
+                  </span>
+                ))
+              : "None"}
+          </span>
         </p>
         <p className="border-t-2 border-(--ink) pt-2 text-center font-bold">
           {week.locked ? `Picks locked ${easternTime(week.lockAt)}` : `Please have your picks in by ${easternTime(week.lockAt)}`}

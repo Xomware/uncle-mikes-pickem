@@ -12,6 +12,8 @@ interface Props {
   /** Hex without '#', as ESPN sends it. Colors the fallback badge. */
   color?: string | null;
   alternateColor?: string | null;
+  /** "eager" on the printable sheets: printing can start before a lazy image loads. */
+  loading?: "eager" | "lazy";
   className?: string;
 }
 
@@ -22,7 +24,7 @@ const cdnLogo = (abbr: string) => `https://a.espncdn.com/i/teamlogos/nfl/500/${a
  * committed). Decorative: callers always print the abbr beside it. If ESPN's image fails,
  * a badge in the team's color with the abbr takes its place.
  */
-export function TeamLogo({ abbr, logo, color, alternateColor, className }: Props) {
+export function TeamLogo({ abbr, logo, color, alternateColor, loading, className }: Props) {
   const [failed, setFailed] = useState(false);
 
   if (failed) {
@@ -46,6 +48,7 @@ export function TeamLogo({ abbr, logo, color, alternateColor, className }: Props
       width={64}
       height={64}
       unoptimized
+      loading={loading}
       onError={() => setFailed(true)}
       // A faint chalk halo keeps dark marks (LV, NE) legible on the dark panels.
       className={cn("size-6 shrink-0 object-contain drop-shadow-[0_0_1px_oklch(0.98_0_0/0.7)]", className)}
