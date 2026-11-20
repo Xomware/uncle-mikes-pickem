@@ -5,10 +5,10 @@ import Link from "next/link";
 import { useCallback } from "react";
 
 import { LoadError } from "@/components/load-error";
-import { Paper } from "@/components/sheets/paper";
+import { Paper, SheetTeam } from "@/components/sheets/paper";
 import { SheetLoading } from "@/components/sheets/week-sheet";
 import { Button } from "@/components/ui/button";
-import { type WeekResult, type WeekView, getWeek, getWeekResult, unlessMissing } from "@/lib/api/client";
+import { type Team, type WeekResult, type WeekView, getWeek, getWeekResult, unlessMissing } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
 import { downloadCsv, toCsv } from "@/lib/csv";
 import { gridRows, outcome, picksHref } from "@/lib/picks";
@@ -70,12 +70,16 @@ const STATUS_PREFIX: Record<WeekResult["status"], string> = {
   final: "",
 };
 
+// One line of 6pt type: anything taller and the 50-odd rows no longer fit one page.
+const GRID_LOGO = "size-[1em] align-[-0.1em]";
+
 function GroupGridSheet({ view, result }: { view: WeekView; result: WeekResult | null }) {
   const games = sheetGames(view);
   const gowId = view.gow?.gameId;
   const totals = new Map(result?.members.map((r) => [r.sub, r]));
   const winners = new Set(result?.winners);
   const rows = gridRows(view, "");
+  const teams: Record<string, Team> = Object.fromEntries(games.flatMap((g) => [g.away, g.home]).map((t) => [t.abbr, t]));
 
   return (
     <div className="uppercase">
@@ -120,8 +124,12 @@ function GroupGridSheet({ view, result }: { view: WeekView; result: WeekResult |
                   scope="col"
                   className={cn("px-0.5 py-1 text-center font-semibold", g.gameId === gowId && "border-x-2 border-(--ink)")}
                 >
-                  <span className="block text-(--ink-soft)">{g.away.abbr}</span>
-                  <span className="block">@{g.home.abbr}</span>
+                  <span className="block text-(--ink-soft)">
+                    <SheetTeam team={g.away} logoClassName={GRID_LOGO} />
+                  </span>
+                  <span className="block">
+                    @<SheetTeam team={g.home} logoClassName={GRID_LOGO} />
+                  </span>
                   {g.gameId === gowId && <span className="block font-bold">GOW</span>}
                 </th>
               ))}
@@ -161,7 +169,10 @@ function GroupGridSheet({ view, result }: { view: WeekView; result: WeekResult |
                           <>
                             {result === "correct" && <Check className="inline size-2.5 stroke-3 align-baseline print:size-[5.5pt]" aria-label="right" />}
                             {result === "wrong" && <X className="inline size-2.5 stroke-3 align-baseline print:size-[5.5pt]" aria-label="wrong" />}
-                            <span className="font-semibold">{pick.team}</span> {pick.conf}
+                            <span className="font-semibold">
+                              <SheetTeam team={teams[pick.team] ?? { abbr: pick.team }} logoClassName={GRID_LOGO} />
+                            </span>{" "}
+                            {pick.conf}
                           </>
                         ) : (
                           <span aria-label="No pick">-</span>

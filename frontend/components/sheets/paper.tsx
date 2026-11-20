@@ -4,7 +4,9 @@ import { ArrowLeft, Printer } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { TeamLogo } from "@/components/field/team-logo";
 import { Button } from "@/components/ui/button";
+import type { Team } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
 // Paper tokens live with the sheets, not in globals.css: the sheet is a light page on the dark
@@ -79,6 +81,23 @@ export function Blank({ value, className }: { value?: ReactNode; className?: str
       )}
     >
       {value ?? " "}
+    </span>
+  );
+}
+
+/**
+ * A team's logo then its abbr, inline so a canceled game's line-through still reaches the abbr.
+ * The logo is sized in em and dropped just below the baseline, so it sits inside the line box and
+ * never makes a printed row taller. The abbr stays beside it: on a black-and-white printer a small
+ * logo is a gray blob.
+ */
+export function SheetTeam({ team, logoClassName }: { team: Team; logoClassName?: string }) {
+  return (
+    <span className="whitespace-nowrap">
+      <span className={cn("mr-[0.2em] inline-block size-[1.2em] align-[-0.25em]", logoClassName)}>
+        <TeamLogo {...team} loading="eager" className="size-full drop-shadow-none" />
+      </span>
+      {team.abbr}
     </span>
   );
 }

@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useCallback } from "react";
 
 import { LoadError } from "@/components/load-error";
-import { Paper } from "@/components/sheets/paper";
+import { Paper, SheetTeam } from "@/components/sheets/paper";
 import { SheetLoading } from "@/components/sheets/week-sheet";
 import { Button } from "@/components/ui/button";
 import {
@@ -201,10 +201,11 @@ function DeathTable({ board }: { board: DeathBoard }) {
                 </th>
                 {weeks.map((w) => {
                   const out = e.eliminatedWeek === w;
+                  const team = e.picks[String(w)];
                   return (
                     <td key={w} className={cn(CELL, "text-center whitespace-nowrap", out && "bg-(--wrong)")}>
                       {out && <X className="inline size-2.5 stroke-3 align-baseline print:size-[5.5pt]" aria-label="eliminated" />}
-                      {e.picks[String(w)] ?? ""}
+                      {team && <SheetTeam team={{ abbr: team }} logoClassName="size-[1em] align-[-0.1em]" />}
                     </td>
                   );
                 })}
