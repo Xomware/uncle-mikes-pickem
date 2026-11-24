@@ -28,6 +28,9 @@ export function teamTrends(teams: TeamRow[], n = 3): { paid: TeamRow[]; cost: Te
   return { paid: top("won"), cost: top("lost") };
 }
 
+export const playerHref = (sub: string, groupId?: string) =>
+  `/player/?${new URLSearchParams({ sub, ...(groupId ? { g: groupId } : {}) })}`;
+
 /** Best and average weekly place over the weeks graded, missed weeks included. */
 export function finishes(weeks: MyStats["weeks"]): { best: number; average: number } | null {
   if (!weeks.length) return null;

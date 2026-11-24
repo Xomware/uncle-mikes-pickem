@@ -5,6 +5,7 @@ import type { LeaderRow } from "@/lib/api/client";
 import { pickPct, pinnedMe, record } from "./leaderboard";
 
 const row = (over: Partial<LeaderRow> = {}): LeaderRow => ({
+  sub: "u1",
   rank: 1,
   name: "Dom G.",
   correct: 7,
