@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Game, WeekPicks, WeekView } from "@/lib/api/client";
 
-import { countdown, gridRows, isComplete, outcome, spreadText, swap, toPayload, toSheet } from "./picks";
+import { checkConf, confError, countdown, gridRows, isComplete, outcome, spreadText, toPayload, toSheet } from "./picks";
 
 const game = (gameId: string, away: string, home: string, extra: Partial<Game> = {}): Game => ({
   gameId,
@@ -34,42 +34,42 @@ const mine = (picks: WeekPicks["picks"], tiebreak: number | null = 44): WeekPick
 });
 
 describe("pick sheet", () => {
-  it("starts in kickoff order with nothing picked, and every game ranked", () => {
+  it("keeps kickoff order and starts blank", () => {
     const sheet = toSheet(GAMES, null);
     expect(sheet.order).toEqual(["101", "102", "103"]);
-    expect(toPayload(sheet)).toEqual({
-      picks: {
-        "101": { team: null, conf: 3 },
-        "102": { team: null, conf: 2 },
-        "103": { team: null, conf: 1 },
-      },
-      tiebreak: null,
-    });
+    expect(toPayload(sheet)).toEqual({ picks: {}, tiebreak: null });
+    expect(checkConf(sheet)).toEqual({ left: [1, 2, 3], dupes: [], bad: [] });
   });
 
-  it("restores a saved ranking and round-trips it", () => {
+  it("restores saved picks in kickoff order and round-trips them", () => {
     const saved = { "101": { team: "KC", conf: 1 }, "102": { team: "PIT", conf: 3 }, "103": { team: "PHI", conf: 2 } };
     const sheet = toSheet(GAMES, mine(saved));
-    expect(sheet.order).toEqual(["102", "103", "101"]);
+    expect(sheet.order).toEqual(["101", "102", "103"]);
     expect(toPayload(sheet)).toEqual({ picks: saved, tiebreak: 44 });
     expect(isComplete(sheet)).toBe(true);
   });
 
-  it("leaves canceled games out and puts a game with no saved pick at the bottom", () => {
+  it("leaves canceled games out and a game with no saved pick blank", () => {
     const games = [GAMES[0], { ...GAMES[1], canceled: true }, GAMES[2], game("104", "SF", "LAR")];
     const sheet = toSheet(games, mine({ "101": { team: "KC", conf: 1 }, "103": { team: "PHI", conf: 2 } }));
-    expect(sheet.order).toEqual(["103", "101", "104"]);
-    expect(toPayload(sheet).picks).toEqual({
-      "103": { team: "PHI", conf: 3 },
-      "101": { team: "KC", conf: 2 },
-      "104": { team: null, conf: 1 },
-    });
+    expect(sheet.order).toEqual(["101", "103", "104"]);
+    expect(sheet.conf["104"]).toBe("");
+    expect(checkConf(sheet).left).toEqual([3]);
     expect(isComplete(sheet)).toBe(false);
   });
 
-  it("swaps two rows, so their confidences trade", () => {
-    expect(swap(["a", "b", "c"], 0, 2)).toEqual(["c", "b", "a"]);
-    expect(swap(["a", "b", "c"], 0, 3)).toEqual(["a", "b", "c"]);
+  it("flags points used twice and boxes outside 1..N", () => {
+    const sheet = { ...toSheet(GAMES, null), conf: { "101": "2", "102": "2", "103": "9" } };
+    const check = checkConf(sheet);
+    expect(check).toEqual({ left: [1, 3], dupes: [2], bad: ["103"] });
+    expect(confError(check)).toBe(true);
+    expect(confError(checkConf({ ...sheet, conf: { "101": "2", "102": "", "103": "x" } }))).toBe(true);
+    expect(confError(checkConf({ ...sheet, conf: { "101": "2", "102": "", "103": "1" } }))).toBe(false);
+  });
+
+  it("saves a draft with a team but no points, or points but no team", () => {
+    const sheet = { ...toSheet(GAMES, null), teams: { "101": "KC", "102": null, "103": null }, conf: { "101": "", "102": "3", "103": "" } };
+    expect(toPayload(sheet).picks).toEqual({ "101": { team: "KC", conf: null }, "102": { team: null, conf: 3 } });
   });
 
   it("sends a tiebreak only when it is a whole number", () => {
@@ -78,6 +78,7 @@ describe("pick sheet", () => {
     expect(toPayload({ ...sheet, tiebreak: "47.5" }).tiebreak).toBeNull();
     expect(toPayload({ ...sheet, tiebreak: "-3" }).tiebreak).toBeNull();
   });
+
 });
 
 describe("group grid", () => {

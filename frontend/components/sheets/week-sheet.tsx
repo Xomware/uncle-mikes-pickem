@@ -86,7 +86,7 @@ function SheetBody({ view, detail }: { view: WeekView; detail: GroupDetail }) {
   );
   const total = mine
     ? Object.values(mine.picks).reduce(
-        (sum, p) => sum + (p.team ? p.conf : 0),
+        (sum, p) => sum + (p.team ? (p.conf ?? 0) : 0),
         0,
       )
     : null;
