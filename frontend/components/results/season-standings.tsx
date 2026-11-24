@@ -20,6 +20,7 @@ import {
 import { useLoad } from "@/lib/api/use-load";
 import { groupHref } from "@/lib/groups";
 import { standingsHref } from "@/lib/results";
+import { playerHref } from "@/lib/stats";
 import { cn } from "@/lib/utils";
 
 export function StandingsLink({ groupId }: { groupId: string }) {
@@ -181,9 +182,12 @@ function SeasonTable({
                     <span className="led w-7 shrink-0 text-base">
                       {r.place}
                     </span>
-                    <span className="truncate font-display text-base font-bold">
+                    <Link
+                      href={playerHref(r.member, standings.groupId)}
+                      className="truncate font-display text-base font-bold hover:text-primary hover:underline underline-offset-4 focus-visible:underline outline-none"
+                    >
                       {r.name}
-                    </span>
+                    </Link>
                   </span>
                 </th>
                 <td className={NUM}>

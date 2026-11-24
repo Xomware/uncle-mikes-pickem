@@ -1,7 +1,8 @@
 """GET /standings/global: the leaderboard across every group, season and latest week (common/leaderboard.py).
 
 Each board sends its first PAGE rows plus the caller's own row, wherever it ranks.
-A row's group is named only to that group's members; nobody gets subs or groupIds.
+A row's group is named only to that group's members; nobody gets groupIds. The sub links to the
+player's page (me_stats).
 """
 
 import os
@@ -29,7 +30,7 @@ def handler(event, context):
     names = {m["GSI1SK"].removeprefix("GROUP#"): m["groupName"] for m in groups}
 
     def show(row: dict) -> dict:
-        shown = {k: v for k, v in row.items() if k not in ("sub", "groupId")}
+        shown = {k: v for k, v in row.items() if k != "groupId"}
         return {**shown, "group": names.get(row["groupId"]), "you": row["sub"] == me["sub"]}
 
     def page(rows: list[dict]) -> dict:

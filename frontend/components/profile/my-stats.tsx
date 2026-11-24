@@ -71,9 +71,13 @@ function GroupStats({ groups }: { groups: GroupSummary[] }) {
   );
 }
 
-function StatsBody({ stats }: { stats: MyStats }) {
+/** A player's season in one group: the scoreboard, weekly finishes, team trends and confidence chart. */
+export function StatsBody({ stats }: { stats: MyStats }) {
   const { group, record, points, streak, gow, season, money } = stats;
   if (!stats.weeks.length) {
+    if (!stats.you || !group) {
+      return <p className="panel p-4 text-sm text-muted-foreground">No graded weeks yet this season.</p>;
+    }
     return (
       <p className="panel p-4 text-sm text-muted-foreground">
         Your stats for{" "}
@@ -87,11 +91,12 @@ function StatsBody({ stats }: { stats: MyStats }) {
   const rate = pickRate(record);
   const place = finishes(stats.weeks);
   const won = stats.weeks.filter((w) => w.won).length;
+  const played = stats.weeks.filter((w) => !w.missed);
 
   return (
     <div className="space-y-6">
       <Board
-        title={group.name}
+        title={group?.name ?? "Season"}
         link={<span className="shrink-0 text-xs tracking-wider text-muted-foreground uppercase">Thru Wk {stats.throughWeek}</span>}
       >
         <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -114,17 +119,25 @@ function StatsBody({ stats }: { stats: MyStats }) {
             value={place ? ordinal(place.best) : "-"}
             note={place ? `Avg ${place.average.toFixed(1)}` : undefined}
           />
-          <Stat
-            label="Money won"
-            value={money ? cents(money.won) : "-"}
-            note={money ? (money.pending ? `+${cents(money.pending)} pending` : "Settled") : "Payouts off"}
-          />
+          {stats.you ? (
+            <Stat
+              label="Money won"
+              value={money ? cents(money.won) : "-"}
+              note={money ? (money.pending ? `+${cents(money.pending)} pending` : "Settled") : "Payouts off"}
+            />
+          ) : (
+            <Stat
+              label="Avg week"
+              value={played.length ? (played.reduce((a, w) => a + w.weekly, 0) / played.length).toFixed(1) : "-"}
+              note={`${played.length} sheets in`}
+            />
+          )}
         </dl>
       </Board>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <WeeklyFinishes weeks={stats.weeks} />
-        <TeamTrends teams={stats.teams} />
+        <TeamTrends teams={stats.teams} you={stats.you} />
       </div>
       <ConfidenceChart levels={stats.confidence} />
     </div>
@@ -178,7 +191,7 @@ function WeeklyFinishes({ weeks }: { weeks: MyStats["weeks"] }) {
   );
 }
 
-function TeamTrends({ teams }: { teams: MyStats["teams"] }) {
+function TeamTrends({ teams, you }: { teams: MyStats["teams"]; you: boolean }) {
   const { paid, cost } = teamTrends(teams);
   return (
     <section className="panel p-4" aria-labelledby="teams-heading">
@@ -188,7 +201,7 @@ function TeamTrends({ teams }: { teams: MyStats["teams"] }) {
       <p className="text-xs text-muted-foreground">Confidence points won and lost on the teams picked.</p>
       <div className="mt-3 space-y-4">
         <TeamList title="Paid off" teams={paid} points={(t) => `+${t.won}`} tone="text-correct" empty="No right picks yet." />
-        <TeamList title="Cost you" teams={cost} points={(t) => `-${t.lost}`} tone="text-wrong" empty="No wrong picks yet." />
+        <TeamList title={you ? "Cost you" : "Cost them"} teams={cost} points={(t) => `-${t.lost}`} tone="text-wrong" empty="No wrong picks yet." />
       </div>
     </section>
   );

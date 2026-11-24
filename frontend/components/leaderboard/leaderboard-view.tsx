@@ -1,6 +1,7 @@
 "use client";
 
 import { Trophy } from "lucide-react";
+import Link from "next/link";
 import { type KeyboardEvent, useState } from "react";
 
 import { FieldTitle } from "@/components/field/field-title";
@@ -8,6 +9,7 @@ import { LoadError } from "@/components/load-error";
 import { type LeaderBoard, type LeaderRow, type Leaderboard, getLeaderboard } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
 import { pickPct, pinnedMe, record } from "@/lib/leaderboard";
+import { playerHref } from "@/lib/stats";
 import { cn } from "@/lib/utils";
 
 type Tab = "overall" | "thisWeek";
@@ -194,7 +196,12 @@ function Row({ row, season }: { row: LeaderRow; season: boolean }) {
           </span>
           <span className="min-w-0">
             <span className="flex items-center gap-1.5">
-              <span className="truncate font-display text-base font-bold">{row.name}</span>
+              <Link
+                href={row.you ? "/profile/" : playerHref(row.sub)}
+                className="truncate font-display text-base font-bold hover:text-primary hover:underline underline-offset-4 focus-visible:underline outline-none"
+              >
+                {row.name}
+              </Link>
               {row.you && (
                 <span className="rounded-sm bg-primary px-1 font-display text-[0.65rem] font-extrabold tracking-wider text-primary-foreground uppercase">
                   You

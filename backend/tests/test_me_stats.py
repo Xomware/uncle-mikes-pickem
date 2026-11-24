@@ -53,7 +53,8 @@ def stats(api, gid, who):
 def test_dom_after_week_one(api, gid):
     status, data = stats(api, gid, DOM)
     assert status == 200
-    assert (data["throughWeek"], data["entryType"]) == (1, "season")
+    assert (data["throughWeek"], data["entryType"], data["you"]) == (1, "season", True)
+    assert data["player"] == {"sub": DOM["sub"], "name": "Dom"}
     # KC 3 right, CIN 2 wrong on the GOW, PHI 1 right; kickoffs run 101, 102, 103.
     assert data["record"] == {"right": 2, "wrong": 1, "tie": 0}
     assert data["points"] == {"earned": 4, "possible": 6}
@@ -82,3 +83,32 @@ def test_pat_won_the_week(api, gid):
 
 def test_non_member_is_404(api, gid):
     assert stats(api, gid, SAM)[0] == 404
+
+
+def board(gid, sub):
+    row = {"sub": sub, "groupId": gid, "name": "Pat", "rank": 1, "correct": 2, "wrong": 1, "ties": 0, "points": 5, "won": 1}
+    table().put_item(Item={"PK": "LEADERBOARD", "SK": "S2027", "season": 2027, "week": 1, "minGraded": 1, "overall": [row], "thisWeek": [row]})
+
+
+def test_member_sees_a_groupmate_without_their_money(api, gid):
+    status, data = call(api["me_stats"], DOM, query={"id": gid, "sub": PAT["sub"]})
+    assert status == 200
+    assert data["player"] == {"sub": PAT["sub"], "name": "Pat"}
+    assert (data["group"]["groupId"], data["you"], data["money"]) == (gid, False, None)
+    assert data["streak"] == {"longest": 2, "current": 2}
+
+
+def test_outsider_sees_a_leaderboard_player_without_the_group(api, gid):
+    board(gid, PAT["sub"])
+    status, data = call(api["me_stats"], SAM, query={"sub": PAT["sub"]})
+    assert status == 200
+    assert (data["group"], data["money"], data["throughWeek"]) == (None, None, 1)
+    assert data["record"] == {"right": 2, "wrong": 1, "tie": 0}
+    assert "email" not in str(data)
+
+
+def test_outsider_cannot_reach_past_the_leaderboard(api, gid):
+    assert call(api["me_stats"], SAM, query={"sub": PAT["sub"]})[0] == 400
+    assert call(api["me_stats"], SAM, query={"id": gid, "sub": PAT["sub"]})[0] == 404
+    board("elsewhere", PAT["sub"])
+    assert call(api["me_stats"], SAM, query={"id": gid, "sub": PAT["sub"]})[0] == 404
