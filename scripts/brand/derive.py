@@ -301,6 +301,17 @@ fit(SUDDEN, 1056, 10_000).save(BRAND / "sudden-death.webp", quality=90, method=6
 
 PRIMARY.resize((1280, round(PRIMARY.height * 1280 / PRIMARY.width)), Image.LANCZOS).save(BRAND / "logo.webp", quality=92, method=6)
 
+
+def midfield():
+    """The primary as paint on grass: the black rim and glow aren't paint, so darkness drains to clear."""
+    r, g, b, a = PRIMARY.split()
+    ink = ImageChops.lighter(ImageChops.lighter(r, g), b).point(lambda v: max(0, min(255, (v - 60) * 3)))
+    return Image.merge("RGBA", (r, g, b, ImageChops.multiply(a, ink)))
+
+
+# The field shows it up to 56rem wide, but faded and scuffed; 720px keeps it near 170KB.
+fit(midfield(), 720, 10_000).save(BRAND / "midfield.webp", quality=70, method=6)
+
 lockup = lockup_horizontal()
 lockup.save(LOGOS / "lockup-horizontal.png", optimize=True)
 # The app header shows it about 44px tall; 3x for phones.

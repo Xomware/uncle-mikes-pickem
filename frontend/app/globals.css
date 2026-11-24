@@ -154,6 +154,9 @@
     @apply font-sans text-foreground;
     /* clip, not hidden: hidden would break position: sticky on the header. */
     overflow-x: clip;
+    /* The field scrolls with the page, so FieldMarks (z-index -1) is pinned to the same yard lines. */
+    position: relative;
+    isolation: isolate;
     /* 5-yard mow stripes with a chalk line on each, yard ticks at the sidelines and hashes. */
     --yard: 24px;
     background:
@@ -166,6 +169,19 @@
         transparent 0 calc(var(--yard) * 5 - 3px),
         color-mix(in oklch, var(--chalk) 62%, transparent) calc(var(--yard) * 5 - 3px) calc(var(--yard) * 5)
       ),
+      /* Mower sheen: grass laid toward the stands catches the light, bright mid-stripe on alternate passes. */
+      repeating-linear-gradient(
+        to bottom,
+        oklch(1 0 0 / 0.05) 0,
+        oklch(1 0 0 / 0.09) calc(var(--yard) * 2.5),
+        oklch(1 0 0 / 0.03) calc(var(--yard) * 5),
+        oklch(0 0 0 / 0.04) calc(var(--yard) * 5),
+        oklch(0 0 0 / 0.07) calc(var(--yard) * 7.5),
+        oklch(0 0 0 / 0.02) calc(var(--yard) * 10)
+      ),
+      /* Cross-cut passes across the stripes, and the turf darkening toward the sidelines. */
+      repeating-linear-gradient(to right, oklch(1 0 0 / 0.025) 0 120px, transparent 120px 240px),
+      radial-gradient(ellipse 75% 120% at 50% 50%, transparent 55%, oklch(0.15 0.05 150 / 0.28)),
       url("./art/grass.svg") 0 0 / 240px 240px,
       repeating-linear-gradient(
         to bottom,
@@ -190,6 +206,66 @@
         var(--turf-1) 0 calc(var(--yard) * 5),
         var(--turf-2) calc(var(--yard) * 5) calc(var(--yard) * 10)
       );
+  }
+  .field-marks {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    --paint: 0.6;
+  }
+  /* Phones: the numbers run under the page's own painted headings. */
+  @media (width < 40rem) {
+    .field-marks {
+      --paint: 0.35;
+    }
+  }
+  :root:is(:has(.sudden-death), :has(.press-box)) .field-marks {
+    --paint: 0.22;
+  }
+  /* The landing's hero is the logo already, and it covers midfield. */
+  :root:has([data-hero]) .midfield {
+    display: none;
+  }
+  .field-numbers {
+    position: absolute;
+    top: 0;
+    width: 80px;
+    height: 100%;
+    font-family: var(--font-stencil);
+    font-size: 48px;
+    fill: var(--chalk);
+    opacity: var(--paint);
+  }
+  .field-numbers text {
+    stroke: var(--chalk);
+    stroke-width: 1.5px;
+  }
+  .field-numbers.left {
+    left: 0;
+  }
+  .field-numbers.right {
+    right: 0;
+  }
+  .midfield {
+    position: absolute;
+    top: calc(var(--yard) * 25 - 1.5px);
+    left: 50%;
+    width: min(56rem, 94vw);
+    aspect-ratio: 720 / 520;
+    translate: -50% -50%;
+    background: url("/brand/midfield.webp") center / contain no-repeat;
+    opacity: calc(var(--paint) * 0.6);
+  }
+  :root:has(.sudden-death) .midfield {
+    filter: grayscale(0.6) brightness(0.8);
+  }
+  :is(.field-numbers, .midfield) {
+    -webkit-mask-image: url("./art/worn.svg");
+    mask-image: url("./art/worn.svg");
+    -webkit-mask-size: 180px;
+    mask-size: 180px;
   }
   h1,
   h2,
