@@ -34,8 +34,12 @@ def test_folds_a_season():
     assert out["streak"] == {"longest": 1, "current": 1}
     assert out["gow"] == {"right": 1, "wrong": 0, "tie": 0}
     assert out["teams"] == [
-        {"team": "BUF", "right": 1, "wrong": 0, "tie": 0},
-        {"team": "KC", "right": 1, "wrong": 1, "tie": 0},
+        {"team": "BUF", "right": 1, "wrong": 0, "tie": 0, "won": 2, "lost": 0},
+        {"team": "KC", "right": 1, "wrong": 1, "tie": 0, "won": 1, "lost": 2},
+    ]
+    assert out["confidence"] == [
+        {"conf": 1, "right": 1, "wrong": 0, "tie": 0},
+        {"conf": 2, "right": 1, "wrong": 1, "tie": 0},
     ]
 
 
@@ -46,6 +50,8 @@ def test_streak_runs_in_kickoff_order_across_weeks():
     # a wrong, b right, c right, d tie: a tie breaks the run.
     assert out["streak"] == {"longest": 2, "current": 0}
     assert out["record"]["tie"] == 1
+    # A tie neither earns nor costs its confidence.
+    assert next(t for t in out["teams"] if t["team"] == "D") == {"team": "D", "right": 0, "wrong": 0, "tie": 1, "won": 0, "lost": 0}
 
 
 def test_member_missing_from_a_result_is_skipped():

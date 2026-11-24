@@ -18,18 +18,14 @@ export function ordinal(place: string | number): string {
 
 type TeamRow = MyStats["teams"][number];
 
-/**
- * The teams the member does best and worst picking. A team needs `min` decided picks to count. Best
- * are at .500 or better, worst below it, so a losing team never shows as a best. More picks wins a
- * tie on the rate.
- */
-export function teamSplits(teams: TeamRow[], min = 2, n = 3): { best: TeamRow[]; worst: TeamRow[] } {
-  const rated = teams.filter((t) => decided(t) >= min);
-  const rate = (t: TeamRow) => pickRate(t) ?? 0;
-  const byVolume = (a: TeamRow, b: TeamRow) => decided(b) - decided(a) || a.team.localeCompare(b.team);
-  const best = rated.filter((t) => rate(t) >= 0.5).sort((a, b) => rate(b) - rate(a) || byVolume(a, b));
-  const worst = rated.filter((t) => rate(t) < 0.5).sort((a, b) => rate(a) - rate(b) || byVolume(a, b));
-  return { best: best.slice(0, n), worst: worst.slice(0, n) };
+/** The `n` teams that earned the most points, and the `n` whose wrong picks cost the most. */
+export function teamTrends(teams: TeamRow[], n = 3): { paid: TeamRow[]; cost: TeamRow[] } {
+  const top = (key: "won" | "lost") =>
+    teams
+      .filter((t) => t[key] > 0)
+      .sort((a, b) => b[key] - a[key] || decided(b) - decided(a) || a.team.localeCompare(b.team))
+      .slice(0, n);
+  return { paid: top("won"), cost: top("lost") };
 }
 
 /** Best and average weekly place over the weeks graded, missed weeks included. */

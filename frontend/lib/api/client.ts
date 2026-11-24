@@ -643,8 +643,10 @@ export interface MyStats {
   /** Right picks in a row, in kickoff order. */
   streak: { longest: number; current: number };
   gow: GradeTally;
-  /** The caller's record picking each team. */
-  teams: (GradeTally & { team: string })[];
+  /** The caller's record picking each team. won is the confidence its right picks earned, lost what its wrong ones cost. */
+  teams: (GradeTally & { team: string; won: number; lost: number })[];
+  /** The caller's record at each confidence level they've used, lowest first. */
+  confidence: (GradeTally & { conf: number })[];
 }
 
 export const getMyStats = (id: string) => request<MyStats>(`/me/stats?id=${encodeURIComponent(id)}`);
