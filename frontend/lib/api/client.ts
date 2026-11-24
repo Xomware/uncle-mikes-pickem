@@ -499,6 +499,58 @@ export interface Leaderboard {
 /** null until the first leaderboard is built. */
 export const getLeaderboard = () => request<Leaderboard | null>("/standings/global");
 
+/** Decided picks only: pending and void ones aren't counted. */
+export interface PickTally {
+  correct: number;
+  wrong: number;
+  ties: number;
+}
+
+export interface GroupRank {
+  rank: number;
+  /** Only for a group the caller is in. */
+  name: string | null;
+  players: number;
+  /** Sheets turned in, all weeks; ranked on points / sheets. */
+  sheets: number;
+  points: number;
+}
+
+export interface TeamTotal extends PickTally {
+  team: string;
+  picks: number;
+  /** Confidence points from right picks on this team. */
+  points: number;
+}
+
+export interface Upset {
+  week: number;
+  gameId: string;
+  winner: string;
+  loser: string;
+  winnerScore: number;
+  loserScore: number;
+  picks: number;
+  onLoser: number;
+}
+
+/** Every sheet in every live group; a player in two groups counts twice. */
+export interface GlobalStats {
+  season: number;
+  week: number;
+  players: number;
+  accuracy: PickTally;
+  weeks: (PickTally & { week: number; sheets: number })[];
+  groups: GroupRank[];
+  /** Most picked first. */
+  teams: TeamTotal[];
+  /** Most lopsided first. */
+  upsets: Upset[];
+}
+
+/** null until the first stats are built. */
+export const getGlobalStats = () => request<GlobalStats | null>("/stats/global");
+
 /** P(this member wins the week) if the away side wins the game, and if home does. null: that side can't win. */
 export interface RootSplit {
   away: number | null;

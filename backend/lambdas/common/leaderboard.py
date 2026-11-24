@@ -1,6 +1,7 @@
 """The global leaderboard: every live group's current season, one row per player (issue #106).
 
     LEADERBOARD / S2026   rebuilt by cron_tick after any regrade and on the hourly sweep
+    STATS / S2026         rebuilt beside it (common/app_stats.py)
 
 Built from the RESULT items, so reading it costs one GetItem instead of a scan.
 A player in several groups is ranked on their best entry. Rows carry a first name and
@@ -15,7 +16,8 @@ from collections.abc import Iterable
 
 from boto3.dynamodb.conditions import Key
 
-from lambdas.common import nfl_store, season as season_fold
+from lambdas.common import app_stats, nfl_store, season as season_fold
+from lambdas.common.weeks import week_pk
 
 PK = "LEADERBOARD"
 # Season pick % ranks only players with at least this share of the most-graded player's
@@ -104,8 +106,8 @@ def board(groups: list[tuple[str, list[dict], list[dict]]], season: int) -> dict
 
 
 def refresh(table, groups: Iterable[dict], season: int) -> bool:
-    """Rebuild LEADERBOARD for `season` from its live groups. Writes, and returns True, only on a change."""
-    inputs = []
+    """Rebuild LEADERBOARD and STATS for `season` from its live groups. Writes only on a change; True if either did."""
+    inputs, sheets = [], []
     for group in groups:
         if group.get("replay") or int(group["season"]) != season:
             continue
@@ -116,9 +118,20 @@ def refresh(table, groups: Iterable[dict], season: int) -> bool:
             table.query(KeyConditionExpression=Key("PK").eq(f"GROUP#{gid}") & Key("SK").begins_with("MEMBER#"))["Items"]
         )
         inputs.append((gid, found, members))
+        sheets.append((gid, found, {r["week"]: week_sheets(table, gid, season, r["week"]) for r in found}))
     # pct floats stay out of the item (DynamoDB wants Decimals); readers recompute them from the counts.
-    body = board(inputs, season)
-    key = {"PK": PK, "SK": f"S{season}"}
+    wrote = save(table, PK, season, board(inputs, season))
+    return save(table, app_stats.PK, season, app_stats.build(sheets, season)) or wrote
+
+
+def week_sheets(table, group_id: str, season: int, week: int) -> dict[str, dict]:
+    pk = week_pk(group_id, season, week)
+    items = table.query(KeyConditionExpression=Key("PK").eq(pk) & Key("SK").begins_with("PICK#"))["Items"]
+    return {i["sub"]: i for i in nfl_store.plain(items)}
+
+
+def save(table, pk: str, season: int, body: dict) -> bool:
+    key = {"PK": pk, "SK": f"S{season}"}
     old = table.get_item(Key=key).get("Item")
     if old and {k: v for k, v in nfl_store.plain(old).items() if k not in key} == body:
         return False

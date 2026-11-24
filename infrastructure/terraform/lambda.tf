@@ -62,6 +62,9 @@ locals {
     { name = "season", description = "Read a group's season standings (?id=)", path_part = "season", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
     { name = "global", description = "Read the leaderboard across every group", path_part = "global", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
   ]
+  stats_lambdas = [
+    { name = "global", description = "Read app-wide pick stats across every group", path_part = "global", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+  ]
   analytics_lambdas = [
     { name = "week", description = "Read a group-week's win odds and rooting guide (?groupId=&week=)", path_part = "week", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
     { name = "season", description = "Read a group's season win odds (?id=)", path_part = "season", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
@@ -111,6 +114,7 @@ locals {
     { for l in local.replay_lambdas : "replay_${l.name}" => l },
     { for l in local.results_lambdas : "results_${l.name}" => l },
     { for l in local.standings_lambdas : "standings_${l.name}" => l },
+    { for l in local.stats_lambdas : "stats_${l.name}" => l },
     { for l in local.analytics_lambdas : "analytics_${l.name}" => l },
     { for l in local.email_lambdas : "email_${l.name}" => l },
     { for l in local.config_lambdas : "config_${l.name}" => l },
@@ -160,6 +164,7 @@ locals {
     results_week     = ["app:GetItem", "app:Query"]
     standings_season = ["app:GetItem", "app:Query"]
     standings_global = ["app:Query", "app_index:Query"]
+    stats_global     = ["app:Query", "app_index:Query"]
     analytics_week   = ["app:GetItem", "app:Query"]
     analytics_season = ["app:GetItem", "app:Query"]
 
