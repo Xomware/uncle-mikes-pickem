@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Game, WeekPicks, WeekView } from "@/lib/api/client";
 
-import { checkConf, confError, countdown, gridRows, isComplete, outcome, spreadText, toPayload, toSheet } from "./picks";
+import { carry, checkConf, confError, countdown, gridRows, isComplete, outcome, spreadText, toPayload, toSheet } from "./picks";
 
 const game = (gameId: string, away: string, home: string, extra: Partial<Game> = {}): Game => ({
   gameId,
@@ -70,6 +70,17 @@ describe("pick sheet", () => {
   it("saves a draft with a team but no points, or points but no team", () => {
     const sheet = { ...toSheet(GAMES, null), teams: { "101": "KC", "102": null, "103": null }, conf: { "101": "", "102": "3", "103": "" } };
     expect(toPayload(sheet).picks).toEqual({ "101": { team: "KC", conf: null }, "102": { team: null, conf: 3 } });
+  });
+
+  it("carries a draft onto a refreshed week, dropping canceled games and adding restored ones", () => {
+    const draft = { ...toSheet(GAMES, null), teams: { "101": "KC", "102": "PIT", "103": null }, conf: { "101": "3", "102": "1", "103": "" }, tiebreak: "40" };
+    const fresh = toSheet([GAMES[0], { ...GAMES[1], canceled: true }, GAMES[2], game("104", "SF", "LAR")], mine({ "104": { team: "SF", conf: 2 } }));
+    expect(carry(draft, fresh)).toEqual({
+      order: ["101", "103", "104"],
+      teams: { "101": "KC", "103": null, "104": "SF" },
+      conf: { "101": "3", "103": "", "104": "2" },
+      tiebreak: "40",
+    });
   });
 
   it("sends a tiebreak only when it is a whole number", () => {

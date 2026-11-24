@@ -42,6 +42,17 @@ export function toSheet(games: Game[], mine: WeekPicks | null): Sheet {
   };
 }
 
+/** A fresh sheet from the server, keeping whatever the draft holds for games still open. */
+export function carry(draft: Sheet, fresh: Sheet): Sheet {
+  const keep = (id: string) => draft.order.includes(id);
+  return {
+    order: fresh.order,
+    teams: Object.fromEntries(fresh.order.map((id) => [id, keep(id) ? draft.teams[id] : fresh.teams[id]])),
+    conf: Object.fromEntries(fresh.order.map((id) => [id, keep(id) ? draft.conf[id] : fresh.conf[id]])),
+    tiebreak: draft.tiebreak,
+  };
+}
+
 const whole = (s: string) => (/^\d+$/.test(s.trim()) ? Number(s) : null);
 
 export interface ConfCheck {

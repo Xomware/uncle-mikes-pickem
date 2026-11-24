@@ -7,13 +7,14 @@ import { useCallback, useEffect, useState } from "react";
 
 import { FieldTitle } from "@/components/field/field-title";
 import { LoadError } from "@/components/load-error";
+import { OrganizerPanel } from "@/components/picks/organizer-panel";
 import { PickSheet } from "@/components/picks/pick-sheet";
 import { LockedWeek } from "@/components/results/week-results";
 import { buttonVariants } from "@/components/ui/button";
 import { type WeekView, getWeek } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
 import { usePoll } from "@/lib/api/use-poll";
-import { groupHref } from "@/lib/groups";
+import { groupHref, isOrganizer } from "@/lib/groups";
 import { countdown, picksHref } from "@/lib/picks";
 import { useFlags } from "@/lib/flags";
 import { inLiveWindow } from "@/lib/live";
@@ -50,13 +51,13 @@ export function PicksWeek() {
       )}
       {load.status === "error" && <LoadError title="Couldn't load this week" message={load.message} onRetry={retry} />}
       {/* Keyed on the week so moving between weeks starts a fresh sheet. */}
-      {load.status === "ready" && <WeekBody key={load.data.week.week} view={load.data} reload={retry} />}
+      {load.status === "ready" && <WeekBody key={load.data.week.week} view={load.data} refresh={refresh} />}
     </div>
   );
 }
 
-function WeekBody({ view, reload }: { view: WeekView; reload: () => void }) {
-  const { group, week } = view;
+function WeekBody({ view, refresh }: { view: WeekView; refresh: () => Promise<void> }) {
+  const { group, week, role } = view;
   const left = useCountdown(week.lockAt, week.now);
   const locked = week.locked || left === null;
   const flags = useFlags(group.groupId);
@@ -106,12 +107,13 @@ function WeekBody({ view, reload }: { view: WeekView; reload: () => void }) {
         )}
       </p>
       {week.locked !== locked && (
-        <button type="button" onClick={reload} className="chalk mt-2 min-h-11 text-xs tracking-[0.12em] underline-offset-4 hover:underline">
+        <button type="button" onClick={refresh} className="chalk mt-2 min-h-11 text-xs tracking-[0.12em] underline-offset-4 hover:underline">
           Reload to see the group&apos;s picks
         </button>
       )}
 
-      {week.locked ? <LockedWeek view={view} /> : <PickSheet view={view} locked={locked} reload={reload} />}
+      {!locked && isOrganizer(role) && <OrganizerPanel view={view} refresh={refresh} />}
+      {week.locked ? <LockedWeek view={view} /> : <PickSheet view={view} locked={locked} />}
     </>
   );
 }
