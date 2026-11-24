@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 
+import { FieldMarks } from "@/components/field/field-marks";
+
 import "./globals.css";
 
 // Self-hosted (SIL OFL, latin subset from Google Fonts): fetching them at build
@@ -48,7 +50,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
       className={`dark ${body.variable} ${heading.variable} ${stencil.variable} ${led.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        <FieldMarks />
+        {children}
+      </body>
     </html>
   );
 }

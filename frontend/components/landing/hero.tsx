@@ -31,7 +31,7 @@ function TickerRun() {
 /** The end zone under the lights: the lockup, what this is in one line, the way in, and the rules crawling past. */
 export function Hero() {
   return (
-    <div className="endzone relative isolate overflow-hidden pt-16">
+    <div data-hero className="endzone relative isolate overflow-hidden pt-16">
       <div aria-hidden="true" className="absolute inset-0 -z-10">
         <span data-side="left" className="hero-beam" />
         <span data-side="right" className="hero-beam" />
