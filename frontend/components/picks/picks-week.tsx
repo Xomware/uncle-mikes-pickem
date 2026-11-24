@@ -36,7 +36,7 @@ export function PicksWeek() {
   usePoll(() => load.status === "ready" && !load.data.group.replay && inLiveWindow(load.data.games, Date.now()), refresh);
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:px-6" aria-busy={load.status === "loading"}>
+    <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:px-6 lg:max-w-6xl" aria-busy={load.status === "loading"}>
       <Link href={groupHref(id)} className="chalk inline-flex min-h-11 items-center gap-1.5 text-sm tracking-[0.14em] hover:text-primary">
         <ArrowLeft className="size-4" aria-hidden="true" />
         Back to group
@@ -87,30 +87,32 @@ function WeekBody({ view, refresh }: { view: WeekView; refresh: () => Promise<vo
         )}
       </div>
 
-      <PickingFor view={view} groups={mine} />
+      <div className="lg:grid lg:grid-cols-2 lg:gap-4">
+        <PickingFor view={view} groups={mine} />
 
-      {/* The game clock: time to lock on the scoreboard. */}
-      <p role="status" className="scoreboard mt-5 flex items-center gap-3 px-4 py-3 text-sm">
-        {locked ? (
-          <Lock className="size-5 shrink-0 text-led" aria-hidden="true" />
-        ) : (
-          <Timer className="size-5 shrink-0 text-led" aria-hidden="true" />
-        )}
-        {locked ? (
-          <>
-            <span className="led text-2xl">LOCKED</span>
-            <span className="text-muted-foreground">Everyone&apos;s picks are visible.</span>
-          </>
-        ) : (
-          <>
-            <span className="min-w-0 flex-1 text-muted-foreground">
-              <span className="block font-display text-xs font-bold tracking-[0.2em] uppercase">Picks lock in</span>
-              {etTime(week.lockAt)}
-            </span>
-            <strong className="led text-3xl leading-none">{left}</strong>
-          </>
-        )}
-      </p>
+        {/* The game clock: time to lock on the scoreboard. */}
+        <p role="status" className="scoreboard mt-4 flex items-center gap-3 px-4 py-3 text-sm">
+          {locked ? (
+            <Lock className="size-5 shrink-0 text-led" aria-hidden="true" />
+          ) : (
+            <Timer className="size-5 shrink-0 text-led" aria-hidden="true" />
+          )}
+          {locked ? (
+            <>
+              <span className="led text-2xl">LOCKED</span>
+              <span className="text-muted-foreground">Everyone&apos;s picks are visible.</span>
+            </>
+          ) : (
+            <>
+              <span className="min-w-0 flex-1 text-muted-foreground">
+                <span className="block font-display text-xs font-bold tracking-[0.2em] uppercase">Picks lock in</span>
+                {etTime(week.lockAt)}
+              </span>
+              <strong className="led text-3xl leading-none">{left}</strong>
+            </>
+          )}
+        </p>
+      </div>
       {week.locked !== locked && (
         <button type="button" onClick={refresh} className="chalk mt-2 min-h-11 text-xs tracking-[0.12em] underline-offset-4 hover:underline">
           Reload to see the group&apos;s picks

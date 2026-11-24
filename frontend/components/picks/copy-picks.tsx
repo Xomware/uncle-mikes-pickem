@@ -25,7 +25,7 @@ export function CopyPicks({ sheet, week, groups }: { sheet: Sheet; week: number;
   }
 
   return (
-    <section className="panel mt-4 p-4" aria-labelledby="copy-title">
+    <section className="panel mt-4 p-4 lg:mt-0" aria-labelledby="copy-title">
       <h2 id="copy-title" className="font-display text-lg font-bold tracking-wide uppercase">
         Same picks in your other groups?
       </h2>
