@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleAlert, CircleCheck, Info, LoaderCircle } from "lucide-react";
+import { BarChart3, ChevronRight, CircleAlert, CircleCheck, LoaderCircle } from "lucide-react";
 import { type CSSProperties, type ReactNode, useState } from "react";
 
 import { LightBank } from "@/components/field/icons";
@@ -41,7 +41,6 @@ export function PickSheet({ view, locked, otherGroups }: Props) {
     setSaved(fresh);
     setSheet(dirty ? carry(sheet, fresh) : fresh);
   }
-  const tiebreakGame = byId[week.tiebreakGameId];
   const check = checkConf(sheet);
   const canceled = games.filter((g) => g.canceled);
   const n = sheet.order.length;
@@ -93,7 +92,15 @@ export function PickSheet({ view, locked, otherGroups }: Props) {
               confIssue={confIssue(sheet, check, id, n)}
               team={sheet.teams[id]}
               isGow={gow?.gameId === id}
-              isTiebreak={week.tiebreakGameId === id}
+              tiebreak={
+                week.tiebreakGameId === id
+                  ? {
+                      value: sheet.tiebreak,
+                      invalid: sheet.tiebreak.trim() !== "" && toPayload(sheet).tiebreak === null,
+                      onChange: (value) => edit({ ...sheet, tiebreak: value.replace(/\D/g, "").slice(0, 3) }),
+                    }
+                  : null
+              }
               editable={editable}
               onPick={(team) => edit({ ...sheet, teams: { ...sheet.teams, [id]: team } })}
               onConf={(value) => edit({ ...sheet, conf: { ...sheet.conf, [id]: value.replace(/\D/g, "").slice(0, 2) } })}
@@ -119,23 +126,6 @@ export function PickSheet({ view, locked, otherGroups }: Props) {
 
       {/* Phones keep one column (contents) so the save bar sticks to the whole sheet; desktop gets a sticky side rail. */}
       <aside className="contents lg:sticky lg:top-4 lg:flex lg:flex-col lg:gap-4">
-        <label className="panel mt-6 block p-4 lg:mt-0">
-          <span className="font-display text-lg font-bold tracking-wide uppercase">Tiebreak</span>
-          <span className="block text-sm text-muted-foreground">
-            Total points in {tiebreakGame ? `${tiebreakGame.away.abbr} @ ${tiebreakGame.home.abbr}` : "the last game"}
-          </span>
-          <Input
-            className="mt-2 w-32"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            maxLength={3}
-            disabled={!editable}
-            value={sheet.tiebreak}
-            aria-invalid={sheet.tiebreak.trim() !== "" && toPayload(sheet).tiebreak === null}
-            onChange={(e) => edit({ ...sheet, tiebreak: e.target.value })}
-          />
-        </label>
-
         {editable && !dirty && pickedCount(saved) > 0 && !confError(checkConf(saved)) && otherGroups.length > 0 && <CopyPicks sheet={saved} week={week.week} groups={otherGroups} />}
 
         {editable && <SaveBar sheet={sheet} check={check} dirty={dirty} save={save} onSave={submit} />}
@@ -153,13 +143,14 @@ interface RowProps {
   confIssue: string | null;
   team: string | null;
   isGow: boolean;
-  isTiebreak: boolean;
+  /** Set on the tiebreak game: the total-points guess lives in its row. */
+  tiebreak: { value: string; invalid: boolean; onChange: (value: string) => void } | null;
   editable: boolean;
   onPick: (team: string) => void;
   onConf: (value: string) => void;
 }
 
-function GameRow({ index, groupId, dirty, game, conf, confIssue, team, isGow, isTiebreak, editable, onPick, onConf }: RowProps) {
+function GameRow({ index, groupId, dirty, game, conf, confIssue, team, isGow, tiebreak, editable, onPick, onConf }: RowProps) {
   const matchup = `${game.away.abbr} at ${game.home.abbr}`;
   const details = [
     etTime(game.kickoff),
@@ -173,7 +164,7 @@ function GameRow({ index, groupId, dirty, game, conf, confIssue, team, isGow, is
       style={{ "--i": index } as CSSProperties}
       className={cn(
         "panel animate-rise p-2",
-        // Primetime: the row sits under a bank of stadium lights.
+        // Game of the week: the row sits under a bank of stadium lights.
         isGow &&
           "border-primary/70 bg-[image:radial-gradient(ellipse_90%_70%_at_50%_-10%,oklch(0.92_0.1_95/0.26),transparent_70%)] shadow-[0_0_24px_-6px_oklch(0.9_0.12_95/0.55)]",
       )}
@@ -202,15 +193,15 @@ function GameRow({ index, groupId, dirty, game, conf, confIssue, team, isGow, is
         </label>
 
         <div className="min-w-0 flex-1">
-          {(isGow || isTiebreak) && (
+          {(isGow || tiebreak) && (
             <div className="mb-1 flex flex-wrap gap-1.5">
               {isGow && (
                 <span className="inline-flex items-center gap-1 font-display text-sm font-extrabold tracking-[0.2em] text-primary uppercase">
                   <LightBank className="size-4" />
-                  Primetime<span className="sr-only">, game of the week</span>
+                  Game of the Week
                 </span>
               )}
-              {isTiebreak && <span className="rounded-sm border px-1.5 py-0.5 font-display text-xs font-bold tracking-wider text-muted-foreground uppercase">Tiebreak</span>}
+              {tiebreak && <span className="rounded-sm border border-led/60 px-1.5 py-0.5 font-display text-xs font-bold tracking-wider text-led uppercase">Tiebreak game</span>}
             </div>
           )}
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1" role="group" aria-label={`Pick ${matchup}`}>
@@ -220,17 +211,40 @@ function GameRow({ index, groupId, dirty, game, conf, confIssue, team, isGow, is
             </span>
             <TeamButton team={game.home} picked={team} editable={editable} onPick={onPick} />
           </div>
-          <GameInfoLink
-            groupId={groupId}
-            gameId={game.gameId}
-            // The sheet lives in this page's state; leaving it unsaved would drop the draft.
-            onClick={(e) => dirty && !window.confirm("Leave without saving your picks?") && e.preventDefault()}
-            aria-label={`Game info for ${matchup}: ${details.join(", ")}`}
-            className="-mb-2 flex min-h-11 items-center gap-1 text-xs text-muted-foreground underline-offset-4 outline-none hover:text-foreground hover:underline focus-visible:text-foreground focus-visible:underline"
-          >
-            <span className="truncate">{details.join(" · ")}</span>
-            <Info className="size-3.5 shrink-0" aria-hidden="true" />
-          </GameInfoLink>
+          <div className="mt-1.5 flex items-center gap-2">
+            <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{details.join(" · ")}</span>
+            <GameInfoLink
+              groupId={groupId}
+              gameId={game.gameId}
+              // The sheet lives in this page's state; leaving it unsaved would drop the draft.
+              onClick={(e) => dirty && !window.confirm("Leave without saving your picks?") && e.preventDefault()}
+              aria-label={`Matchup details for ${matchup}`}
+              className="inline-flex h-9 shrink-0 items-center gap-1 rounded-md border border-border bg-input/30 px-2.5 font-display text-xs font-bold tracking-wider uppercase outline-none hover:border-primary hover:text-primary focus-visible:ring-3 focus-visible:ring-ring/60 [&:not(a)]:hidden"
+            >
+              <BarChart3 className="size-3.5" aria-hidden="true" />
+              Matchup
+              <ChevronRight className="size-3.5" aria-hidden="true" />
+            </GameInfoLink>
+          </div>
+          {tiebreak && (
+            <label className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-dashed border-led/50 bg-board/60 px-3 py-2">
+              <span className="min-w-0 flex-1 text-sm">
+                <strong className="block font-display tracking-wide uppercase">Tiebreak</strong>
+                <span className="text-xs text-muted-foreground">Total points scored in {game.away.abbr} @ {game.home.abbr}</span>
+              </span>
+              <Input
+                className="w-24 text-center font-stencil text-xl"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={3}
+                placeholder="–"
+                disabled={!editable}
+                value={tiebreak.value}
+                aria-invalid={tiebreak.invalid}
+                onChange={(e) => tiebreak.onChange(e.target.value)}
+              />
+            </label>
+          )}
         </div>
 
       </div>
