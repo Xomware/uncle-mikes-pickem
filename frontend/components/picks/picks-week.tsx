@@ -8,10 +8,11 @@ import { useCallback, useEffect, useState } from "react";
 import { FieldTitle } from "@/components/field/field-title";
 import { LoadError } from "@/components/load-error";
 import { OrganizerPanel } from "@/components/picks/organizer-panel";
+import { PickingFor } from "@/components/picks/picking-for";
 import { PickSheet } from "@/components/picks/pick-sheet";
 import { LockedWeek } from "@/components/results/week-results";
 import { buttonVariants } from "@/components/ui/button";
-import { type WeekView, getWeek } from "@/lib/api/client";
+import { type WeekView, getWeek, myGroups } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
 import { usePoll } from "@/lib/api/use-poll";
 import { groupHref, isOrganizer } from "@/lib/groups";
@@ -61,6 +62,8 @@ function WeekBody({ view, refresh }: { view: WeekView; refresh: () => Promise<vo
   const left = useCountdown(week.lockAt, week.now);
   const locked = week.locked || left === null;
   const flags = useFlags(group.groupId);
+  const groups = useLoad(myGroups).load;
+  const mine = groups.status === "ready" ? groups.data : null;
 
   return (
     <>
@@ -83,6 +86,8 @@ function WeekBody({ view, refresh }: { view: WeekView; refresh: () => Promise<vo
           </Link>
         )}
       </div>
+
+      <PickingFor view={view} groups={mine} />
 
       {/* The game clock: time to lock on the scoreboard. */}
       <p role="status" className="scoreboard mt-5 flex items-center gap-3 px-4 py-3 text-sm">
@@ -113,7 +118,7 @@ function WeekBody({ view, refresh }: { view: WeekView; refresh: () => Promise<vo
       )}
 
       {!locked && isOrganizer(role) && <OrganizerPanel view={view} refresh={refresh} />}
-      {week.locked ? <LockedWeek view={view} /> : <PickSheet view={view} locked={locked} />}
+      {week.locked ? <LockedWeek view={view} /> : <PickSheet view={view} locked={locked} otherGroups={(mine ?? []).filter((g) => g.groupId !== group.groupId && g.season === group.season)} />}
     </>
   );
 }
