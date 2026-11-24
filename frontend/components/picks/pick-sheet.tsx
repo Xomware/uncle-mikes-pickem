@@ -1,7 +1,7 @@
 "use client";
 
 import { CircleAlert, CircleCheck, Info, LoaderCircle } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { type CSSProperties, type ReactNode, useState } from "react";
 
 import { LightBank } from "@/components/field/icons";
 import { TeamLogo } from "@/components/field/team-logo";
@@ -81,9 +81,10 @@ export function PickSheet({ view, locked, otherGroups }: Props) {
       )}
 
       <ol className="space-y-2">
-        {sheet.order.map((id) => (
+        {sheet.order.map((id, index) => (
           <GameRow
             key={id}
+            index={index}
             groupId={group.groupId}
             dirty={dirty}
             game={byId[id]}
@@ -139,6 +140,7 @@ export function PickSheet({ view, locked, otherGroups }: Props) {
 }
 
 interface RowProps {
+  index: number;
   groupId: string;
   dirty: boolean;
   game: Game;
@@ -152,7 +154,7 @@ interface RowProps {
   onConf: (value: string) => void;
 }
 
-function GameRow({ groupId, dirty, game, conf, confIssue, team, isGow, isTiebreak, editable, onPick, onConf }: RowProps) {
+function GameRow({ index, groupId, dirty, game, conf, confIssue, team, isGow, isTiebreak, editable, onPick, onConf }: RowProps) {
   const matchup = `${game.away.abbr} at ${game.home.abbr}`;
   const details = [
     etTime(game.kickoff),
@@ -163,8 +165,9 @@ function GameRow({ groupId, dirty, game, conf, confIssue, team, isGow, isTiebrea
 
   return (
     <li
+      style={{ "--i": index } as CSSProperties}
       className={cn(
-        "panel p-2",
+        "panel animate-rise p-2",
         // Primetime: the row sits under a bank of stadium lights.
         isGow &&
           "border-primary/70 bg-[image:radial-gradient(ellipse_90%_70%_at_50%_-10%,oklch(0.92_0.1_95/0.26),transparent_70%)] shadow-[0_0_24px_-6px_oklch(0.9_0.12_95/0.55)]",
@@ -188,7 +191,7 @@ function GameRow({ groupId, dirty, game, conf, confIssue, team, isGow, isTiebrea
             className={cn(
               // A yard marker: stencilled numeral on turf.
               "h-12 w-full rounded-md bg-turf text-center font-stencil text-3xl leading-none font-black text-chalk shadow-[inset_0_-3px_0_var(--chalk)] outline-none placeholder:text-chalk/40 focus-visible:ring-3 focus-visible:ring-ring/60 disabled:opacity-100",
-              confIssue && "bg-wrong/25 text-wrong shadow-[inset_0_-3px_0_var(--color-wrong)] ring-2 ring-wrong",
+              confIssue && "animate-shake bg-wrong/25 text-wrong shadow-[inset_0_-3px_0_var(--color-wrong)] ring-2 ring-wrong",
             )}
           />
         </label>
@@ -252,12 +255,12 @@ function TeamButton({ team, picked, editable, onPick }: TeamProps) {
       aria-pressed={on}
       onClick={() => onPick(team.abbr)}
       className={cn(
-        "flex h-11 items-center justify-center gap-1.5 rounded-md border font-display text-xl font-extrabold tracking-wide outline-none focus-visible:ring-3 focus-visible:ring-ring/60 disabled:opacity-100",
+        "flex h-11 items-center justify-center gap-1.5 rounded-md border font-display transition-[background-color,border-color,transform] active:scale-95 text-xl font-extrabold tracking-wide outline-none focus-visible:ring-3 focus-visible:ring-ring/60 disabled:opacity-100",
         on ? "border-primary bg-primary text-primary-foreground" : "bg-input/30 enabled:hover:bg-input/60",
         !editable && !on && "text-muted-foreground",
       )}
     >
-      <TeamLogo {...team} className="size-7" />
+      <TeamLogo key={String(on)} {...team} className={cn("size-7", on && "animate-pop")} />
       {team.abbr}
     </button>
   );
@@ -293,6 +296,11 @@ function SaveBar({ sheet, check, dirty, save, onSave }: { sheet: Sheet; check: C
         <p role="status" aria-live="polite" className="flex min-w-0 flex-1 items-center gap-2 text-sm">
           {!dirty && complete && save.kind !== "failed" && <CircleCheck className="size-4 shrink-0 text-primary" aria-hidden="true" />}
           <span className="min-w-0">{status}</span>
+          {!dirty && complete && save.kind === "saved" && (
+            <span key={save.at} aria-hidden="true" className="ml-auto animate-stamp rounded-sm border-2 border-primary px-1.5 py-0.5 font-stencil text-sm leading-none font-black tracking-wider text-primary uppercase">
+              Picks in
+            </span>
+          )}
         </p>
         <Button size="lg" disabled={!dirty || blocked || save.kind === "saving"} onClick={onSave}>
           {save.kind === "saving" && <LoaderCircle className="animate-spin" aria-hidden="true" />}

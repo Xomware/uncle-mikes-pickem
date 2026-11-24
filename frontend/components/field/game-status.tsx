@@ -1,4 +1,5 @@
 import type { Game } from "@/lib/api/client";
+import { ScoreFlash } from "@/components/field/score-flash";
 import { finalLabel, gameClock } from "@/lib/live";
 import { cn } from "@/lib/utils";
 
@@ -35,9 +36,11 @@ export function GameStatus({ game, score = true, className }: GameStatusProps) {
       )}
       {scored && (
         <>
-          <span aria-hidden="true" className="led text-sm leading-none whitespace-nowrap">
-            {game.awayScore}-{game.homeScore}
-          </span>
+          <ScoreFlash value={`${game.awayScore}-${game.homeScore}`} className="led px-0.5 text-sm leading-none whitespace-nowrap">
+            <span aria-hidden="true">
+              {game.awayScore}-{game.homeScore}
+            </span>
+          </ScoreFlash>
           <span className="sr-only">
             {game.away.abbr} {game.awayScore}, {game.home.abbr} {game.homeScore}
           </span>

@@ -2,10 +2,11 @@
 
 import { ArrowRight, Plus, UsersRound } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useState } from "react";
 
 import { FieldTitle } from "@/components/field/field-title";
 import { GameStatus } from "@/components/field/game-status";
+import { ScoreFlash } from "@/components/field/score-flash";
 import { Board, Stat } from "@/components/field/stat";
 import { TeamLogo } from "@/components/field/team-logo";
 import { LoadError } from "@/components/load-error";
@@ -83,8 +84,8 @@ function HomeBody({ slate }: { slate: Slate }) {
           <NoGroups />
         ) : (
           <ul className="mt-2 grid gap-3 sm:grid-cols-2">
-            {slate.groups.map((g) => (
-              <GroupCard key={g.groupId} group={g} week={slate.week} games={slate.games.length} left={left} />
+            {slate.groups.map((g, i) => (
+              <GroupCard key={g.groupId} index={i} group={g} week={slate.week} games={slate.games.length} left={left} />
             ))}
           </ul>
         )}
@@ -123,6 +124,7 @@ function NoGroups() {
 }
 
 interface GroupCardProps {
+  index: number;
   group: SlateGroup;
   week: number;
   games: number;
@@ -130,7 +132,7 @@ interface GroupCardProps {
   left: string | null;
 }
 
-function GroupCard({ group, week, games, left }: GroupCardProps) {
+function GroupCard({ index, group, week, games, left }: GroupCardProps) {
   const fetcher = useCallback(() => getMyStats(group.groupId), [group.groupId]);
   const { load } = useLoad(fetcher);
   const status = pickStatus(group, games);
@@ -139,7 +141,7 @@ function GroupCard({ group, week, games, left }: GroupCardProps) {
   const pending = load.status === "loading" ? "…" : "-";
 
   return (
-    <li className="panel flex flex-col p-4">
+    <li className="panel flex animate-rise flex-col p-4" style={{ "--i": index } as CSSProperties}>
       <div className="flex items-center gap-2">
         <h3 className="min-w-0 truncate font-display text-2xl font-extrabold uppercase">{group.name}</h3>
         {group.replay && <span className="rounded-sm border px-1 text-[0.65rem] font-bold tracking-wider text-muted-foreground uppercase">Replay</span>}
@@ -181,7 +183,11 @@ function ScoreChip({ game }: { game: SlateGame }) {
           >
             <TeamLogo {...team} className="size-5" />
             <span className="font-display text-base leading-none font-bold">{team.abbr}</span>
-            {started && <span className="ml-auto led text-base leading-none">{score}</span>}
+            {started && (
+              <ScoreFlash value={score} className="ml-auto led px-0.5 text-base leading-none">
+                {score}
+              </ScoreFlash>
+            )}
           </span>
         ))}
       </div>
