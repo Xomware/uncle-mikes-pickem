@@ -39,7 +39,7 @@ export function AppHeader() {
 
   return (
     <header className="endzone">
-      <div className="mx-auto flex max-w-5xl items-center gap-1 px-3 py-2 sm:px-6">
+      <div className="mx-auto flex max-w-6xl items-center gap-1 px-3 py-2 sm:px-6">
         <Brand href={DEFAULT_NEXT} className="mr-auto" />
         <nav
           aria-label="Main"
