@@ -1,4 +1,4 @@
-import type { NflTeams, ScheduleGame, TeamRecord, WinLoss } from "@/lib/api/client";
+import type { NflTeams, ScheduleGame, ScheduleRow, TeamRecord, WinLoss } from "@/lib/api/client";
 import type { Outcome } from "@/lib/picks";
 import { etDate } from "@/lib/time";
 
@@ -12,7 +12,21 @@ export function pickOutcome(game: ScheduleGame, abbr: string, picked: string): O
   return (game.result === "W") === (picked === abbr) ? "correct" : "wrong";
 }
 
-const withGroup = (query: URLSearchParams, groupId?: string | null) => {
+/** The team against its own spread once final: W covered, L didn't, P push. */
+export function atsResult(game: Pick<ScheduleGame, "result" | "score" | "opponentScore" | "spread">): "W" | "L" | "P" | null {
+  if (!game.result || game.spread == null || game.score == null || game.opponentScore == null) return null;
+  const margin = game.score - game.opponentScore + game.spread;
+  return margin === 0 ? "P" : margin > 0 ? "W" : "L";
+}
+
+/** Played and live games first, then what's left; a bye goes with the games around it. */
+export function splitSchedule(rows: ScheduleRow[]): { played: ScheduleRow[]; upcoming: ScheduleRow[] } {
+  const next = rows.findIndex((r) => !r.bye && r.result == null && r.state !== "in");
+  const at = next === -1 ? rows.length : next;
+  return { played: rows.slice(0, at), upcoming: rows.slice(at) };
+}
+
+const withGroup =(query: URLSearchParams, groupId?: string | null) => {
   if (groupId) query.set("groupId", groupId);
   return query.toString();
 };

@@ -154,6 +154,22 @@ def test_replay_group_sees_its_clock(teams):
     assert data["team"]["schedule"][1]["score"] is None
 
 
+def test_live_weeks_before_launch_come_from_the_replay_finals(teams):
+    seed()
+    week1 = [{**g, "lines": g.get("lines"), "tie": False, "final": True, "snapshots": []} for g in SEASON[1]]
+    nfl_store.save_replay(2026, {1: week1}, "2026-11-12T00:00:00Z")
+    pk = nfl_store.week_pk(2026, 1)
+    for key in [{"PK": pk, "SK": "WEEK"}] + [{"PK": pk, "SK": f"GAME#{g['gameId']}"} for g in SEASON[1]]:
+        nfl_store.table().delete_item(Key=key)
+    group()
+
+    data = get(teams, team="KC", groupId="g")[1]
+    assert data["team"]["overall"] == {"w": 1, "l": 1, "t": 0}
+    w1, w2 = data["team"]["schedule"][:2]
+    assert (w1["week"], w1["archived"], w1["result"], w1["score"], w1["opponentScore"]) == (1, True, "W", 27, 20)
+    assert w1["picks"] is None and w2["archived"] is False
+
+
 def test_members_only(teams):
     seed()
     group(members=(DOM,))

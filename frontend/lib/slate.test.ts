@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { SlateGame, SlateGroup } from "@/lib/api/client";
 
-import { adjacentWeeks, byDay, infoGroupId, kickoffTime } from "./slate";
+import { adjacentWeeks, byDay, covered, infoGroupId, kickoffTime } from "./slate";
 
 const game = (gameId: string, kickoff: string, timeValid = true): SlateGame => ({
   gameId,
@@ -50,6 +50,22 @@ describe("slate", () => {
   it("steps to the nearest scheduled week, skipping gaps", () => {
     expect(adjacentWeeks([10, 11, 13], 11)).toEqual({ prev: 10, next: 13 });
     expect(adjacentWeeks([10, 11], 10)).toEqual({ prev: null, next: 11 });
+  });
+
+  it("names who covered the home line", () => {
+    const final = (awayScore: number, homeScore: number, spread: number | null) => ({
+      ...game("1", "2026-11-22T18:00:00Z"),
+      completed: true,
+      awayScore,
+      homeScore,
+      lines: { spread },
+    });
+    expect(covered(final(20, 27, -3.5))).toBe("KC");
+    expect(covered(final(24, 27, -3.5))).toBe("BAL");
+    expect(covered(final(24, 27, -3))).toBe("PUSH");
+    expect(covered(final(30, 27, 2.5))).toBe("BAL");
+    expect(covered(final(20, 27, null))).toBeNull();
+    expect(covered(game("1", "2026-11-22T18:00:00Z"))).toBeNull();
   });
 
   it("links game info through a live group only", () => {

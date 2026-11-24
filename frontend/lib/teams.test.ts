@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { ScheduleGame, TeamRecord, WinLoss } from "@/lib/api/client";
 
-import { divisions, lineText, pickOutcome, recordText, seasonLine, teamHref, teamsHref, winPct } from "./teams";
+import { atsResult, divisions, lineText, pickOutcome, recordText, seasonLine, splitSchedule, teamHref, teamsHref, winPct } from "./teams";
 
 const rec = (w: number, l: number, t = 0): WinLoss => ({ w, l, t });
 
@@ -43,6 +43,26 @@ describe("teams", () => {
     expect(pickOutcome(game("L"), "KC", "LV")).toBe("correct");
     expect(pickOutcome(game("T"), "KC", "KC")).toBeNull();
     expect(pickOutcome(game(null), "KC", "KC")).toBeNull();
+  });
+
+  it("grades the team against its own spread", () => {
+    const final = (score: number, opponentScore: number, spread: number | null) =>
+      ({ result: score > opponentScore ? "W" : "L", score, opponentScore, spread }) as ScheduleGame;
+    expect(atsResult(final(27, 20, -6.5))).toBe("W");
+    expect(atsResult(final(27, 24, -6.5))).toBe("L");
+    expect(atsResult(final(20, 23, 3))).toBe("P");
+    expect(atsResult(final(20, 23, null))).toBeNull();
+    expect(atsResult({ result: null, score: null, opponentScore: null, spread: -3 })).toBeNull();
+  });
+
+  it("splits the schedule at the next game still to play", () => {
+    const row = (week: number, result: ScheduleGame["result"], state: ScheduleGame["state"] = "post") =>
+      ({ week, bye: false, result, state }) as ScheduleGame;
+    const bye = { week: 3, bye: true } as const;
+    const { played, upcoming } = splitSchedule([row(1, "W"), row(2, "L"), bye, row(4, null, "in"), row(5, null, "pre"), row(6, null, "pre")]);
+    expect(played.map((r) => r.week)).toEqual([1, 2, 3, 4]);
+    expect(upcoming.map((r) => r.week)).toEqual([5, 6]);
+    expect(splitSchedule([row(1, "W")]).upcoming).toEqual([]);
   });
 
   it("names the season, the group and a replay's clock", () => {

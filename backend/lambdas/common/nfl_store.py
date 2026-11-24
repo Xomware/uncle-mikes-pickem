@@ -202,6 +202,15 @@ def as_of(game: dict, now: datetime) -> dict:
     return game
 
 
+def archive_games(season: int, week: int) -> list[dict]:
+    """A live week cron_tick never wrote (it went live mid-season), from the replay rows' nflverse finals.
+
+    Marked `archived`: there is no GAME item behind them, so no game info and no pick sheets.
+    """
+    now = clock.now()
+    return [{**as_of(g, now), "archived": True} for g in _games(replay_pk(season, week))]
+
+
 def find_game(season: int, game_id: str, replay: bool) -> tuple[int, dict] | None:
     """(week, GAME) for an ESPN event id, in one BatchGetItem over all 18 weeks."""
     name = os.environ["NFL_TABLE"]
