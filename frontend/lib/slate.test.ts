@@ -25,7 +25,7 @@ const game = (gameId: string, kickoff: string, timeValid = true): SlateGame => (
   hype: null,
 });
 
-const group = (groupId: string, replay: boolean): SlateGroup => ({ groupId, name: groupId, replay, picks: null });
+const group = (groupId: string, replay: boolean): SlateGroup => ({ groupId, name: groupId, replay, picks: null, complete: false, role: "member", gow: null });
 
 describe("slate", () => {
   it("groups games by Eastern day, so a late Thursday kickoff stays on Thursday", () => {

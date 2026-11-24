@@ -337,6 +337,9 @@ export interface SlateGroup {
   name: string;
   replay: boolean;
   picks: Record<string, PickEntry> | null;
+  complete: boolean;
+  role: Role;
+  gow: { gameId: string; chosenBy: string } | null;
 }
 
 /** The live season's week, no group needed. */
@@ -348,6 +351,10 @@ export interface Slate {
   weeks: number[];
   /** A week from before the app went live: nflverse finals, no pick sheets or game info. */
   archived: boolean;
+  /** When the week locks; null for an archived week. */
+  lockAt: string | null;
+  /** After this the GOW is set automatically for any live group without one. */
+  gowDeadline: string | null;
   games: SlateGame[];
   groups: SlateGroup[];
 }
