@@ -1,6 +1,6 @@
 "use client";
 
-import { Trophy } from "lucide-react";
+import { ChartColumn, Trophy } from "lucide-react";
 import Link from "next/link";
 import { type KeyboardEvent, useState } from "react";
 
@@ -62,7 +62,16 @@ function Boards({ data }: { data: Leaderboard | null }) {
 
   return (
     <>
-      <FieldTitle sub={`${data.season} season · every group`}>Leaders</FieldTitle>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <FieldTitle sub={`${data.season} season · every group`}>Leaders</FieldTitle>
+        <Link
+          href="/stats/"
+          className="panel inline-flex h-10 items-center gap-2 px-3 font-display text-sm font-extrabold tracking-wide uppercase outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/60"
+        >
+          <ChartColumn className="size-4 text-primary" aria-hidden="true" />
+          App stats
+        </Link>
+      </div>
       <div role="tablist" aria-label="Leaderboard" className="panel mt-6 grid grid-cols-2 gap-1 p-1">
         {TABS.map((key) => (
           <button
