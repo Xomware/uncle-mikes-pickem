@@ -12,7 +12,7 @@ import { type GroupSummary, type MyStats, getMyStats, myGroups } from "@/lib/api
 import { useLoad } from "@/lib/api/use-load";
 import { groupHref } from "@/lib/groups";
 import { STATUS_LABEL, cents } from "@/lib/payouts";
-import { finishes, ordinal, pickRate, recordText, teamSplits } from "@/lib/stats";
+import { finishes, ordinal, pickRate, recordText, teamTrends } from "@/lib/stats";
 import { cn } from "@/lib/utils";
 
 /** Your season in each of your groups, one group at a time. */
@@ -124,8 +124,9 @@ function StatsBody({ stats }: { stats: MyStats }) {
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <WeeklyFinishes weeks={stats.weeks} />
-        <TeamRecords teams={stats.teams} />
+        <TeamTrends teams={stats.teams} />
       </div>
+      <ConfidenceChart levels={stats.confidence} />
     </div>
   );
 }
@@ -177,27 +178,31 @@ function WeeklyFinishes({ weeks }: { weeks: MyStats["weeks"] }) {
   );
 }
 
-function TeamRecords({ teams }: { teams: MyStats["teams"] }) {
-  const { best, worst } = teamSplits(teams);
+function TeamTrends({ teams }: { teams: MyStats["teams"] }) {
+  const { paid, cost } = teamTrends(teams);
   return (
     <section className="panel p-4" aria-labelledby="teams-heading">
       <h3 id="teams-heading" className="font-display text-xl font-extrabold uppercase">
-        Teams you pick
+        Team trends
       </h3>
-      <p className="text-xs text-muted-foreground">Your record taking each team, two picks or more.</p>
-      {best.length + worst.length === 0 ? (
-        <p className="mt-3 text-sm text-muted-foreground">Not enough picks on any one team yet.</p>
-      ) : (
-        <div className="mt-3 space-y-4">
-          <TeamList title="Best to pick" teams={best} empty="No team at .500 or better yet." />
-          <TeamList title="Worst to pick" teams={worst} empty="No losing team yet." />
-        </div>
-      )}
+      <p className="text-xs text-muted-foreground">Confidence points won and lost on the teams picked.</p>
+      <div className="mt-3 space-y-4">
+        <TeamList title="Paid off" teams={paid} points={(t) => `+${t.won}`} tone="text-correct" empty="No right picks yet." />
+        <TeamList title="Cost you" teams={cost} points={(t) => `-${t.lost}`} tone="text-wrong" empty="No wrong picks yet." />
+      </div>
     </section>
   );
 }
 
-function TeamList({ title, teams, empty }: { title: string; teams: MyStats["teams"]; empty: string }) {
+interface TeamListProps {
+  title: string;
+  teams: MyStats["teams"];
+  points: (t: MyStats["teams"][number]) => string;
+  tone: string;
+  empty: string;
+}
+
+function TeamList({ title, teams, points, tone, empty }: TeamListProps) {
   return (
     <div>
       <h4 className="chalk text-xs tracking-[0.14em]">{title}</h4>
@@ -209,12 +214,46 @@ function TeamList({ title, teams, empty }: { title: string; teams: MyStats["team
             <li key={t.team} className="flex items-center gap-2 py-1.5">
               <TeamLogo abbr={t.team} className="size-6" />
               <span className="font-display font-bold">{t.team}</span>
-              <span className="ml-auto text-sm tabular-nums">{recordText(t)}</span>
-              <span className="led w-12 text-right text-base">{pct(pickRate(t) ?? 0)}</span>
+              <span className="ml-auto text-sm text-muted-foreground tabular-nums">{recordText(t)}</span>
+              <span className={cn("led w-14 text-right text-base", tone)}>
+                {points(t)}
+                <span className="sr-only"> points</span>
+              </span>
             </li>
           ))}
         </ul>
       )}
     </div>
+  );
+}
+
+function ConfidenceChart({ levels }: { levels: MyStats["confidence"] }) {
+  return (
+    <section className="panel p-4" aria-labelledby="confidence-heading">
+      <h3 id="confidence-heading" className="font-display text-xl font-extrabold uppercase">
+        Accuracy by confidence
+      </h3>
+      <p className="text-xs text-muted-foreground">Share of picks right at each confidence level.</p>
+      <ol className="mt-3 flex h-40 items-end gap-1">
+        {levels.map((c) => {
+          const rate = pickRate(c) ?? 0;
+          return (
+            <li key={c.conf} className="flex h-full min-w-0 flex-1 flex-col items-center gap-1">
+              <span className="hidden text-[0.65rem] text-muted-foreground tabular-nums sm:block">{pct(rate)}</span>
+              <span className="flex w-full flex-1 items-end rounded-sm bg-white/5" aria-hidden="true">
+                <span
+                  className={cn("w-full rounded-sm", rate >= 0.5 ? "bg-correct" : "bg-wrong")}
+                  style={{ height: `${Math.max(rate * 100, 2)}%` }}
+                />
+              </span>
+              <span className="font-display text-xs font-bold tabular-nums">{c.conf}</span>
+              <span className="sr-only">
+                -point picks: {recordText(c)}, {pct(rate)} right
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
   );
 }

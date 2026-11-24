@@ -1,7 +1,8 @@
 """One member's season in a group, folded from the RESULT items and their own PICK items.
 
 A void or pending game counts for nothing. A "tie" grade is a tie under the zero rule; under
-the full rule a tie already grades "right". Streaks run in kickoff order across weeks; a
+the full rule a tie already grades "right". A team's `won` is the confidence its right picks
+earned, `lost` the confidence spent on its wrong ones. Streaks run in kickoff order across weeks; a
 missed week has no picks, so it neither extends nor breaks one.
 """
 
@@ -18,7 +19,7 @@ def member_stats(sub: str, results: list[dict], sheets: dict[int, dict], kickoff
     """`results` are plain RESULT items in week order, `sheets` the member's PICK items by week,
     `kickoffs` every game's kickoff by gameId."""
     weeks, picks = [], []
-    record, gow, teams = tally(), tally(), {}
+    record, gow, teams, confs = tally(), tally(), {}, {}
     for r in results:
         row = r["members"].get(sub)
         if not row:
@@ -39,7 +40,11 @@ def member_stats(sub: str, results: list[dict], sheets: dict[int, dict], kickoff
             pick = sheets[r["week"]]["picks"][gid]
             picks.append((kickoffs.get(gid, ""), gid, pick["conf"], g))
             record[g] += 1
-            teams.setdefault(pick["team"], tally())[g] += 1
+            team = teams.setdefault(pick["team"], {**tally(), "won": 0, "lost": 0})
+            team[g] += 1
+            team["won"] += pick["conf"] if g == "right" else 0
+            team["lost"] += pick["conf"] if g == "wrong" else 0
+            confs.setdefault(pick["conf"], tally())[g] += 1
         if r["gowGameId"] in decided:
             gow[decided[r["gowGameId"]]] += 1
 
@@ -57,4 +62,5 @@ def member_stats(sub: str, results: list[dict], sheets: dict[int, dict], kickoff
         "streak": {"longest": longest, "current": run},
         "gow": gow,
         "teams": [{"team": t, **counts} for t, counts in sorted(teams.items())],
+        "confidence": [{"conf": c, **counts} for c, counts in sorted(confs.items())],
     }

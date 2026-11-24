@@ -64,6 +64,12 @@ def test_dom_after_week_one(api, gid):
     ]
     assert data["season"] == {"place": "2", "total": 2, "gow": -2}
     assert data["money"] == {"won": 0, "pending": 0}
+    assert data["teams"] == [
+        {"team": "CIN", "right": 0, "wrong": 1, "tie": 0, "won": 0, "lost": 2},
+        {"team": "KC", "right": 1, "wrong": 0, "tie": 0, "won": 3, "lost": 0},
+        {"team": "PHI", "right": 1, "wrong": 0, "tie": 0, "won": 1, "lost": 0},
+    ]
+    assert [(c["conf"], c["right"], c["wrong"]) for c in data["confidence"]] == [(1, 1, 0), (2, 0, 1), (3, 1, 0)]
 
 
 def test_pat_won_the_week(api, gid):
