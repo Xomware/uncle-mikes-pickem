@@ -11,7 +11,7 @@ import { Board, Stat } from "@/components/field/stat";
 import { TeamLogo } from "@/components/field/team-logo";
 import { LoadError } from "@/components/load-error";
 import { buttonVariants } from "@/components/ui/button";
-import { type Slate, type SlateGame, type SlateGroup, getLeaderboard, getMyStats, getSlate } from "@/lib/api/client";
+import { type Slate, type SlateGame, type SlateGroup, getLeaderboard, getMyStats, getPickSlate } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
 import { usePoll } from "@/lib/api/use-poll";
 import { lockAt, pickStatus, scoreStrip } from "@/lib/home";
@@ -23,7 +23,7 @@ import { etDate } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
 export function HomeView() {
-  const { load, retry, refresh } = useLoad(getSlate);
+  const { load, retry, refresh } = useLoad(getPickSlate);
   usePoll(() => load.status === "ready" && inLiveWindow(load.data.games, Date.now()), refresh);
 
   return (
