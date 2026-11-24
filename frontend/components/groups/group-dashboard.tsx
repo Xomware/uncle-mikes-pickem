@@ -115,7 +115,7 @@ function ThisWeek({ view }: { view: WeekView }) {
       {view.games.length === 0 ? (
         <p className="p-4 text-sm text-muted-foreground">No games on the schedule yet.</p>
       ) : (
-        <ul className="divide-y">
+        <ul className="divide-y xl:grid xl:grid-cols-2 xl:divide-y-0">
           {view.games.map((g) => (
             <GameRow key={g.gameId} game={g} view={view} />
           ))}
@@ -133,7 +133,13 @@ function GameRow({ game, view }: { game: Game; view: WeekView }) {
   const picked = pick?.team ? (pick.team === game.away.abbr ? game.away : game.home) : null;
 
   return (
-    <li className={cn("grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 px-4 py-2.5", game.canceled && "opacity-60")}>
+    // xl: two games a row; divide-y can't rule a grid, so each cell draws its own lines.
+    <li
+      className={cn(
+        "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 px-4 py-2.5 xl:border-t xl:odd:border-r xl:last:odd:col-span-2 xl:last:odd:border-r-0 xl:[&:nth-child(-n+2)]:border-t-0",
+        game.canceled && "opacity-60",
+      )}
+    >
       <div className="min-w-0">
         <GameInfoLink
           groupId={view.group.groupId}

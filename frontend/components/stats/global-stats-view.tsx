@@ -20,7 +20,7 @@ export function GlobalStatsView() {
   const { load, retry } = useLoad(getGlobalStats);
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6" aria-busy={load.status === "loading"}>
+    <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 lg:max-w-6xl" aria-busy={load.status === "loading"}>
       {load.status === "loading" && (
         <div className="animate-pulse space-y-3">
           <span className="block h-12 w-56 rounded bg-card/70" />
@@ -69,13 +69,16 @@ function Stats({ data }: { data: GlobalStats | null }) {
         <WeekBars weeks={data.weeks} />
       </section>
 
-      <div className="mt-6 space-y-6">
+      {/* Wide: teams run down the right; groups and upsets stack on the left, the spare height under the upsets. */}
+      <div className="mt-6 space-y-6 lg:grid lg:grid-cols-2 lg:grid-rows-[auto_1fr] lg:items-start lg:gap-6 lg:space-y-0">
         <Board title="Groups">
           <GroupTable data={data} />
         </Board>
-        <Board title="Teams">
-          <TeamTable teams={data.teams} />
-        </Board>
+        <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1">
+          <Board title="Teams">
+            <TeamTable teams={data.teams} />
+          </Board>
+        </div>
         {data.upsets.length > 0 && (
           <Board title="Biggest upsets">
             <Upsets data={data} />
@@ -96,12 +99,12 @@ function WeekBars({ weeks }: { weeks: GlobalStats["weeks"] }) {
     <div className="mt-4">
       <p className={HEAD}>Pick % by week</p>
       <div className="mt-2 overflow-x-auto" tabIndex={0} role="region" aria-label="Pick % by week">
-        <ol className="flex h-28 min-w-max items-end gap-1.5">
+        <ol className="flex h-28 min-w-max items-end gap-1.5 lg:min-w-0">
           {weeks.map((w) => {
             const n = w.correct + w.wrong + w.ties;
             const pct = n ? w.correct / n : 0;
             return (
-              <li key={w.week} className="flex h-full w-6 flex-col sm:w-8 items-center justify-end gap-1">
+              <li key={w.week} className="flex h-full w-6 flex-col sm:w-8 items-center justify-end gap-1 lg:w-auto lg:max-w-16 lg:flex-1">
                 <span className="led text-[0.65rem]">{n ? Math.round(pct * 100) : "-"}</span>
                 <span
                   aria-hidden="true"

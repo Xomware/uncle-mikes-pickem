@@ -94,12 +94,12 @@ export function StatsBody({ stats }: { stats: MyStats }) {
   const played = stats.weeks.filter((w) => !w.missed);
 
   return (
-    <div className="space-y-6">
+    <div className="@container space-y-6">
       <Board
         title={group?.name ?? "Season"}
         link={<span className="shrink-0 text-xs tracking-wider text-muted-foreground uppercase">Thru Wk {stats.throughWeek}</span>}
       >
-        <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 @4xl:grid-cols-8">
           <Stat label="Pick rate" value={rate === null ? "-" : pct(rate)} note={recordText(record)} />
           <Stat
             label="Points"
