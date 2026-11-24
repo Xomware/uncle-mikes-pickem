@@ -316,6 +316,9 @@ export interface SlateGame {
   /** False while the NFL hasn't set the time; kickoff is a placeholder. */
   timeValid: boolean | null;
   state: "pre" | "in" | "post" | null;
+  status: string | null;
+  period: number | null;
+  clock: string | null;
   completed: boolean | null;
   awayScore: number | null;
   homeScore: number | null;
