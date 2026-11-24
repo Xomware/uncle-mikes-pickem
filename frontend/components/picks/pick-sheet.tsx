@@ -6,9 +6,10 @@ import { type ReactNode, useState } from "react";
 import { LightBank } from "@/components/field/icons";
 import { TeamLogo } from "@/components/field/team-logo";
 import { GameInfoLink } from "@/components/game/game-info-link";
+import { CopyPicks } from "@/components/picks/copy-picks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { type Game, type Team, type WeekView, setPicks } from "@/lib/api/client";
+import { type Game, type GroupSummary, type Team, type WeekView, setPicks } from "@/lib/api/client";
 import { isOrganizer } from "@/lib/groups";
 import { type ConfCheck, type Sheet, carry, checkConf, confError, isComplete, pickedCount, sameSheet, spreadText, toPayload, toSheet } from "@/lib/picks";
 import { etTime } from "@/lib/time";
@@ -19,9 +20,10 @@ type SaveState = { kind: "idle" | "saving" } | { kind: "saved"; at: string } | {
 interface Props {
   view: WeekView;
   locked: boolean;
+  otherGroups: GroupSummary[];
 }
 
-export function PickSheet({ view, locked }: Props) {
+export function PickSheet({ view, locked, otherGroups }: Props) {
   const { group, week, games, gow, role } = view;
   const [saved, setSaved] = useState<Sheet>(() => toSheet(games, view.mine));
   const [sheet, setSheet] = useState<Sheet>(saved);
@@ -128,6 +130,8 @@ export function PickSheet({ view, locked }: Props) {
           onChange={(e) => edit({ ...sheet, tiebreak: e.target.value })}
         />
       </label>
+
+      {editable && !dirty && pickedCount(saved) > 0 && !confError(checkConf(saved)) && otherGroups.length > 0 && <CopyPicks sheet={saved} week={week.week} groups={otherGroups} />}
 
       {editable && <SaveBar sheet={sheet} check={check} dirty={dirty} save={save} onSave={submit} />}
     </div>
