@@ -11,12 +11,14 @@ import { GameInfoLink } from "@/components/game/game-info-link";
 import { LoadError } from "@/components/load-error";
 import { GroupPicker } from "@/components/teams/group-picker";
 import { useTeams } from "@/components/teams/use-teams";
-import type { GamePicks, NflTeams, PickRecords, ScheduleGame, TeamRecord, TeamSeason } from "@/lib/api/client";
-import { lineText, pickOutcome, recordText, seasonLine, teamHref, teamsHref } from "@/lib/teams";
+import type { GamePicks, NflTeams, PickRecords, ScheduleGame, ScheduleRow, TeamRecord, TeamSeason } from "@/lib/api/client";
+import { atsResult, lineText, pickOutcome, recordText, seasonLine, splitSchedule, teamHref, teamsHref } from "@/lib/teams";
 import { etDate, etDay } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
 const RESULT_STYLE = { W: "bg-correct-muted text-correct", L: "bg-wrong-muted text-wrong", T: "bg-secondary text-foreground" };
+const ATS_TEXT = { W: "Covered", L: "No cover", P: "Push" };
+const ATS_STYLE = { W: "text-correct", L: "text-wrong", P: "text-muted-foreground" };
 
 export function TeamView() {
   const params = useSearchParams();
@@ -64,16 +66,15 @@ export function TeamView() {
 function TeamBody({ data, team }: { data: NflTeams; team: TeamSeason }) {
   const groupId = data.group?.groupId;
   const records: Record<string, TeamRecord> = Object.fromEntries(data.teams.map((t) => [t.abbr, t]));
-  return (
-    <>
-      <Header team={team} />
-      {team.picks && <PickTable abbr={team.abbr} picks={team.picks} />}
-      <section className="mt-6" aria-labelledby="schedule">
-        <h2 id="schedule" className="paint worn mb-2 text-3xl leading-none">
-          Schedule
+  const { played, upcoming } = splitSchedule(team.schedule);
+  const list = (id: string, title: string, rows: ScheduleRow[]) =>
+    rows.length > 0 && (
+      <section className="mt-6" aria-labelledby={id}>
+        <h2 id={id} className="paint worn mb-2 text-3xl leading-none">
+          {title}
         </h2>
         <ol className="panel divide-y divide-white/10">
-          {team.schedule.map((row) =>
+          {rows.map((row) =>
             row.bye ? (
               <li key={row.week} className="flex items-center gap-3 px-3 py-1.5 text-sm text-muted-foreground">
                 <WeekNumber week={row.week} />
@@ -85,6 +86,13 @@ function TeamBody({ data, team }: { data: NflTeams; team: TeamSeason }) {
           )}
         </ol>
       </section>
+    );
+  return (
+    <>
+      <Header team={team} />
+      {team.picks && <PickTable abbr={team.abbr} picks={team.picks} />}
+      {list("results", "Results", played)}
+      {list("upcoming", "Upcoming", upcoming)}
     </>
   );
 }
@@ -190,10 +198,11 @@ interface GameRowProps {
 function GameRow({ game, abbr, groupId, opponent }: GameRowProps) {
   const played = game.result != null || (game.state === "in" && game.score != null);
   const line = lineText(game.spread);
+  const ats = atsResult(game);
   const when = game.timeValid ? etDate(game.kickoff) : `${etDay(game.kickoff)} · Time TBD`;
   // The score once there is one, else the kickoff, links to the game page.
   const info = (children: ReactNode, className: string) =>
-    groupId ? (
+    groupId && !game.archived ? (
       <GameInfoLink
         groupId={groupId}
         gameId={game.gameId}
@@ -248,7 +257,11 @@ function GameRow({ game, abbr, groupId, opponent }: GameRowProps) {
       <span className="shrink-0 pt-1.5 text-right">
         <span className="sr-only">Line </span>
         <span className="led text-base">{line ?? "--"}</span>
-        {game.overUnder != null && <span className="block text-[0.65rem] text-muted-foreground">O/U {game.overUnder}</span>}
+        {ats ? (
+          <span className={cn("block font-display text-[0.65rem] font-bold tracking-wider uppercase", ATS_STYLE[ats])}>{ATS_TEXT[ats]}</span>
+        ) : (
+          game.overUnder != null && <span className="block text-[0.65rem] text-muted-foreground">O/U {game.overUnder}</span>
+        )}
       </span>
     </li>
   );

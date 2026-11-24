@@ -15,7 +15,7 @@ import { type Slate, type SlateGame, type SlateGroup, type SlateTeam, getSlate }
 import { useLoad } from "@/lib/api/use-load";
 import { useFlags } from "@/lib/flags";
 import { outcome, picksHref, spreadText } from "@/lib/picks";
-import { adjacentWeeks, byDay, infoGroupId, kickoffTime, slateHref } from "@/lib/slate";
+import { adjacentWeeks, byDay, covered, infoGroupId, kickoffTime, slateHref } from "@/lib/slate";
 import { cn } from "@/lib/utils";
 
 export function SlateView() {
@@ -45,8 +45,9 @@ function SlateBody({ slate }: { slate: Slate }) {
   const { prev, next } = adjacentWeeks(slate.weeks, slate.week);
   const liveGroup = infoGroupId(slate.groups);
   const { gameInfo } = useFlags(liveGroup ?? undefined);
-  const infoGroup = gameInfo ? liveGroup : null;
+  const infoGroup = gameInfo && !slate.archived ? liveGroup : null;
   const topHype = Math.max(...slate.games.map((g) => g.hype ?? 0));
+  const lastWeek = adjacentWeeks(slate.weeks, slate.currentWeek).prev;
 
   return (
     <>
@@ -70,7 +71,22 @@ function SlateBody({ slate }: { slate: Slate }) {
         </div>
       </div>
 
-      <GroupBar groups={slate.groups} week={slate.week} games={slate.games.length} />
+      <nav aria-label="Jump to week" className="mt-3 inline-flex rounded-lg border bg-card p-0.5">
+        <WeekTab week={slate.currentWeek} current={slate.week}>
+          This week
+        </WeekTab>
+        {lastWeek !== null && (
+          <WeekTab week={lastWeek} current={slate.week}>
+            Last week
+          </WeekTab>
+        )}
+      </nav>
+
+      {slate.archived ? (
+        <p className="panel mt-4 px-3 py-2 text-sm text-muted-foreground">Before the pick&apos;em went live: final scores and closing lines from nflverse.</p>
+      ) : (
+        <GroupBar groups={slate.groups} week={slate.week} games={slate.games.length} />
+      )}
 
       {slate.games.length === 0 && (
         <p role="status" className="panel mt-6 p-4 text-sm text-muted-foreground">
@@ -88,6 +104,22 @@ function SlateBody({ slate }: { slate: Slate }) {
         </section>
       ))}
     </>
+  );
+}
+
+function WeekTab({ week, current, children }: { week: number; current: number; children: string }) {
+  const on = week === current;
+  return (
+    <Link
+      href={slateHref(week)}
+      aria-current={on ? "page" : undefined}
+      className={cn(
+        "inline-flex min-h-9 items-center rounded-md px-3 font-display text-sm font-bold tracking-wider uppercase outline-none focus-visible:ring-3 focus-visible:ring-ring/60",
+        on ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+      )}
+    >
+      {children}
+    </Link>
   );
 }
 
@@ -146,12 +178,13 @@ function GroupBar({ groups, week, games }: { groups: SlateGroup[]; week: number;
 function GameRow({ game, groups, infoGroup, top }: { game: SlateGame; groups: SlateGroup[]; infoGroup: string | null; top: boolean }) {
   const started = game.state === "in" || game.state === "post";
   const spread = spreadText(game);
+  const cover = covered(game);
   // A group with no sheet this week shows 0 picked in the bar above, not "no pick" on every game.
   const sheets = groups.filter((g) => g.picks);
   const matchup = (
     <>
-      <TeamLine team={game.away} score={started ? game.awayScore : null} lost={isLoser(game, game.away)} />
-      <TeamLine team={game.home} score={started ? game.homeScore : null} lost={isLoser(game, game.home)} home />
+      <TeamLine team={game.away} score={started ? game.awayScore : null} result={result(game, game.away)} />
+      <TeamLine team={game.home} score={started ? game.homeScore : null} result={result(game, game.home)} home />
     </>
   );
 
@@ -189,6 +222,14 @@ function GameRow({ game, groups, infoGroup, top }: { game: SlateGame; groups: Sl
             <dd className="font-semibold text-foreground">{spread}</dd>
           </div>
         )}
+        {cover && (
+          <div>
+            <dt className="sr-only">Against the spread</dt>
+            <dd className="font-display text-xs font-bold tracking-wider text-primary uppercase">
+              {cover === "PUSH" ? "Push ATS" : `${cover} covered`}
+            </dd>
+          </div>
+        )}
         {game.lines?.overUnder != null && (
           <div>
             <dt className="inline">O/U </dt>
@@ -220,13 +261,17 @@ function GameRow({ game, groups, infoGroup, top }: { game: SlateGame; groups: Sl
   );
 }
 
-const isLoser = (game: SlateGame, team: SlateTeam) => Boolean(game.completed && game.winner && game.winner !== team.abbr);
+function result(game: SlateGame, team: SlateTeam): "won" | "lost" | null {
+  if (!game.completed || !game.winner || game.tie) return null;
+  return game.winner === team.abbr ? "won" : "lost";
+}
 
-function TeamLine({ team, score, lost, home = false }: { team: SlateTeam; score: number | null; lost: boolean; home?: boolean }) {
+function TeamLine({ team, score, result, home = false }: { team: SlateTeam; score: number | null; result: "won" | "lost" | null; home?: boolean }) {
+  const lost = result === "lost";
   return (
     <span className={cn("flex items-center gap-2 py-0.5", lost && "text-muted-foreground")}>
-      <TeamLogo {...team} className="size-6" />
-      <span className="font-display text-lg leading-none font-bold">
+      <TeamLogo {...team} className={cn("size-6", lost && "opacity-50 grayscale")} />
+      <span className={cn("font-display text-lg leading-none", result === "won" ? "font-extrabold" : "font-bold")}>
         {home && <span className="sr-only">at </span>}
         {team.abbr}
       </span>
@@ -236,7 +281,19 @@ function TeamLine({ team, score, lost, home = false }: { team: SlateTeam; score:
           {team.record}
         </span>
       )}
-      {score != null && <span className={cn("ml-auto led text-lg leading-none", lost && "opacity-60")}>{score}</span>}
+      {score != null && (
+        <span className="ml-auto flex items-center gap-0.5">
+          <span className={cn("led text-lg leading-none", lost && "opacity-50 [text-shadow:none]")}>{score}</span>
+          <span className="w-3">
+            {result === "won" && (
+              <>
+                <ChevronLeft className="size-3.5 text-primary" aria-hidden="true" />
+                <span className="sr-only">won</span>
+              </>
+            )}
+          </span>
+        </span>
+      )}
     </span>
   );
 }

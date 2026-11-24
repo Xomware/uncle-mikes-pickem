@@ -343,6 +343,8 @@ export interface Slate {
   currentWeek: number;
   /** Weeks on the schedule, ascending. */
   weeks: number[];
+  /** A week from before the app went live: nflverse finals, no pick sheets or game info. */
+  archived: boolean;
   games: SlateGame[];
   groups: SlateGroup[];
 }
@@ -694,6 +696,8 @@ export interface ScheduleGame {
   spread: number | null;
   overUnder: number | null;
   broadcasts: string[];
+  /** From before the app went live: no game info page. */
+  archived: boolean;
   picks: GamePicks | null;
 }
 

@@ -95,3 +95,32 @@ def test_week_param(api):
 
 def test_no_schedule_yet(app):
     assert call(app("nfl_week"), DOM) == (404, "The NFL schedule isn't loaded yet")
+
+
+def replay(week, gid, away, home, kickoff, score):
+    nfl_store.save_replay(2026, {week: [{
+        "gameId": gid, "kickoff": kickoff, "timeValid": True,
+        "away": {"abbr": away, "logo": None}, "home": {"abbr": home, "logo": None},
+        "lines": {"provider": "nflverse", "details": None, "spread": -3.5, "overUnder": 44.5},
+        "awayScore": score[0], "homeScore": score[1], "winner": away if score[0] > score[1] else home,
+        "tie": False, "final": True, "snapshots": [],
+    }]}, "2026-11-12T00:00:00Z")
+
+
+def test_a_week_before_launch_comes_from_the_replay_finals(api):
+    replay(9, "401873040", "KC", "DEN", "2026-11-02T18:00:00Z", (20, 24))
+    group("g1", "Office")
+    data = call(api, DOM)[1]
+    assert (data["weeks"], data["archived"]) == ([9, 10], False)
+
+    status, data = call(api, DOM, query={"week": "9"})
+    assert status == 200 and data["archived"] is True and data["groups"] == []
+    (g,) = data["games"]
+    assert (g["state"], g["completed"], g["awayScore"], g["homeScore"], g["winner"]) == ("post", True, 20, 24, "DEN")
+    assert g["lines"]["spread"] == -3.5
+
+
+def test_replay_rows_after_the_current_week_stay_off_the_slate(api):
+    replay(11, "401873070", "KC", "DEN", "2026-11-20T18:00:00Z", (20, 24))
+    assert call(api, DOM)[1]["weeks"] == [10]
+    assert call(api, DOM, query={"week": "11"}) == (404, "Week 11 isn't on the schedule yet")

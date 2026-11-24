@@ -1,7 +1,8 @@
 """GET /nfl/week[?week=n]: the live season's slate for one week, with the caller's picks in each group.
 
 No group needed: games come straight from the live SEASON rows, the week ESPN calls
-current by default. Picks are the caller's own, so nothing another member hid until
+current by default. A week before cron_tick went live has no rows, so it comes from the
+replay rows' nflverse finals instead (`archived`: no picks, no game info). Picks are the caller's own, so nothing another member hid until
 lock is shown. Records are each team's going into the week, folded from nflverse and
 cached on pickem-nfl as `SEASON#yr#Wnn / RECORDS`; once every earlier game is final
 they never change, so the row is kept for good.
@@ -34,14 +35,15 @@ def week_param(event: dict, current: int) -> int:
     return int(raw)
 
 
-def scheduled_weeks(season: int) -> list[int]:
-    """Weeks with a WEEK row. The live season's rows start wherever cron_tick first ran."""
+def scheduled_weeks(season: int, current: int) -> list[int]:
+    """Weeks with a WEEK row, plus the archived weeks before the current one."""
     name = os.environ["NFL_TABLE"]
     keys = [{"PK": nfl_store.week_pk(season, w), "SK": "WEEK"} for w in range(1, LAST_WEEK + 1)]
     resp = dynamodb.batch_get_item(RequestItems={name: {"Keys": keys, "ProjectionExpression": "PK"}})
     if resp.get("UnprocessedKeys"):
         raise RuntimeError("BatchGetItem left WEEK keys unprocessed")
-    return sorted(int(i["PK"].rsplit("W", 1)[1]) for i in resp["Responses"][name])
+    live = {int(i["PK"].rsplit("W", 1)[1]) for i in resp["Responses"][name]}
+    return sorted(live | {w for w in nfl_store.replay_lock_ats(season) if w < current})
 
 
 def fold_records(text: str, season: int, week: int) -> tuple[dict[str, str], bool]:
@@ -126,8 +128,9 @@ def handler(event, context):
         raise ApiError(404, "The NFL schedule isn't loaded yet")
     season, current_week = current
     week = week_param(event, current_week)
-    nfl_week = nfl_store.get_week(season, week)
-    if not nfl_week:
+    archived = not nfl_store.get_week(season, week) and week < current_week
+    games = nfl_store.archive_games(season, week) if archived else nfl_store.list_games(season, week)
+    if not games:
         raise ApiError(404, f"Week {week} isn't on the schedule yet")
     recs = records(season, week)
     return respond(
@@ -136,8 +139,9 @@ def handler(event, context):
             "season": season,
             "week": week,
             "currentWeek": current_week,
-            "weeks": scheduled_weeks(season),
-            "games": [game(g, week, recs) for g in nfl_store.list_games(season, week)],
-            "groups": my_picks(me["sub"], season, week),
+            "weeks": scheduled_weeks(season, current_week),
+            "archived": archived,
+            "games": [game(g, week, recs) for g in games],
+            "groups": [] if archived else my_picks(me["sub"], season, week),
         },
     )

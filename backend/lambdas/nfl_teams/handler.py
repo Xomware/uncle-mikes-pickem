@@ -1,6 +1,7 @@
 """GET /nfl/teams[?team=KC][&groupId=g][&season=2026]: every team's record, and one team's season.
 
-Records come from the GAME items' final scores. With ?groupId= the season and clock are
+Records come from the GAME items' final scores; a live week cron_tick never wrote comes from
+the replay rows instead (nfl_store.archive_games). With ?groupId= the season and clock are
 the group's (a replay group sees only what its clock has reached), and ?team= adds how the
 group and the caller have picked that team in locked weeks. Without it, the live season:
 ?season=, else the one ESPN calls current.
@@ -130,7 +131,7 @@ def schedule(by_week: dict[int, list[dict]], abbr: str) -> list[dict]:
             "opponent": game[them], "state": game.get("state"), "result": team_result(game, abbr),
             "score": game.get(f"{us}Score"), "opponentScore": game.get(f"{them}Score"),
             "spread": team_line(game, home), "overUnder": (game.get("lines") or {}).get("overUnder"),
-            "broadcasts": game.get("broadcasts") or [], "picks": None,
+            "broadcasts": game.get("broadcasts") or [], "archived": bool(game.get("archived")), "picks": None,
         })
     return rows
 
@@ -143,7 +144,7 @@ def pick_records(table, gid: str, feed: nfl_store.Feed, by_week: dict[int, list[
     totals = {"group": {"for": record(), "against": record()}, "mine": {"for": record(), "against": record()}}
     last = feed.last_locked_week() or 0
     for row in rows:
-        if row["bye"] or row["week"] > last:
+        if row["bye"] or row["archived"] or row["week"] > last:
             continue
         items = nfl_store.plain(table.query(KeyConditionExpression=Key("PK").eq(week_pk(gid, feed.season, row["week"])))["Items"])
         canceled = next((set(i["gameIds"]) for i in items if i["SK"] == "CANCELED"), set())
@@ -204,6 +205,9 @@ def handler(event, context):
         feed = nfl_store.Feed(season_for(event), False, clock.now())
 
     by_week = {w: feed.games(w) for w in WEEKS}
+    if not feed.replay:
+        before = feed.last_locked_week() or 0
+        by_week |= {w: nfl_store.archive_games(feed.season, w) for w, games in by_week.items() if not games and w <= before}
     teams = standings([g for games in by_week.values() for g in games])
     body = {
         "season": feed.season,

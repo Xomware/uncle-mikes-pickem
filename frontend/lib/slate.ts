@@ -22,6 +22,15 @@ export function kickoffTime(game: Pick<SlateGame, "kickoff" | "timeValid">): str
   return new Date(game.kickoff).toLocaleTimeString("en-US", { timeZone: ET, hour: "numeric", minute: "2-digit" });
 }
 
+/** Who covered the closing spread: a team, "PUSH", or null without a final or a line. */
+export function covered(game: Pick<SlateGame, "completed" | "awayScore" | "homeScore" | "lines" | "away" | "home">): string | null {
+  const spread = game.lines?.spread;
+  if (!game.completed || spread == null || game.awayScore == null || game.homeScore == null) return null;
+  const margin = game.homeScore - game.awayScore + spread;
+  if (margin === 0) return "PUSH";
+  return margin > 0 ? game.home.abbr : game.away.abbr;
+}
+
 /** The scheduled weeks either side of `week`, skipping gaps. */
 export function adjacentWeeks(weeks: number[], week: number): { prev: number | null; next: number | null } {
   return {
