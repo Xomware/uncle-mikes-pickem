@@ -805,3 +805,24 @@ export function getNflTeams(groupId: string | null, team?: string) {
   const qs = query.toString();
   return request<NflTeams>(`/nfl/teams${qs ? `?${qs}` : ""}`);
 }
+
+export interface AdminGroup {
+  groupId: string;
+  name: string;
+  season: number;
+  role: Role;
+  replay: boolean;
+  week: number;
+  /** Null once the season is over or before the schedule is loaded. */
+  lockAt: string | null;
+  /** chosenBy is a member's name, or "auto" when cron_tick picked it. */
+  gow: { gameId: string; matchup: string | null; chosenBy: string } | null;
+  gowDeadline: string | null;
+  members: number;
+  /** Names without a complete sheet this week. */
+  missing: string[];
+  /** Null when payments are off for the group. */
+  unpaid: { count: number; amount: number; names: string[] } | null;
+}
+
+export const getAdminOverview = () => request<AdminGroup[]>("/admin/overview");

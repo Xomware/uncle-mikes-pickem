@@ -1,15 +1,16 @@
 "use client";
 
-import { Binoculars, CalendarDays, House, ListOrdered, LogOut, Shield, TriangleAlert, UserRound, UsersRound } from "lucide-react";
+import { CalendarDays, ClipboardList, House, ListOrdered, LogOut, Shield, TriangleAlert, UserRound, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { Brand } from "@/components/brand";
 import { Button } from "@/components/ui/button";
+import { useHasAdmin } from "@/lib/admin";
 import { useAuth } from "@/lib/auth/use-auth";
 import { DEFAULT_NEXT } from "@/lib/auth/next-path";
-import { useFlags, useSuperAdmin } from "@/lib/flags";
+import { useFlags } from "@/lib/flags";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -20,16 +21,15 @@ const NAV = [
   { href: "/leaderboard/", label: "Leaders", icon: ListOrdered },
   { href: "/profile/", label: "Profile", icon: UserRound },
 ];
-const PRESS_BOX = { href: "/super/", label: "Press Box", icon: Binoculars };
+// The super admin reaches the Press Box from the Admin page, so the phone tab bar stays at seven.
+const ADMIN = { href: "/admin/", label: "Admin", icon: ClipboardList };
 
 export function AppHeader() {
   const pathname = usePathname();
   const auth = useAuth();
   const [signingOut, setSigningOut] = useState(false);
   const { maintenanceBanner } = useFlags();
-  // Only the super admin gets a 200 from /super/overview, so only they see the link.
-  const superAdmin = useSuperAdmin();
-  const items = superAdmin ? [...NAV, PRESS_BOX] : NAV;
+  const items = useHasAdmin() ? [...NAV, ADMIN] : NAV;
 
   async function signOut() {
     setSigningOut(true);

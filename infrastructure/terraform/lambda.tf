@@ -82,6 +82,11 @@ locals {
     { name = "test", description = "Send the test email to the caller", path_part = "test", http_method = "POST", authorization = "COGNITO_USER_POOLS" },
   ]
 
+  # Owner and admin only, filtered per group in the handler.
+  admin_lambdas = [
+    { name = "overview", description = "Read this week's to-do list for each group the caller organizes", path_part = "overview", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
+  ]
+
   config_lambdas = [
     { name = "flags", description = "Read the resolved feature flags, global or for a group (?groupId=)", path_part = "flags", http_method = "GET", authorization = "COGNITO_USER_POOLS" },
   ]
@@ -118,6 +123,7 @@ locals {
     { for l in local.analytics_lambdas : "analytics_${l.name}" => l },
     { for l in local.email_lambdas : "email_${l.name}" => l },
     { for l in local.config_lambdas : "config_${l.name}" => l },
+    { for l in local.admin_lambdas : "admin_${l.name}" => l },
     { for l in local.super_lambdas : "super_${l.name}" => l },
   )
 
@@ -175,6 +181,8 @@ locals {
     email_test        = ["app:GetItem"]
 
     config_flags = ["app:GetItem"]
+
+    admin_overview = ["app_index:Query", "app:GetItem", "app:Query", "nfl:GetItem", "nfl:Query"]
 
     super_overview  = ["app:Scan", "app:Query", "nfl:GetItem", "nfl:Query", "ops:Query", "ops:Scan"]
     super_groups    = ["app:Scan"]
