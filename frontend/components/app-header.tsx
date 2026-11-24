@@ -1,6 +1,6 @@
 "use client";
 
-import { Binoculars, CalendarDays, ListOrdered, LogOut, Shield, TriangleAlert, UserRound, UsersRound } from "lucide-react";
+import { Binoculars, CalendarDays, House, ListOrdered, LogOut, Shield, TriangleAlert, UserRound, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -13,6 +13,7 @@ import { useFlags, useSuperAdmin } from "@/lib/flags";
 import { cn } from "@/lib/utils";
 
 const NAV = [
+  { href: "/home/", label: "Home", icon: House },
   { href: "/slate/", label: "Slate", icon: CalendarDays },
   { href: "/groups/", label: "Groups", icon: UsersRound },
   { href: "/teams/", label: "Teams", icon: Shield },
