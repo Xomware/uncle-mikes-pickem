@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-import { getSlate } from "@/lib/api/client";
+import { getPickSlate } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
 import { type Banner, banners } from "@/lib/banners";
 import { countdown, picksHref } from "@/lib/picks";
@@ -18,7 +18,7 @@ export function ActionBanners() {
   const path = usePathname();
   const here = useSearchParams().get("id");
   // Refetched on every page change, so a sheet saved a moment ago stops nagging.
-  const fetcher = useCallback(() => getSlate(), [path]); // eslint-disable-line react-hooks/exhaustive-deps
+  const fetcher = useCallback(() => getPickSlate(), [path]); // eslint-disable-line react-hooks/exhaustive-deps
   const { load } = useLoad(fetcher);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -83,9 +83,9 @@ function BannerRow({ banner, now }: { banner: Banner; now: number }) {
         </span>
       </span>
       {left && (
-        <span className="hidden shrink-0 text-right sm:block">
+        <span className="shrink-0 text-right">
           <span className="block font-display text-[0.6rem] font-bold tracking-[0.2em] text-muted-foreground uppercase">Locks in</span>
-          <span className="led text-xl leading-none">{left}</span>
+          <span className="led text-lg leading-none whitespace-nowrap sm:text-xl">{left}</span>
         </span>
       )}
       <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-primary px-3 py-2 font-display text-sm font-extrabold tracking-wide text-primary-foreground uppercase">

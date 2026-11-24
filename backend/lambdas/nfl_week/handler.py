@@ -92,6 +92,17 @@ def game(g: dict, week: int, recs: dict[str, str]) -> dict:
     }
 
 
+def pick_week(season: int, current: int) -> int | None:
+    """The first stored week that hasn't locked. ESPN keeps a week current until midweek,
+    after its Thursday lock, while cron_tick already holds the next one open for picks."""
+    now = clock.now()
+    for w in (current, current + 1):
+        row = nfl_store.get_week(season, w)
+        if row and nfl_store.parse(row["lockAt"]) > now:
+            return w
+    return None
+
+
 def my_picks(sub: str, season: int, week: int) -> list[dict]:
     """The caller's sheet in each of their groups for this season, in one BatchGetItem."""
     table = dynamodb.Table(os.environ["APP_TABLE"])
@@ -146,6 +157,7 @@ def handler(event, context):
             "season": season,
             "week": week,
             "currentWeek": current_week,
+            "pickWeek": pick_week(season, current_week),
             "weeks": scheduled_weeks(season, current_week),
             "archived": archived,
             "lockAt": row["lockAt"] if row else None,

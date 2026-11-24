@@ -12,7 +12,7 @@ import { GameInfoLink } from "@/components/game/game-info-link";
 import { LoadError } from "@/components/load-error";
 import { buttonVariants } from "@/components/ui/button";
 import { Select } from "@/components/ui/input";
-import { type Slate, type SlateGame, type SlateGroup, type SlateTeam, getSlate } from "@/lib/api/client";
+import { type Slate, type SlateGame, type SlateGroup, type SlateTeam, getPickSlate, getSlate } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
 import { useFlags } from "@/lib/flags";
 import { outcome, picksHref, spreadText } from "@/lib/picks";
@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 export function SlateView() {
   const params = useSearchParams();
   const week = Number(params.get("week")) || undefined;
-  const fetcher = useCallback(() => getSlate(week), [week]);
+  const fetcher = useCallback(() => (week ? getSlate(week) : getPickSlate()), [week]);
   const { load, retry } = useLoad(fetcher);
 
   return (
@@ -48,12 +48,14 @@ function SlateBody({ slate }: { slate: Slate }) {
   const { gameInfo } = useFlags(liveGroup ?? undefined);
   const infoGroup = gameInfo && !slate.archived ? liveGroup : null;
   const topHype = Math.max(...slate.games.map((g) => g.hype ?? 0));
-  const lastWeek = adjacentWeeks(slate.weeks, slate.currentWeek).prev;
+  // The week open for picks; ESPN's current week can already be locked.
+  const thisWeek = slate.pickWeek ?? slate.currentWeek;
+  const lastWeek = adjacentWeeks(slate.weeks, thisWeek).prev;
 
   return (
     <>
       <div className="flex flex-wrap items-end gap-2">
-        <FieldTitle sub={`${slate.season} season${slate.week === slate.currentWeek ? " · This week" : ""}`} className="mr-auto">
+        <FieldTitle sub={`${slate.season} season${slate.week === thisWeek ? " · This week" : ""}`} className="mr-auto">
           Week {slate.week}
         </FieldTitle>
         <div className="flex items-center gap-1.5">
@@ -73,7 +75,7 @@ function SlateBody({ slate }: { slate: Slate }) {
       </div>
 
       <nav aria-label="Jump to week" className="mt-3 inline-flex rounded-lg border bg-card p-0.5">
-        <WeekTab week={slate.currentWeek} current={slate.week}>
+        <WeekTab week={thisWeek} current={slate.week}>
           This week
         </WeekTab>
         {lastWeek !== null && (

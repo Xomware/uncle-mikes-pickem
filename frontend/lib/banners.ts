@@ -19,7 +19,7 @@ function progress(group: SlateGroup, games: number) {
  */
 export function banners(slate: Slate, now: number): Banner[] {
   const { week, lockAt, gowDeadline } = slate;
-  if (slate.archived || slate.week !== slate.currentWeek || !lockAt || now >= Date.parse(lockAt)) return [];
+  if (slate.archived || slate.week !== slate.pickWeek || !lockAt || now >= Date.parse(lockAt)) return [];
   const live = slate.groups.filter((g) => !g.replay);
   const gow: Banner[] = live
     .filter((g) => isOrganizer(g.role) && !g.gow && gowDeadline && now < Date.parse(gowDeadline))

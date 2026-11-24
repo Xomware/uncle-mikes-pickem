@@ -130,3 +130,23 @@ def test_replay_rows_after_the_current_week_stay_off_the_slate(api):
     replay(11, "401873070", "KC", "DEN", "2026-11-20T18:00:00Z", (20, 24))
     assert call(api, DOM)[1]["weeks"] == [10]
     assert call(api, DOM, query={"week": "11"}) == (404, "Week 11 isn't on the schedule yet")
+
+
+def test_pick_week_moves_past_a_locked_current_week(app, monkeypatch):
+    from datetime import datetime, timezone
+
+    from lambdas.common import clock
+
+    seed_week(2026, 11, "2026-11-20T01:15:00Z", [("401873070", "KC", "BUF", 50)])
+    seed_week(2026, 10, LOCK, GAMES)  # ESPN still calls 10 current
+    api = app("nfl_week")
+    monkeypatch.setattr(nflverse, "fetch", lambda: CSV)
+    at = lambda iso: monkeypatch.setattr(clock, "now", lambda group=None: datetime.fromisoformat(iso).replace(tzinfo=timezone.utc))
+
+    at("2026-11-10T12:00:00")
+    assert call(api, DOM)[1]["pickWeek"] == 10
+    at("2026-11-15T12:00:00")
+    data = call(api, DOM)[1]
+    assert (data["week"], data["pickWeek"]) == (10, 11)
+    at("2026-11-21T12:00:00")
+    assert call(api, DOM)[1]["pickWeek"] is None

@@ -10,7 +10,7 @@ const group = (extra: Partial<SlateGroup>): SlateGroup => ({
   groupId: "g1", name: "Uncle Mike's", replay: false, picks: null, complete: false, role: "member", gow: { gameId: "1", chosenBy: "u" }, ...extra,
 });
 const slate = (groups: SlateGroup[], extra: Partial<Slate> = {}): Slate => ({
-  season: 2026, week: 12, currentWeek: 12, weeks: [12], archived: false, lockAt: LOCK, gowDeadline: DUE, games: [], groups, ...extra,
+  season: 2026, week: 12, currentWeek: 12, pickWeek: 12, weeks: [12], archived: false, lockAt: LOCK, gowDeadline: DUE, games: [], groups, ...extra,
 });
 const before = Date.parse("2026-11-24T12:00:00Z");
 

@@ -347,6 +347,8 @@ export interface Slate {
   season: number;
   week: number;
   currentWeek: number;
+  /** The first stored week still open for picks; ESPN's current week can already be locked. */
+  pickWeek: number | null;
   /** Weeks on the schedule, ascending. */
   weeks: number[];
   /** A week from before the app went live: nflverse finals, no pick sheets or game info. */
@@ -360,6 +362,12 @@ export interface Slate {
 }
 
 export const getSlate = (week?: number) => request<Slate>(`/nfl/week${week ? `?week=${week}` : ""}`);
+
+/** The week people should be picking: ESPN's current one, or the next once it has locked. */
+export async function getPickSlate() {
+  const slate = await getSlate();
+  return slate.pickWeek && slate.pickWeek !== slate.week ? getSlate(slate.pickWeek) : slate;
+}
 
 export interface DeathGame {
   gameId: string;
