@@ -29,10 +29,12 @@ export function useLoad<T>(fetcher: () => Promise<T>) {
   }
 
   /** Refetch in place for polling. A failed poll keeps the last data on screen; the next one retries. */
-  function refresh() {
-    fetcher().then(
+  function refresh(): Promise<void> {
+    return fetcher().then(
       // Dropped when the page has moved on to another fetcher (a different week) meanwhile.
-      (data) => current.current === fetcher && setLoad({ status: "ready", data }),
+      (data) => {
+        if (current.current === fetcher) setLoad({ status: "ready", data });
+      },
       () => undefined,
     );
   }

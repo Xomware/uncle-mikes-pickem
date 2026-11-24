@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleAlert, CircleCheck, Info, LoaderCircle, Star, Undo2 } from "lucide-react";
+import { CircleAlert, CircleCheck, Info, LoaderCircle } from "lucide-react";
 import { type ReactNode, useState } from "react";
 
 import { LightBank } from "@/components/field/icons";
@@ -8,9 +8,9 @@ import { TeamLogo } from "@/components/field/team-logo";
 import { GameInfoLink } from "@/components/game/game-info-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { type Game, type Team, type WeekView, cancelGame, setGow, setPicks } from "@/lib/api/client";
+import { type Game, type Team, type WeekView, setPicks } from "@/lib/api/client";
 import { isOrganizer } from "@/lib/groups";
-import { type ConfCheck, type Sheet, checkConf, confError, isComplete, pickedCount, sameSheet, spreadText, toPayload, toSheet } from "@/lib/picks";
+import { type ConfCheck, type Sheet, carry, checkConf, confError, isComplete, pickedCount, sameSheet, spreadText, toPayload, toSheet } from "@/lib/picks";
 import { etTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
@@ -19,22 +19,29 @@ type SaveState = { kind: "idle" | "saving" } | { kind: "saved"; at: string } | {
 interface Props {
   view: WeekView;
   locked: boolean;
-  reload: () => void;
 }
 
-export function PickSheet({ view, locked, reload }: Props) {
+export function PickSheet({ view, locked }: Props) {
   const { group, week, games, gow, role } = view;
   const [saved, setSaved] = useState<Sheet>(() => toSheet(games, view.mine));
   const [sheet, setSheet] = useState<Sheet>(saved);
   const [save, setSave] = useState<SaveState>({ kind: "idle" });
-  const [managing, setManaging] = useState(false);
-  const [organizerError, setOrganizerError] = useState<string | null>(null);
+  const [base, setBase] = useState(view);
 
   const byId = Object.fromEntries(games.map((g) => [g.gameId, g]));
   const editable = !locked && gow !== null;
   const dirty = !sameSheet(sheet, saved);
+
+  // A refreshed week (live poll, an organizer change) updates the sheet in place and keeps a draft.
+  if (base !== view) {
+    setBase(view);
+    const fresh = toSheet(games, view.mine);
+    setSaved(fresh);
+    setSheet(dirty ? carry(sheet, fresh) : fresh);
+  }
   const tiebreakGame = byId[week.tiebreakGameId];
   const check = checkConf(sheet);
+  const canceled = games.filter((g) => g.canceled);
   const n = sheet.order.length;
 
   function edit(next: Sheet) {
@@ -55,43 +62,16 @@ export function PickSheet({ view, locked, reload }: Props) {
     }
   }
 
-  async function organize(action: () => Promise<unknown>) {
-    setOrganizerError(null);
-    try {
-      await action();
-      reload();
-    } catch (err) {
-      setOrganizerError(err instanceof Error ? err.message : "That didn't work.");
-    }
-  }
-
-  const canManage = isOrganizer(role) && !locked;
-  const canceled = games.filter((g) => g.canceled);
-
   return (
     <div className="mt-6">
       {!gow && !locked && (
         <p className="panel mb-4 p-3 text-sm text-muted-foreground">
           Picks open once the organizer chooses the game of the week.
-          {isOrganizer(role) && " Use Manage games to choose it."}
+          {isOrganizer(role) && " Choose it in the Organizer booth above."}
         </p>
       )}
 
-      {canManage && (
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <Button variant="outline" aria-pressed={managing} onClick={() => setManaging((m) => !m)}>
-            {managing ? "Done managing" : "Manage games"}
-          </Button>
-          {managing && dirty && <span className="chalk text-xs tracking-[0.12em]">Save your picks first.</span>}
-        </div>
-      )}
-      {organizerError && (
-        <p role="alert" className="mb-3 flex items-center gap-2 text-sm text-wrong">
-          <CircleAlert className="size-4 shrink-0" aria-hidden="true" />
-          {organizerError}
-        </p>
-      )}
-
+      <h2 className="chalk mb-2 text-sm">My picks</h2>
       {editable && (
         <p className="mb-3 rounded-md bg-card/90 px-3 py-2 text-sm text-muted-foreground">
           Tap a team to pick it. Type your confidence in the box: {n} for your surest pick, 1 for your least. Each number once.
@@ -113,21 +93,6 @@ export function PickSheet({ view, locked, reload }: Props) {
             editable={editable}
             onPick={(team) => edit({ ...sheet, teams: { ...sheet.teams, [id]: team } })}
             onConf={(value) => edit({ ...sheet, conf: { ...sheet.conf, [id]: value.replace(/\D/g, "").slice(0, 2) } })}
-            manage={
-              managing && (
-                <div className="mt-2 flex flex-wrap gap-2 border-t pt-2">
-                  {gow?.gameId !== id && (
-                    <Button size="sm" variant="outline" disabled={dirty} onClick={() => organize(() => setGow(group.groupId, week.week, id))}>
-                      <Star aria-hidden="true" />
-                      Make game of the week
-                    </Button>
-                  )}
-                  <Button size="sm" variant="destructive" disabled={dirty} onClick={() => organize(() => cancelGame(group.groupId, week.week, id, true))}>
-                    Cancel game
-                  </Button>
-                </div>
-              )
-            }
           />
         ))}
       </ol>
@@ -141,12 +106,6 @@ export function PickSheet({ view, locked, reload }: Props) {
                 <span className="flex-1 line-through">
                   {g.away.abbr} @ {g.home.abbr}
                 </span>
-                {managing && (
-                  <Button size="sm" variant="outline" disabled={dirty} onClick={() => organize(() => cancelGame(group.groupId, week.week, g.gameId, false))}>
-                    <Undo2 aria-hidden="true" />
-                    Restore
-                  </Button>
-                )}
               </li>
             ))}
           </ul>
@@ -187,10 +146,9 @@ interface RowProps {
   editable: boolean;
   onPick: (team: string) => void;
   onConf: (value: string) => void;
-  manage: ReactNode;
 }
 
-function GameRow({ groupId, dirty, game, conf, confIssue, team, isGow, isTiebreak, editable, onPick, onConf, manage }: RowProps) {
+function GameRow({ groupId, dirty, game, conf, confIssue, team, isGow, isTiebreak, editable, onPick, onConf }: RowProps) {
   const matchup = `${game.away.abbr} at ${game.home.abbr}`;
   const details = [
     etTime(game.kickoff),
@@ -270,7 +228,6 @@ function GameRow({ groupId, dirty, game, conf, confIssue, team, isGow, isTiebrea
           {confIssue}
         </p>
       )}
-      {manage}
     </li>
   );
 }
