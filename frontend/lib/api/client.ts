@@ -458,6 +458,7 @@ export const getSeasonStandings = (groupId: string) =>
 
 /** A player's best entry across their groups. Names are first name and last initial. */
 export interface LeaderRow {
+  sub: string;
   /** null: too few graded picks to rank on pick %. */
   rank: number | null;
   name: string;
@@ -627,14 +628,19 @@ export interface GradeTally {
   tie: number;
 }
 
-/** The caller's season in one group. Void and pending games count for nothing. */
+/** A player's season in one group. Void and pending games count for nothing. */
 export interface MyStats {
-  group: { groupId: string; name: string; season: number };
+  /** name is first name and last initial when the caller isn't in the group. */
+  player: { sub: string; name: string };
+  /** null when the caller isn't in the group: the player was reached from the global leaderboard. */
+  group: { groupId: string; name: string; season: number } | null;
+  /** The player is the caller. */
+  you: boolean;
   entryType: EntryType;
   throughWeek: number;
   /** null for a weekly-only member, or before Week 1 is graded. */
   season: { place: string; total: number; gow: number } | null;
-  /** Cents. null while payouts are off for the group. pending is won on a result that can still change. */
+  /** Cents. Only ever the caller's: null for anyone else, or while payouts are off for the group. pending is won on a result that can still change. */
   money: { won: number; pending: number } | null;
   /** field is how many members the week graded. */
   weeks: { week: number; status: WeekResult["status"]; weekly: number; place: string; field: number; missed: boolean; won: boolean }[];
@@ -643,13 +649,16 @@ export interface MyStats {
   /** Right picks in a row, in kickoff order. */
   streak: { longest: number; current: number };
   gow: GradeTally;
-  /** The caller's record picking each team. won is the confidence its right picks earned, lost what its wrong ones cost. */
+  /** The player's record picking each team. won is the confidence its right picks earned, lost what its wrong ones cost. */
   teams: (GradeTally & { team: string; won: number; lost: number })[];
-  /** The caller's record at each confidence level they've used, lowest first. */
+  /** The player's record at each confidence level they've used, lowest first. */
   confidence: (GradeTally & { conf: number })[];
 }
 
 export const getMyStats = (id: string) => request<MyStats>(`/me/stats?id=${encodeURIComponent(id)}`);
+/** Another player's stats, in `groupId` when given, else in their global leaderboard entry. */
+export const getPlayerStats = (sub: string, groupId?: string | null) =>
+  request<MyStats>(`/me/stats?${new URLSearchParams({ sub, ...(groupId ? { id: groupId } : {}) })}`);
 
 export interface WinLoss {
   w: number;

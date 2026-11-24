@@ -27,7 +27,7 @@ import { type SheetState, sheetStatus, winnerWeeks } from "@/lib/dashboard";
 import { cents } from "@/lib/payouts";
 import { outcome, picksHref, spreadText } from "@/lib/picks";
 import { standingsHref } from "@/lib/results";
-import { ordinal } from "@/lib/stats";
+import { ordinal, playerHref } from "@/lib/stats";
 import { etDate, etTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
@@ -221,7 +221,9 @@ function Leaders({ groupId, me }: { groupId: string; me: string }) {
                   <tr key={r.member} className={cn("border-t border-white/10", r.member === me && "text-primary")}>
                     <td className="led py-1.5 text-base">{r.place}</td>
                     <td className="max-w-0 truncate py-1.5 font-display font-bold">
-                      {r.name}
+                      <Link href={playerHref(r.member, groupId)} className="hover:text-primary hover:underline underline-offset-4 focus-visible:underline outline-none">
+                        {r.name}
+                      </Link>
                       {r.member === me && <span className="sr-only"> (you)</span>}
                     </td>
                     <td className="led py-1.5 text-right text-base">{r.total}</td>

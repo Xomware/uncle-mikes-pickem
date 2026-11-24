@@ -85,7 +85,7 @@ def test_global_names_only_your_own_groups(app):
         ("Sam", None, False),
         ("Dom", "Dom's Pool", True),
     ]
-    assert not {"sub", "groupId"} & set(data["overall"]["rows"][0])
+    assert "groupId" not in data["overall"]["rows"][0] and data["overall"]["rows"][0]["sub"] == PAT["sub"]
     assert data["thisWeek"]["me"] is None and data["thisWeek"]["players"] == 1
 
 

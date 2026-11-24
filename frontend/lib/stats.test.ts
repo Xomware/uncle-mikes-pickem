@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 
 import type { MyStats } from "./api/client";
-import { finishes, ordinal, pickRate, recordText, teamTrends } from "./stats";
+import { finishes, ordinal, pickRate, playerHref, recordText, teamTrends } from "./stats";
 
 const team = (abbr: string, right: number, wrong: number, tie: number, won: number, lost: number) => ({
   team: abbr,
@@ -48,4 +48,9 @@ it("summarises weekly places", () => {
   const week = (place: string) => ({ place }) as MyStats["weeks"][number];
   expect(finishes([week("3"), week("1*"), week("8")])).toEqual({ best: 1, average: 4 });
   expect(finishes([])).toBeNull();
+});
+
+it("links a player, in a group when given", () => {
+  expect(playerHref("u 1")).toBe("/player/?sub=u+1");
+  expect(playerHref("u1", "g1")).toBe("/player/?sub=u1&g=g1");
 });
