@@ -25,7 +25,7 @@ const game = (gameId: string, kickoff: string, state: SlateGame["state"] = "pre"
   hype: null,
 });
 
-const group = (picks: Record<string, PickEntry> | null): SlateGroup => ({ groupId: "g", name: "G", replay: false, picks });
+const group = (picks: Record<string, PickEntry> | null): SlateGroup => ({ groupId: "g", name: "G", replay: false, picks, complete: false, role: "member", gow: null });
 
 describe("home", () => {
   it("locks at the first kickoff, whatever order the games come in", () => {

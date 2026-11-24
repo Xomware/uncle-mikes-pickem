@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from lambdas.common import nfl_store, nflverse
+from lambdas.common import gow, nfl_store, nflverse
 from lambdas.nfl_week.handler import fold_records
 from tests.conftest import DOM, PAT, call, seed_week, table
 
@@ -33,7 +33,7 @@ def group(gid, name, replay=False, season=2026, picks=None):
         "sub": DOM["sub"], "groupName": name, "season": season, "role": "owner",
     })
     if picks:
-        table().put_item(Item={"PK": f"GROUP#{gid}#S{season}#W10", "SK": f"PICK#{DOM['sub']}", "sub": DOM["sub"], "picks": picks})
+        table().put_item(Item={"PK": f"GROUP#{gid}#S{season}#W10", "SK": f"PICK#{DOM['sub']}", "sub": DOM["sub"], "picks": picks, "complete": False})
 
 
 def test_current_week_with_hype_and_records_entering_it(api):
@@ -78,13 +78,19 @@ def test_my_picks_in_each_group_of_the_season(api):
     group("g2", "Replay", replay=True)
     group("g3", "Next year", season=2027, picks={"1": {"team": "KC", "conf": 1}})
     # Another member's sheet never shows.
-    table().put_item(Item={"PK": "GROUP#g1#S2026#W10", "SK": f"PICK#{PAT['sub']}", "sub": PAT["sub"], "picks": {}})
+    table().put_item(Item={"PK": "GROUP#g1#S2026#W10", "SK": f"PICK#{PAT['sub']}", "sub": PAT["sub"], "picks": {}, "complete": True})
+    table().put_item(Item=gow.item("GROUP#g1#S2026#W10", "401873052", "auto", "2026-11-10T17:00:00Z"))
 
-    groups = call(api, DOM)[1]["groups"]
-    assert groups == [
-        {"groupId": "g1", "name": "Office", "replay": False, "picks": {"401873052": {"team": "NYG", "conf": 2}}},
-        {"groupId": "g2", "name": "Replay", "replay": True, "picks": None},
+    data = call(api, DOM)[1]
+    assert data["groups"] == [
+        {
+            "groupId": "g1", "name": "Office", "replay": False, "picks": {"401873052": {"team": "NYG", "conf": 2}},
+            "complete": False, "role": "owner", "gow": {"gameId": "401873052", "chosenBy": "auto"},
+        },
+        {"groupId": "g2", "name": "Replay", "replay": True, "picks": None, "complete": False, "role": "owner", "gow": None},
     ]
+    assert data["gowDeadline"] == nfl_store.iso(gow.deadline(data["lockAt"]))
+    assert data["gowDeadline"] < data["lockAt"]
 
 
 def test_week_param(api):

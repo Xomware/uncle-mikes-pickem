@@ -16,7 +16,7 @@ from datetime import timedelta
 import boto3
 from boto3.dynamodb.conditions import Key
 
-from lambdas.common import clock, nfl_store, nflverse, weeks
+from lambdas.common import clock, gow, nfl_store, nflverse, weeks
 from lambdas.common.api import ApiError, api_handler, respond, user
 from lambdas.common.game_view import GAME_FIELDS
 
@@ -96,12 +96,14 @@ def my_picks(sub: str, season: int, week: int) -> list[dict]:
     """The caller's sheet in each of their groups for this season, in one BatchGetItem."""
     table = dynamodb.Table(os.environ["APP_TABLE"])
     members = table.query(IndexName="GSI1", KeyConditionExpression=Key("GSI1PK").eq(f"USER#{sub}"))["Items"]
-    gids = sorted((m["GSI1SK"].removeprefix("GROUP#") for m in members if int(m["season"]) == season))
+    roles = {m["GSI1SK"].removeprefix("GROUP#"): m["role"] for m in members if int(m["season"]) == season}
+    gids = sorted(roles)
     if not gids:
         return []
     name = os.environ["APP_TABLE"]
     keys = [{"PK": f"GROUP#{g}", "SK": "META"} for g in gids]
     keys += [{"PK": weeks.week_pk(g, season, week), "SK": f"PICK#{sub}"} for g in gids]
+    keys += [{"PK": weeks.week_pk(g, season, week), "SK": "GOW"} for g in gids]
     resp = dynamodb.batch_get_item(RequestItems={name: {"Keys": keys}})
     if resp.get("UnprocessedKeys"):
         raise RuntimeError("BatchGetItem left group keys unprocessed")
@@ -110,12 +112,16 @@ def my_picks(sub: str, season: int, week: int) -> list[dict]:
     for gid in gids:
         meta = items[(f"GROUP#{gid}", "META")]
         pick = items.get((weeks.week_pk(gid, season, week), f"PICK#{sub}"))
+        chosen = items.get((weeks.week_pk(gid, season, week), "GOW"))
         out.append({
             "groupId": gid,
             "name": meta["name"],
             # A replay group's sheet was made on its virtual clock, against the same games.
             "replay": bool(meta.get("replay")),
             "picks": pick["picks"] if pick else None,
+            "complete": bool(pick and pick["complete"]),
+            "role": roles[gid],
+            "gow": {"gameId": chosen["gameId"], "chosenBy": chosen["chosenBy"]} if chosen else None,
         })
     return sorted(out, key=lambda g: (g["replay"], g["name"].lower()))
 
@@ -133,6 +139,7 @@ def handler(event, context):
     if not games:
         raise ApiError(404, f"Week {week} isn't on the schedule yet")
     recs = records(season, week)
+    row = None if archived else nfl_store.get_week(season, week)
     return respond(
         200,
         {
@@ -141,6 +148,9 @@ def handler(event, context):
             "currentWeek": current_week,
             "weeks": scheduled_weeks(season, current_week),
             "archived": archived,
+            "lockAt": row["lockAt"] if row else None,
+            # After this, cron_tick sets the GOW for any live group that hasn't.
+            "gowDeadline": nfl_store.iso(gow.deadline(row["lockAt"])) if row else None,
             "games": [game(g, week, recs) for g in games],
             "groups": [] if archived else my_picks(me["sub"], season, week),
         },
