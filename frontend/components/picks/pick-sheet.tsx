@@ -65,76 +65,81 @@ export function PickSheet({ view, locked, otherGroups }: Props) {
   }
 
   return (
-    <div className="mt-6">
-      {!gow && !locked && (
-        <p className="panel mb-4 p-3 text-sm text-muted-foreground">
-          Picks open once the organizer chooses the game of the week.
-          {isOrganizer(role) && " Choose it in the Organizer booth above."}
-        </p>
-      )}
+    <div className="mt-6 lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-6">
+      <div className="min-w-0">
+        {!gow && !locked && (
+          <p className="panel mb-4 p-3 text-sm text-muted-foreground">
+            Picks open once the organizer chooses the game of the week.
+            {isOrganizer(role) && " Choose it in the Organizer booth above."}
+          </p>
+        )}
 
-      <h2 className="chalk mb-2 text-sm">My picks</h2>
-      {editable && (
-        <p className="mb-3 rounded-md bg-card/90 px-3 py-2 text-sm text-muted-foreground">
-          Tap a team to pick it. Type your confidence in the box: {n} for your surest pick, 1 for your least. Each number once.
-        </p>
-      )}
+        <h2 className="chalk mb-2 text-sm">My picks</h2>
+        {editable && (
+          <p className="mb-3 rounded-md bg-card/90 px-3 py-2 text-sm text-muted-foreground">
+            Tap a team to pick it. Type your confidence in the box: {n} for your surest pick, 1 for your least. Each number once.
+          </p>
+        )}
 
-      <ol className="space-y-2">
-        {sheet.order.map((id, index) => (
-          <GameRow
-            key={id}
-            index={index}
-            groupId={group.groupId}
-            dirty={dirty}
-            game={byId[id]}
-            conf={sheet.conf[id]}
-            confIssue={confIssue(sheet, check, id, n)}
-            team={sheet.teams[id]}
-            isGow={gow?.gameId === id}
-            isTiebreak={week.tiebreakGameId === id}
-            editable={editable}
-            onPick={(team) => edit({ ...sheet, teams: { ...sheet.teams, [id]: team } })}
-            onConf={(value) => edit({ ...sheet, conf: { ...sheet.conf, [id]: value.replace(/\D/g, "").slice(0, 2) } })}
+        <ol className="space-y-2">
+          {sheet.order.map((id, index) => (
+            <GameRow
+              key={id}
+              index={index}
+              groupId={group.groupId}
+              dirty={dirty}
+              game={byId[id]}
+              conf={sheet.conf[id]}
+              confIssue={confIssue(sheet, check, id, n)}
+              team={sheet.teams[id]}
+              isGow={gow?.gameId === id}
+              isTiebreak={week.tiebreakGameId === id}
+              editable={editable}
+              onPick={(team) => edit({ ...sheet, teams: { ...sheet.teams, [id]: team } })}
+              onConf={(value) => edit({ ...sheet, conf: { ...sheet.conf, [id]: value.replace(/\D/g, "").slice(0, 2) } })}
+            />
+          ))}
+        </ol>
+
+        {canceled.length > 0 && (
+          <section className="mt-6">
+            <h2 className="chalk text-sm">Canceled</h2>
+            <ul className="mt-2 space-y-2">
+              {canceled.map((g) => (
+                <li key={g.gameId} className="flex min-h-11 items-center gap-3 rounded-lg border border-dashed bg-card/90 px-3 text-muted-foreground">
+                  <span className="flex-1 line-through">
+                    {g.away.abbr} @ {g.home.abbr}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </div>
+
+      {/* Phones keep one column (contents) so the save bar sticks to the whole sheet; desktop gets a sticky side rail. */}
+      <aside className="contents lg:sticky lg:top-4 lg:flex lg:flex-col lg:gap-4">
+        <label className="panel mt-6 block p-4 lg:mt-0">
+          <span className="font-display text-lg font-bold tracking-wide uppercase">Tiebreak</span>
+          <span className="block text-sm text-muted-foreground">
+            Total points in {tiebreakGame ? `${tiebreakGame.away.abbr} @ ${tiebreakGame.home.abbr}` : "the last game"}
+          </span>
+          <Input
+            className="mt-2 w-32"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={3}
+            disabled={!editable}
+            value={sheet.tiebreak}
+            aria-invalid={sheet.tiebreak.trim() !== "" && toPayload(sheet).tiebreak === null}
+            onChange={(e) => edit({ ...sheet, tiebreak: e.target.value })}
           />
-        ))}
-      </ol>
+        </label>
 
-      {canceled.length > 0 && (
-        <section className="mt-6">
-          <h2 className="chalk text-sm">Canceled</h2>
-          <ul className="mt-2 space-y-2">
-            {canceled.map((g) => (
-              <li key={g.gameId} className="flex min-h-11 items-center gap-3 rounded-lg border border-dashed bg-card/90 px-3 text-muted-foreground">
-                <span className="flex-1 line-through">
-                  {g.away.abbr} @ {g.home.abbr}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+        {editable && !dirty && pickedCount(saved) > 0 && !confError(checkConf(saved)) && otherGroups.length > 0 && <CopyPicks sheet={saved} week={week.week} groups={otherGroups} />}
 
-      <label className="panel mt-6 block p-4">
-        <span className="font-display text-lg font-bold tracking-wide uppercase">Tiebreak</span>
-        <span className="block text-sm text-muted-foreground">
-          Total points in {tiebreakGame ? `${tiebreakGame.away.abbr} @ ${tiebreakGame.home.abbr}` : "the last game"}
-        </span>
-        <Input
-          className="mt-2 w-32"
-          inputMode="numeric"
-          pattern="[0-9]*"
-          maxLength={3}
-          disabled={!editable}
-          value={sheet.tiebreak}
-          aria-invalid={sheet.tiebreak.trim() !== "" && toPayload(sheet).tiebreak === null}
-          onChange={(e) => edit({ ...sheet, tiebreak: e.target.value })}
-        />
-      </label>
-
-      {editable && !dirty && pickedCount(saved) > 0 && !confError(checkConf(saved)) && otherGroups.length > 0 && <CopyPicks sheet={saved} week={week.week} groups={otherGroups} />}
-
-      {editable && <SaveBar sheet={sheet} check={check} dirty={dirty} save={save} onSave={submit} />}
+        {editable && <SaveBar sheet={sheet} check={check} dirty={dirty} save={save} onSave={submit} />}
+      </aside>
     </div>
   );
 }
@@ -290,7 +295,7 @@ function SaveBar({ sheet, check, dirty, save, onSave }: { sheet: Sheet; check: C
   return (
     // Sticky, not fixed: it keeps its own height at the end of the sheet, so however far the
     // status text wraps, the last row and the tiebreak always scroll clear of it.
-    <div className="sticky bottom-(--tabbar-h) z-10 -mx-4 mt-6 border-t-2 border-primary bg-board sm:pb-[env(safe-area-inset-bottom)] sm:-mx-6">
+    <div className="sticky bottom-(--tabbar-h) z-10 -mx-4 mt-6 border-t-2 border-primary bg-board sm:-mx-6 sm:pb-[env(safe-area-inset-bottom)] lg:static lg:order-first lg:mx-0 lg:mt-0 lg:overflow-hidden lg:rounded-xl lg:border-2 lg:pb-0">
       <PointsLeft n={sheet.order.length} check={check} />
       <div className="flex items-center gap-3 px-4 py-3 sm:px-6">
         <p role="status" aria-live="polite" className="flex min-w-0 flex-1 items-center gap-2 text-sm">
