@@ -3,9 +3,10 @@
 import { Check, ChevronLeft, ChevronRight, Flame, Info, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback } from "react";
+import { type CSSProperties, useCallback } from "react";
 
 import { FieldTitle } from "@/components/field/field-title";
+import { ScoreFlash } from "@/components/field/score-flash";
 import { TeamLogo } from "@/components/field/team-logo";
 import { GameInfoLink } from "@/components/game/game-info-link";
 import { LoadError } from "@/components/load-error";
@@ -93,8 +94,8 @@ function SlateBody({ slate }: { slate: Slate }) {
           No games on the schedule for Week {slate.week} yet.
         </p>
       )}
-      {byDay(slate.games).map(({ day, games }) => (
-        <section key={day} className="mt-6" aria-label={day}>
+      {byDay(slate.games).map(({ day, games }, i) => (
+        <section key={day} className="mt-6 animate-rise" style={{ "--i": i } as CSSProperties} aria-label={day}>
           <h2 className="chalk text-sm tracking-[0.16em]">{day}</h2>
           <ul className="panel mt-2 divide-y overflow-hidden">
             {games.map((g) => (
@@ -283,7 +284,9 @@ function TeamLine({ team, score, result, home = false }: { team: SlateTeam; scor
       )}
       {score != null && (
         <span className="ml-auto flex items-center gap-0.5">
-          <span className={cn("led text-lg leading-none", lost && "opacity-50 [text-shadow:none]")}>{score}</span>
+          <ScoreFlash value={score} className={cn("led px-0.5 text-lg leading-none", lost && "opacity-50 [text-shadow:none]")}>
+            {score}
+          </ScoreFlash>
           <span className="w-3">
             {result === "won" && (
               <>
