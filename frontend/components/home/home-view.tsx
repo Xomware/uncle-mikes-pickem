@@ -27,17 +27,22 @@ export function HomeView() {
   usePoll(() => load.status === "ready" && inLiveWindow(load.data.games, Date.now()), refresh);
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6" aria-busy={load.status === "loading"}>
-      {load.status === "loading" && (
-        <div className="animate-pulse space-y-3">
-          <span className="block h-14 w-48 rounded bg-card/70" />
-          <span className="block h-24 rounded-xl bg-card/70" />
-          <span className="block h-56 rounded-xl bg-card/70" />
-          <span className="sr-only">Loading your week</span>
-        </div>
-      )}
-      {load.status === "error" && <LoadError title="Couldn't load this week" message={load.message} onRetry={retry} />}
-      {load.status === "ready" && <HomeBody slate={load.data} />}
+    <div
+      className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 lg:max-w-6xl xl:grid xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start xl:gap-x-8"
+      aria-busy={load.status === "loading"}
+    >
+      <div className="min-w-0">
+        {load.status === "loading" && (
+          <div className="animate-pulse space-y-3">
+            <span className="block h-14 w-48 rounded bg-card/70" />
+            <span className="block h-24 rounded-xl bg-card/70" />
+            <span className="block h-56 rounded-xl bg-card/70" />
+            <span className="sr-only">Loading your week</span>
+          </div>
+        )}
+        {load.status === "error" && <LoadError title="Couldn't load this week" message={load.message} onRetry={retry} />}
+        {load.status === "ready" && <HomeBody slate={load.data} />}
+      </div>
       <SeasonSummary />
     </div>
   );
@@ -83,7 +88,7 @@ function HomeBody({ slate }: { slate: Slate }) {
         {slate.groups.length === 0 ? (
           <NoGroups />
         ) : (
-          <ul className="mt-2 grid gap-3 sm:grid-cols-2">
+          <ul className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2">
             {slate.groups.map((g, i) => (
               <GroupCard key={g.groupId} index={i} group={g} week={slate.week} games={slate.games.length} left={left} />
             ))}
@@ -96,7 +101,7 @@ function HomeBody({ slate }: { slate: Slate }) {
           <h2 id="scores-title" className="chalk text-sm tracking-[0.16em]">
             Scores
           </h2>
-          <ul className="mt-2 flex snap-x gap-2 overflow-x-auto pb-2">
+          <ul className="mt-2 flex snap-x gap-2 overflow-x-auto pb-2 lg:grid lg:grid-cols-5 lg:overflow-visible lg:pb-0 xl:grid-cols-4">
             {strip.map((g) => (
               <ScoreChip key={g.gameId} game={g} />
             ))}
@@ -171,7 +176,7 @@ function GroupCard({ index, group, week, games, left }: GroupCardProps) {
 function ScoreChip({ game }: { game: SlateGame }) {
   const started = game.awayScore != null && game.homeScore != null;
   return (
-    <li className="panel flex w-40 shrink-0 snap-start items-center gap-3 p-2.5">
+    <li className="panel flex w-40 shrink-0 snap-start items-center gap-3 p-2.5 lg:w-auto">
       <div className="min-w-0 flex-1 space-y-1">
         {[
           { team: game.away, score: game.awayScore },
@@ -201,7 +206,7 @@ function SeasonSummary() {
   const me = load.status === "ready" ? load.data?.overall.me : null;
 
   return (
-    <div className="mt-6">
+    <div className="mt-6 xl:sticky xl:top-20 xl:mt-[6.25rem]">
       {load.status === "error" && <LoadError title="Couldn't load your season" message={load.message} onRetry={retry} />}
       {load.status !== "error" && (
         <Board

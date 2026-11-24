@@ -18,9 +18,9 @@ export function GroupsView() {
   const { load, retry } = useLoad(myGroups);
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
-      <h1 className="paint worn mt-1 text-5xl leading-none sm:text-6xl">My groups</h1>
-      <section aria-live="polite" aria-busy={load.status === "loading"} className="mt-6">
+    <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6 lg:grid lg:max-w-6xl lg:has-[>form]:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-x-8">
+      <h1 className="paint worn mt-1 text-5xl leading-none sm:text-6xl lg:col-span-full">My groups</h1>
+      <section aria-live="polite" aria-busy={load.status === "loading"} className="mt-6 min-w-0">
         {load.status === "loading" && <ListSkeleton />}
         {load.status === "error" && <LoadError title="Couldn't load your groups" message={load.message} onRetry={retry} />}
         {load.status === "ready" && load.data.length === 0 && (
@@ -33,9 +33,9 @@ export function GroupsView() {
           </div>
         )}
         {load.status === "ready" && load.data.length > 0 && (
-          <ul className="divide-y panel">
+          <ul className="divide-y panel xl:grid xl:grid-cols-2 xl:divide-y-0">
             {load.data.map((g) => (
-              <li key={g.groupId}>
+              <li key={g.groupId} className="xl:border-t xl:odd:border-r xl:last:odd:col-span-2 xl:last:odd:border-r-0 xl:[&:nth-child(-n+2)]:border-t-0">
                 <Link
                   href={groupHref(g.groupId)}
                   className="flex min-h-16 items-center gap-3 px-4 py-3 outline-none hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/60"
@@ -86,10 +86,10 @@ function CreateGroupForm() {
   if (!flags.groupCreation && !superAdmin) return null;
 
   return (
-    <form onSubmit={submit} className="mt-10 panel p-5">
+    <form onSubmit={submit} className="mt-10 panel p-5 lg:sticky lg:top-20 lg:mt-6">
       <h2 className="font-display text-2xl font-extrabold uppercase">Start a group</h2>
       <p className="mt-1 text-muted-foreground">You become its organizer and can invite people.</p>
-      <div className="mt-4 grid gap-4 sm:grid-cols-[1fr_9rem]">
+      <div className="mt-4 grid gap-4 sm:grid-cols-[1fr_9rem] lg:grid-cols-[1fr_7rem]">
         <label className="grid gap-1.5 text-sm font-medium">
           Group name
           <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={60} required />

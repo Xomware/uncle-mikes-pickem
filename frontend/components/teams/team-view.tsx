@@ -27,7 +27,7 @@ export function TeamView() {
   const groupId = load.status === "ready" ? load.data.data.group?.groupId : params.get("groupId");
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6" aria-busy={load.status === "loading"}>
+    <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 lg:max-w-6xl" aria-busy={load.status === "loading"}>
       <Link href={teamsHref(groupId)} className="chalk inline-flex min-h-11 items-center gap-1.5 text-sm tracking-[0.14em] hover:text-primary">
         <ArrowLeft className="size-4" aria-hidden="true" />
         All teams
@@ -89,10 +89,14 @@ function TeamBody({ data, team }: { data: NflTeams; team: TeamSeason }) {
     );
   return (
     <>
-      <Header team={team} />
-      {team.picks && <PickTable abbr={team.abbr} picks={team.picks} />}
-      {list("results", "Results", played)}
-      {list("upcoming", "Upcoming", upcoming)}
+      <div className={cn(team.picks && "lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-end lg:gap-x-6")}>
+        <Header team={team} />
+        {team.picks && <PickTable abbr={team.abbr} picks={team.picks} />}
+      </div>
+      <div className={cn(played.length > 0 && upcoming.length > 0 && "lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-6")}>
+        {list("results", "Results", played)}
+        {list("upcoming", "Upcoming", upcoming)}
+      </div>
     </>
   );
 }

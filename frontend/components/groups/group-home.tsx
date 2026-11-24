@@ -175,11 +175,11 @@ function GroupDetails({
           <h2 className="paint worn text-4xl leading-none">
             Roster <span className="text-chalk/70">({members.length})</span>
           </h2>
-          <ul className="panel mt-3 divide-y">
+          <ul className="panel mt-3 divide-y lg:grid lg:grid-cols-2 lg:divide-y-0">
             {members.map((m) => (
               <li
                 key={m.sub}
-                className="flex min-h-14 items-center gap-3 px-4 py-2"
+                className="flex min-h-14 items-center gap-3 px-4 py-2 lg:border-t lg:odd:border-r lg:last:odd:col-span-2 lg:last:odd:border-r-0 lg:[&:nth-child(-n+2)]:border-t-0"
               >
                 <span
                   aria-hidden="true"

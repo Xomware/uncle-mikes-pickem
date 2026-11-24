@@ -21,7 +21,7 @@ export function PlayerView() {
   const { load, retry } = useLoad(fetcher);
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6" aria-busy={load.status === "loading"}>
+    <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 lg:max-w-6xl" aria-busy={load.status === "loading"}>
       <Link
         href={groupId ? groupHref(groupId) : "/leaderboard/"}
         className="chalk inline-flex min-h-11 items-center gap-1.5 text-sm tracking-[0.14em] hover:text-primary"

@@ -15,11 +15,11 @@ export function TeamsIndex() {
   const { load, retry } = useTeams();
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6" aria-busy={load.status === "loading"}>
+    <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 xl:max-w-7xl" aria-busy={load.status === "loading"}>
       {load.status === "loading" && (
         <div className="animate-pulse space-y-3">
           <span className="block h-14 w-48 rounded bg-card/70" />
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {Array.from({ length: 8 }, (_, i) => (
               <span key={i} className="block h-48 rounded-xl bg-card/70" />
             ))}
@@ -44,7 +44,7 @@ export function TeamsIndex() {
 function Divisions({ data }: { data: NflTeams }) {
   const groupId = data.group?.groupId;
   return (
-    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+    <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {divisions(data.teams).map(({ conference, division, teams }) => (
         <section key={`${conference}-${division}`} className="panel overflow-hidden" aria-labelledby={`div-${conference}-${division}`}>
           <table className="w-full table-fixed text-sm">
@@ -95,7 +95,7 @@ function TeamRow({ team, groupId }: { team: TeamRecord; groupId?: string }) {
         >
           <TeamLogo {...team} className="size-7" />
           <span className="w-10 shrink-0 font-display text-lg leading-none font-extrabold">{team.abbr}</span>
-          <span className="truncate text-xs text-muted-foreground">{team.name}</span>
+          <span className="truncate text-xs text-muted-foreground xl:sr-only">{team.name}</span>
         </Link>
       </td>
       <td className="led text-right text-base whitespace-nowrap">{recordText(team.overall)}</td>

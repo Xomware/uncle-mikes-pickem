@@ -5,6 +5,7 @@ import Link from "next/link";
 import { type KeyboardEvent, useState } from "react";
 
 import { FieldTitle } from "@/components/field/field-title";
+import { Board, Stat } from "@/components/field/stat";
 import { LoadError } from "@/components/load-error";
 import { type LeaderBoard, type LeaderRow, type Leaderboard, getLeaderboard } from "@/lib/api/client";
 import { useLoad } from "@/lib/api/use-load";
@@ -20,7 +21,7 @@ export function LeaderboardView() {
   const { load, retry } = useLoad(getLeaderboard);
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6" aria-busy={load.status === "loading"}>
+    <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 lg:max-w-6xl" aria-busy={load.status === "loading"}>
       {load.status === "loading" && (
         <div className="animate-pulse space-y-3">
           <span className="block h-12 w-56 rounded bg-card/70" />
@@ -72,48 +73,84 @@ function Boards({ data }: { data: Leaderboard | null }) {
           App stats
         </Link>
       </div>
-      <div role="tablist" aria-label="Leaderboard" className="panel mt-6 grid grid-cols-2 gap-1 p-1">
-        {TABS.map((key) => (
-          <button
-            key={key}
-            id={`leaders-tab-${key}`}
-            type="button"
-            role="tab"
-            aria-selected={tab === key}
-            aria-controls="leaders-panel"
-            tabIndex={tab === key ? 0 : -1}
-            onClick={() => setTab(key)}
-            onKeyDown={onKey}
-            className={cn(
-              "h-11 rounded-md px-4 font-display text-lg font-extrabold tracking-wide uppercase outline-none focus-visible:ring-3 focus-visible:ring-ring/60",
-              tab === key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
-            )}
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-x-6">
+        <div className="min-w-0">
+          <div role="tablist" aria-label="Leaderboard" className="panel mt-6 grid grid-cols-2 gap-1 p-1">
+            {TABS.map((key) => (
+              <button
+                key={key}
+                id={`leaders-tab-${key}`}
+                type="button"
+                role="tab"
+                aria-selected={tab === key}
+                aria-controls="leaders-panel"
+                tabIndex={tab === key ? 0 : -1}
+                onClick={() => setTab(key)}
+                onKeyDown={onKey}
+                className={cn(
+                  "h-11 rounded-md px-4 font-display text-lg font-extrabold tracking-wide uppercase outline-none focus-visible:ring-3 focus-visible:ring-ring/60",
+                  tab === key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                )}
+              >
+                {labels[key]}
+              </button>
+            ))}
+          </div>
+          <section
+            id="leaders-panel"
+            role="tabpanel"
+            aria-labelledby={`leaders-tab-${tab}`}
+            className="scoreboard mt-4 p-3"
           >
-            {labels[key]}
-          </button>
-        ))}
+            <BoardTable board={data[tab]} season={tab === "overall"} />
+            <ul className="mt-3 space-y-1 px-1 text-xs text-muted-foreground">
+              {tab === "overall" ? (
+                <li>
+                  Ranked by pick %: right picks over graded picks. {data.minGraded} graded picks to be ranked; anyone
+                  under that is listed, unranked.
+                </li>
+              ) : (
+                <li>Ranked by right picks, then confidence points. Only sheets turned in for Week {data.week}.</li>
+              )}
+              <li>Players in more than one group show their best group.</li>
+              <li>Names are first name and last initial. A group is named only if you&apos;re in it.</li>
+            </ul>
+          </section>
+        </div>
+        <YouPanel data={data} />
       </div>
-      <section
-        id="leaders-panel"
-        role="tabpanel"
-        aria-labelledby={`leaders-tab-${tab}`}
-        className="scoreboard mt-4 p-3"
-      >
-        <BoardTable board={data[tab]} season={tab === "overall"} />
-        <ul className="mt-3 space-y-1 px-1 text-xs text-muted-foreground">
-          {tab === "overall" ? (
-            <li>
-              Ranked by pick %: right picks over graded picks. {data.minGraded} graded picks to be ranked; anyone
-              under that is listed, unranked.
-            </li>
-          ) : (
-            <li>Ranked by right picks, then confidence points. Only sheets turned in for Week {data.week}.</li>
-          )}
-          <li>Players in more than one group show their best group.</li>
-          <li>Names are first name and last initial. A group is named only if you&apos;re in it.</li>
-        </ul>
-      </section>
     </>
+  );
+}
+
+/** Your own line from both boards, beside the table on a wide screen. Phones already see it pinned in the table. */
+function YouPanel({ data }: { data: Leaderboard }) {
+  const { me } = data.overall;
+  const week = data.thisWeek.me;
+  return (
+    <aside className="mt-6 hidden lg:sticky lg:top-20 lg:block" aria-label="Your standing">
+      <Board title="You">
+        {me ? (
+          <dl className="mt-3 grid grid-cols-2 gap-2">
+            <Stat label="Season rank" value={me.rank ? `#${me.rank}` : "-"} note={`of ${data.overall.players}`} />
+            <Stat label="Pick %" value={pickPct(me)} note={record(me)} />
+            <Stat label="Points" value={`${me.points}`} />
+            <Stat label="Weeks won" value={`${me.won}`} />
+          </dl>
+        ) : (
+          <p className="mt-2 text-sm text-muted-foreground">No graded picks yet this season.</p>
+        )}
+        <p className="mt-4 font-display text-xs tracking-[0.14em] text-muted-foreground uppercase">Week {data.week}</p>
+        {week ? (
+          <dl className="mt-2 grid grid-cols-2 gap-2">
+            <Stat label="Rank" value={week.rank ? `#${week.rank}` : "-"} note={`of ${data.thisWeek.players}`} />
+            <Stat label="Record" value={record(week)} note={`${week.points} pts`} />
+          </dl>
+        ) : (
+          <p className="mt-1 text-sm text-muted-foreground">No sheet graded this week.</p>
+        )}
+      </Board>
+    </aside>
   );
 }
 

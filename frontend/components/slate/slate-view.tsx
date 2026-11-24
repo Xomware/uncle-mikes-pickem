@@ -26,7 +26,7 @@ export function SlateView() {
   const { load, retry } = useLoad(fetcher);
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6" aria-busy={load.status === "loading"}>
+    <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 lg:max-w-6xl" aria-busy={load.status === "loading"}>
       {load.status === "loading" && (
         <div className="animate-pulse space-y-3">
           <span className="block h-14 w-48 rounded bg-card/70" />
@@ -97,7 +97,7 @@ function SlateBody({ slate }: { slate: Slate }) {
       {byDay(slate.games).map(({ day, games }, i) => (
         <section key={day} className="mt-6 animate-rise" style={{ "--i": i } as CSSProperties} aria-label={day}>
           <h2 className="chalk text-sm tracking-[0.16em]">{day}</h2>
-          <ul className="panel mt-2 divide-y overflow-hidden">
+          <ul className="panel mt-2 divide-y overflow-hidden xl:grid xl:grid-cols-2 xl:divide-y-0">
             {games.map((g) => (
               <GameRow key={g.gameId} game={g} groups={slate.groups} infoGroup={infoGroup} top={g.hype != null && g.hype === topHype} />
             ))}
@@ -191,7 +191,8 @@ function GameRow({ game, groups, infoGroup, top }: { game: SlateGame; groups: Sl
 
   return (
     // Phone: picks wrap under the game. Wider: they sit between the matchup and the line, one row per game.
-    <li className="grid grid-cols-[3.75rem_minmax(0,1fr)_auto] items-start gap-x-3 px-3 py-2.5 sm:grid-cols-[4.5rem_11rem_minmax(0,1fr)_auto] sm:px-4">
+    // xl: two games a row; divide-y can't rule a grid, so each cell draws its own lines.
+    <li className="grid grid-cols-[3.75rem_minmax(0,1fr)_auto] items-start gap-x-3 px-3 py-2.5 sm:grid-cols-[4.5rem_11rem_minmax(0,1fr)_auto] sm:px-4 xl:border-t xl:odd:border-r xl:last:odd:col-span-2 xl:last:odd:border-r-0 xl:[&:nth-child(-n+2)]:border-t-0">
       <div className="pt-1 font-display leading-tight">
         {game.state === "in" && <span className="led text-base">LIVE</span>}
         {game.state === "post" && <span className="text-sm font-bold tracking-wider text-muted-foreground">FINAL</span>}
