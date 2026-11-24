@@ -18,7 +18,7 @@ dynamodb = boto3.resource("dynamodb")
 
 class Pick(Request):
     team: Annotated[str, StringConstraints(min_length=2, max_length=4)] | None = None
-    conf: Annotated[int, Field(ge=1, le=32)]
+    conf: Annotated[int, Field(ge=1, le=32)] | None = None
 
 
 class SetPicks(Request):

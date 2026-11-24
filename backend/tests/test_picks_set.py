@@ -126,3 +126,14 @@ def test_a_replay_group_picks_from_replay_rows_and_locks_on_its_clock(api):
         Key={"PK": f"GROUP#{gid}", "SK": "META"}, UpdateExpression="SET clock = :c", ExpressionAttributeValues={":c": lock}
     )
     assert save(api, gid, pick, who=DOM)[0] == 409
+
+
+def test_a_draft_can_leave_confidence_blank(api, gid):
+    status, data = save(api, gid, {"101": {"team": "KC", "conf": None}, "102": {"team": None, "conf": 3}})
+    assert status == 200
+    assert data["pick"]["complete"] is False
+    assert stored(gid)["picks"]["101"] == {"team": "KC", "conf": None}
+
+
+def test_every_game_needs_a_confidence_to_be_complete(api, gid):
+    assert save(api, gid, {**FULL, "102": {"team": "PIT", "conf": None}})[1]["pick"]["complete"] is False

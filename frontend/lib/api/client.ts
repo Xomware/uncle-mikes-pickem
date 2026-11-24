@@ -187,7 +187,7 @@ export interface Game {
 
 export interface PickEntry {
   team: string | null;
-  conf: number;
+  conf: number | null;
 }
 
 export interface WeekPicks {

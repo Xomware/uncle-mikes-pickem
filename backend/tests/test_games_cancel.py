@@ -98,3 +98,11 @@ def test_cron_skips_a_canceled_game_when_picking_the_gow(app, monkeypatch):
     tick.auto_gow()
     gow = table().get_item(Key={"PK": f"GROUP#{gid}#S2027#W01", "SK": "GOW"})["Item"]
     assert gow["gameId"] == "102"
+
+
+def test_rerank_shifts_a_partial_draft_and_clears_what_no_longer_fits():
+    draft = {"101": {"team": "KC", "conf": 4}, "102": {"team": None, "conf": 2}, "103": {"team": "PHI", "conf": None}}
+    games = [{"gameId": g} for g in ("101", "102")]
+    assert picks.rerank(draft, games) == {"101": {"team": "KC", "conf": None}, "102": {"team": None, "conf": 2}}
+    games = [{"gameId": g} for g in ("101", "103", "104")]
+    assert picks.rerank(draft, games) == {"101": {"team": "KC", "conf": 3}, "103": {"team": "PHI", "conf": None}}

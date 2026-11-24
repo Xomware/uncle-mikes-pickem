@@ -24,7 +24,7 @@ export function breakdown(games: Game[], picks: WeekPicks[], gowId: string | nul
   const splits = open.map((game) => {
     const chosen = picks.flatMap((p) => {
       const pick = p.picks[game.gameId];
-      return pick?.team ? [{ sub: p.sub, team: pick.team, conf: pick.conf }] : [];
+      return pick?.team && pick.conf != null ? [{ sub: p.sub, team: pick.team, conf: pick.conf }] : [];
     });
     const side = (abbr: string): Side => {
       const on = chosen.filter((c) => c.team === abbr);

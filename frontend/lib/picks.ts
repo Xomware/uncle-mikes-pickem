@@ -17,13 +17,14 @@ export function gridRows(view: WeekView, me: string) {
 }
 
 /**
- * A pick sheet is a ranking: open games in order, top row worth N, last worth 1.
- * Every row always holds a confidence, so 1..N stays unique by construction and
- * reordering is the only way to change one.
+ * A pick sheet: open games in kickoff order, which never changes. Each game gets a
+ * typed confidence; a draft may leave any blank, but the ones it holds must be
+ * unique in 1..N before it can save.
  */
 export interface Sheet {
   order: string[];
   teams: Record<string, string | null>;
+  conf: Record<string, string>;
   tiebreak: string;
 }
 
@@ -31,39 +32,61 @@ export const picksHref = (groupId: string, week?: number) =>
   `/picks/?id=${encodeURIComponent(groupId)}${week ? `&week=${week}` : ""}`;
 
 export function toSheet(games: Game[], mine: WeekPicks | null): Sheet {
-  const open = games.filter((g) => !g.canceled).map((g) => g.gameId);
+  const order = games.filter((g) => !g.canceled).map((g) => g.gameId);
   const saved = mine?.picks ?? {};
-  // Saved games by confidence, highest first; a game with no saved pick (new, or restored
-  // after a cancel) goes to the bottom in kickoff order.
-  const ranked = open.filter((id) => saved[id]).sort((a, b) => saved[b].conf - saved[a].conf);
-  const order = [...ranked, ...open.filter((id) => !saved[id])];
   return {
     order,
     teams: Object.fromEntries(order.map((id) => [id, saved[id]?.team ?? null])),
+    conf: Object.fromEntries(order.map((id) => [id, saved[id]?.conf == null ? "" : String(saved[id].conf)])),
     tiebreak: mine?.tiebreak == null ? "" : String(mine.tiebreak),
   };
 }
 
-export function toPayload(sheet: Sheet): { picks: Record<string, PickEntry>; tiebreak: number | null } {
-  const n = sheet.order.length;
-  const picks = Object.fromEntries(sheet.order.map((id, i) => [id, { team: sheet.teams[id], conf: n - i }]));
-  const tiebreak = sheet.tiebreak.trim();
-  return { picks, tiebreak: /^\d+$/.test(tiebreak) ? Number(tiebreak) : null };
+const whole = (s: string) => (/^\d+$/.test(s.trim()) ? Number(s) : null);
+
+export interface ConfCheck {
+  /** Points 1..N nobody has used yet. */
+  left: number[];
+  /** Points typed on more than one game. */
+  dupes: number[];
+  /** Games whose box holds something that isn't 1..N. */
+  bad: string[];
 }
 
-export const confAt = (sheet: Sheet, index: number) => sheet.order.length - index;
+export function checkConf(sheet: Sheet): ConfCheck {
+  const n = sheet.order.length;
+  const counts = new Map<number, number>();
+  const bad: string[] = [];
+  for (const id of sheet.order) {
+    if (sheet.conf[id].trim() === "") continue;
+    const c = whole(sheet.conf[id]);
+    if (c === null || c < 1 || c > n) bad.push(id);
+    else counts.set(c, (counts.get(c) ?? 0) + 1);
+  }
+  return {
+    left: Array.from({ length: n }, (_, i) => i + 1).filter((c) => !counts.has(c)),
+    dupes: [...counts].filter(([, k]) => k > 1).map(([c]) => c),
+    bad,
+  };
+}
 
-export function swap(order: string[], i: number, j: number): string[] {
-  if (i === j || i < 0 || j < 0 || i >= order.length || j >= order.length) return order;
-  const next = [...order];
-  [next[i], next[j]] = [next[j], next[i]];
-  return next;
+export const confError = ({ dupes, bad }: ConfCheck) => dupes.length > 0 || bad.length > 0;
+
+export function toPayload(sheet: Sheet): { picks: Record<string, PickEntry>; tiebreak: number | null } {
+  const picks = Object.fromEntries(
+    sheet.order
+      .map((id) => [id, { team: sheet.teams[id], conf: whole(sheet.conf[id]) }] as const)
+      .filter(([, p]) => p.team !== null || p.conf !== null),
+  );
+  return { picks, tiebreak: whole(sheet.tiebreak) };
 }
 
 export const pickedCount = (sheet: Sheet) => sheet.order.filter((id) => sheet.teams[id]).length;
 
-export const isComplete = (sheet: Sheet) =>
-  pickedCount(sheet) === sheet.order.length && toPayload(sheet).tiebreak !== null;
+export function isComplete(sheet: Sheet) {
+  const check = checkConf(sheet);
+  return pickedCount(sheet) === sheet.order.length && check.left.length === 0 && !confError(check) && whole(sheet.tiebreak) !== null;
+}
 
 export const sameSheet = (a: Sheet, b: Sheet) => JSON.stringify(toPayload(a)) === JSON.stringify(toPayload(b));
 
