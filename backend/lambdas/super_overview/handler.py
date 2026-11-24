@@ -1,6 +1,6 @@
 """GET /super/overview: counts, this week's picks per group, scheduled job health and mail volume. Super admin only.
 
-The site header also calls it to decide whether to show the Press Box link.
+The site header also calls it to decide whether to show the Admin link.
 """
 
 import os
